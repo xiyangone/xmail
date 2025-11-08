@@ -4,8 +4,9 @@ import { useState, useEffect } from "react";
 import { BrandHeader } from "@/components/ui/brand-header";
 import { SharedMessageList } from "@/components/emails/shared-message-list";
 import { SharedMessageDetail } from "@/components/emails/shared-message-detail";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 interface Message {
   id: string;
@@ -54,21 +55,43 @@ export function SharedEmailPageClient({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-      <div className="max-w-7xl mx-auto">
-        <BrandHeader />
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* 顶部品牌区域 */}
+        <div className="text-center mb-8">
+          <BrandHeader showCTA={false} />
 
-        <div className="px-4 pb-4">
-          <div className="bg-card border border-border rounded-lg shadow-lg overflow-hidden">
-            <div className="p-4 bg-muted/30 border-b border-border">
-              <div className="space-y-1">
-                <h2 className="text-lg font-semibold">分享的邮箱</h2>
-                <p className="text-sm text-muted-foreground">{email.address}</p>
-                <p className="text-xs text-muted-foreground">
-                  过期时间：
-                  {new Date(email.expiresAt).toLocaleString("zh-CN")}
-                </p>
+          {/* 邮箱信息卡片 */}
+          <div className="mt-6 max-w-2xl mx-auto">
+            <div className="bg-card border border-border rounded-xl shadow-lg p-6 space-y-4">
+              <div className="flex items-center justify-center gap-2">
+                <Mail className="h-5 w-5 text-primary" />
+                <h2 className="text-xl font-bold">{email.address}</h2>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                邮箱过期时间：{new Date(email.expiresAt).toLocaleString("zh-CN", {
+                  year: "numeric",
+                  month: "2-digit",
+                  day: "2-digit",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                })}
+              </p>
+              <div className="pt-2">
+                <Button asChild className="gap-2">
+                  <Link href="/">
+                    <Mail className="h-4 w-4" />
+                    创建自己的临时邮箱
+                  </Link>
+                </Button>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* 邮件内容区域 */}
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-card border border-border rounded-xl shadow-lg overflow-hidden">
 
             <div className="h-[600px] flex">
               {isMobile ? (
@@ -120,7 +143,7 @@ export function SharedEmailPageClient({
                       />
                     ) : (
                       <div className="flex items-center justify-center h-full text-muted-foreground">
-                        <p className="text-sm">请选择一封邮件查看详情</p>
+                        <p className="text-sm">选择邮件查看详情</p>
                       </div>
                     )}
                   </div>

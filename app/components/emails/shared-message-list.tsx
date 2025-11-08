@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Mail, RefreshCw, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { useThrottle } from "@/hooks/use-throttle";
 import { useToast } from "@/components/ui/use-toast";
 
@@ -121,24 +120,18 @@ export function SharedMessageList({
   }, [throttledHandleScroll]);
 
   return (
-    <div className="h-full flex flex-col bg-card border-r border-border">
-      <div className="p-4 border-b border-border flex items-center justify-between bg-muted/30">
-        <div className="space-y-1">
-          <h2 className="text-lg font-semibold">收件箱</h2>
-          <p className="text-xs text-muted-foreground">共 {total} 封邮件</p>
+    <div className="h-full flex flex-col bg-card">
+      <div className="p-3 border-b border-border flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <RefreshCw
+            className={cn("h-4 w-4 cursor-pointer text-muted-foreground hover:text-primary transition-colors", refreshing && "animate-spin")}
+            onClick={handleRefresh}
+          />
+          <span className="text-sm text-muted-foreground">{total}封邮件</span>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleRefresh}
-          disabled={refreshing}
-          className="h-8 w-8"
-        >
-          <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
-        </Button>
       </div>
 
-      <div ref={listRef} className="flex-1 overflow-y-auto p-2 space-y-2">
+      <div ref={listRef} className="flex-1 overflow-y-auto">
         {messages.length === 0 && !loading ? (
           <div className="flex flex-col items-center justify-center h-32 text-center text-muted-foreground">
             <Mail className="h-8 w-8 mb-2 opacity-50" />
@@ -149,19 +142,17 @@ export function SharedMessageList({
             <div
               key={message.id}
               className={cn(
-                "flex items-start gap-3 p-3 rounded-lg cursor-pointer text-sm group transition-all duration-200",
-                "hover:bg-primary/10 hover:shadow-md",
-                "border border-transparent hover:border-primary/20",
-                selectedMessageId === message.id &&
-                  "bg-primary/15 border-primary/30 shadow-md",
+                "flex items-start gap-3 p-4 cursor-pointer text-sm group transition-all duration-150 border-b border-border/50",
+                "hover:bg-muted/50",
+                selectedMessageId === message.id && "bg-muted/80",
                 "animate-fade-in"
               )}
               style={{ animationDelay: `${index * 30}ms` }}
               onClick={() => onMessageSelect(message.id)}
             >
-              <Mail className="h-5 w-5 text-primary/70 group-hover:text-primary transition-colors flex-shrink-0 mt-0.5" />
+              <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-1" />
               <div className="flex-1 min-w-0 space-y-1">
-                <div className="font-medium truncate group-hover:text-primary transition-colors">
+                <div className="font-medium truncate">
                   {message.subject || "(无主题)"}
                 </div>
                 <div className="text-xs text-muted-foreground truncate">
@@ -171,6 +162,7 @@ export function SharedMessageList({
                   {new Date(
                     message.received_at || message.sent_at || 0
                   ).toLocaleString("zh-CN", {
+                    year: "numeric",
                     month: "2-digit",
                     day: "2-digit",
                     hour: "2-digit",

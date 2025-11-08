@@ -183,13 +183,13 @@ export function ShareDialog({ emailId }: ShareDialogProps) {
         >
           <DialogHeader>
             <DialogTitle>分享邮箱</DialogTitle>
-            <DialogDescription>创建分享链接，让他人查看此邮箱的邮件</DialogDescription>
+            <DialogDescription>创建分享链接，让其他人可以查看此邮箱中的邮件</DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-6">
             {/* Create new share link */}
-            <div className="space-y-2">
-              <Label>有效期</Label>
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">链接有效期</Label>
               <div className="flex gap-2">
                 <Select value={expiryTime} onValueChange={setExpiryTime}>
                   <SelectTrigger className="flex-1">
@@ -217,8 +217,8 @@ export function ShareDialog({ emailId }: ShareDialogProps) {
             </div>
 
             {/* Active share links */}
-            <div className="space-y-2">
-              <Label>活跃的分享链接</Label>
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">当前分享链接</Label>
               <div className="h-[270px] overflow-y-auto">
                 {loading ? (
                   <div className="text-sm text-gray-500 text-center py-8 flex flex-col items-center gap-2">
@@ -230,7 +230,7 @@ export function ShareDialog({ emailId }: ShareDialogProps) {
                     暂无分享链接
                   </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {shares.map((share) => {
                       const expiresAtTime = share.expiresAt
                         ? typeof share.expiresAt === "number"
@@ -243,10 +243,10 @@ export function ShareDialog({ emailId }: ShareDialogProps) {
                         <div
                           key={share.id}
                           className={cn(
-                            "p-3 border rounded-lg space-y-2 transition-all",
+                            "p-4 border rounded-lg space-y-3 transition-all",
                             isExpired
-                              ? "border-destructive/30 bg-destructive/5 opacity-75"
-                              : "border-border"
+                              ? "border-destructive/30 bg-destructive/5"
+                              : "border-border bg-muted/30"
                           )}
                         >
                           <div className="flex items-center gap-2">
@@ -255,7 +255,7 @@ export function ShareDialog({ emailId }: ShareDialogProps) {
                                 "h-4 w-4 flex-shrink-0",
                                 isExpired
                                   ? "text-destructive/60"
-                                  : "text-primary/60"
+                                  : "text-primary"
                               )}
                             />
                             <a
@@ -272,10 +272,10 @@ export function ShareDialog({ emailId }: ShareDialogProps) {
                                 }
                               }}
                               className={cn(
-                                "flex-1 text-xs p-1 rounded truncate font-mono transition-colors",
+                                "flex-1 text-xs p-2 rounded truncate font-mono transition-colors",
                                 isExpired
-                                  ? "bg-destructive/10 text-destructive/70 cursor-not-allowed pointer-events-none"
-                                  : "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary cursor-pointer"
+                                  ? "bg-destructive/10 text-destructive/70 cursor-not-allowed"
+                                  : "bg-muted text-foreground hover:bg-muted/80 cursor-pointer"
                               )}
                             >
                               {getShareUrl(share.token)}
@@ -285,49 +285,54 @@ export function ShareDialog({ emailId }: ShareDialogProps) {
                               size="icon"
                               className="h-8 w-8 flex-shrink-0"
                               onClick={() => handleCopy(share.token)}
+                              disabled={isExpired}
                             >
                               <Copy className="h-4 w-4" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 flex-shrink-0"
+                              className="h-8 w-8 flex-shrink-0 hover:bg-destructive/10"
                               onClick={() => setDeleteTarget(share)}
                             >
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </div>
-                          <div className="flex gap-4 text-xs">
-                            <span
-                              className={cn(
-                                isExpired
-                                  ? "text-destructive/70"
-                                  : "text-gray-500"
-                              )}
-                            >
-                              创建时间:{" "}
-                              {new Date(
-                                typeof share.createdAt === "number"
-                                  ? share.createdAt
-                                  : share.createdAt
-                              ).toLocaleString()}
-                            </span>
-                            <span
-                              className={cn(
-                                isExpired
-                                  ? "text-destructive/70"
-                                  : "text-gray-500"
-                              )}
-                            >
-                              过期时间:{" "}
-                              {share.expiresAt
-                                ? new Date(
-                                    typeof share.expiresAt === "number"
-                                      ? share.expiresAt
-                                      : share.expiresAt
-                                  ).toLocaleString()
-                                : "永久"}
-                            </span>
+                          <div className="flex items-center justify-between text-xs text-muted-foreground">
+                            <div className="flex gap-4">
+                              <span>
+                                创建时间:{" "}
+                                {new Date(
+                                  typeof share.createdAt === "number"
+                                    ? share.createdAt
+                                    : share.createdAt
+                                ).toLocaleString("zh-CN", {
+                                  year: "numeric",
+                                  month: "2-digit",
+                                  day: "2-digit",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  second: "2-digit",
+                                })}
+                              </span>
+                              <span>
+                                过期时间:{" "}
+                                {share.expiresAt
+                                  ? new Date(
+                                      typeof share.expiresAt === "number"
+                                        ? share.expiresAt
+                                        : share.expiresAt
+                                    ).toLocaleString("zh-CN", {
+                                      year: "numeric",
+                                      month: "2-digit",
+                                      day: "2-digit",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                      second: "2-digit",
+                                    })
+                                  : "永久"}
+                              </span>
+                            </div>
                             {isExpired && (
                               <span className="text-destructive font-medium flex items-center gap-1">
                                 <span className="w-2 h-2 bg-destructive rounded-full"></span>
