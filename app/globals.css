@@ -1,0 +1,139 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 24 96% 60%; /* #FF8A3D */
+    --primary-foreground: 0 0% 98%;
+    --primary-light: 24 96% 70%;
+    --primary-dark: 24 96% 50%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --accent-orange: 15 86% 65%;
+    --accent-purple: 270 65% 65%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 24 96% 60%; /* #FF8A3D */
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 260 30% 18%; /* 更柔和的暗紫色背景 */
+    --foreground: 270 15% 92%;
+    --card: 260 25% 22%;
+    --card-foreground: 270 15% 92%;
+    --popover: 260 25% 22%;
+    --popover-foreground: 270 15% 92%;
+    --primary: 270 65% 65%; /* 紫色主题 #8b5cf6 */
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 270 65% 75%;
+    --primary-dark: 270 65% 55%;
+    --secondary: 260 20% 28%;
+    --secondary-foreground: 270 15% 92%;
+    --muted: 260 20% 28%;
+    --muted-foreground: 270 15% 70%;
+    --accent: 260 20% 28%;
+    --accent-foreground: 270 15% 92%;
+    --accent-orange: 15 86% 65%;
+    --accent-purple: 270 65% 65%;
+    --destructive: 0 62.8% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 260 20% 32%;
+    --input: 260 20% 32%;
+    --ring: 270 65% 65%; /* 紫色边框 */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /* 标题加粗 */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-weight: 700;
+  }
+}
+
+@layer utilities {
+  .bg-grid-primary {
+    background-image: linear-gradient(var(--primary) 1px, transparent 1px),
+      linear-gradient(90deg, var(--primary) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  /* 渐变背景工具类 */
+  .gradient-primary {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--primary)) 0%,
+      hsl(var(--accent-orange)) 50%,
+      hsl(var(--accent-purple)) 100%
+    );
+    background-size: 200% 200%;
+  }
+
+  /* 整体滚动条 */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  /* 滚动条轨道 */
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /* 滚动条滑块 */
+  ::-webkit-scrollbar-thumb {
+    @apply bg-primary/20 rounded-full hover:bg-primary/40 transition-colors;
+  }
+
+  /* Firefox 滚动条 */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--primary) / 0.2) transparent;
+  }
+
+  /* 深色模式下的滚动条 */
+  .dark ::-webkit-scrollbar-thumb {
+    @apply bg-primary/30 hover:bg-primary/50;
+  }
+
+  .dark * {
+    scrollbar-color: hsl(var(--primary) / 0.3) transparent;
+  }
+
+  /* 字体家族 */
+  .font-jetbrains {
+    font-family: var(--font-jetbrains-mono), var(--font-maple-mono),
+      ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+      "Courier New", monospace;
+  }
+
+  .font-maple {
+    font-family: var(--font-maple-mono), ui-monospace, SFMono-Regular, Menlo,
+      Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+}
