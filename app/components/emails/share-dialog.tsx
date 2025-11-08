@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -219,7 +220,7 @@ export function ShareDialog({ emailId }: ShareDialogProps) {
             {/* Active share links */}
             <div className="space-y-3">
               <Label className="text-sm font-medium">当前分享链接</Label>
-              <div className="max-h-[280px] overflow-y-auto">
+              <div className="max-h-[240px] overflow-y-auto">
                 {loading ? (
                   <div className="text-sm text-gray-500 text-center py-8 flex flex-col items-center gap-2">
                     <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
@@ -262,32 +263,25 @@ export function ShareDialog({ emailId }: ShareDialogProps) {
                                   : "text-primary"
                               )}
                             />
-                            <a
-                              href={
-                                isExpired ? undefined : getShareUrl(share.token)
-                              }
-                              target={isExpired ? undefined : "_blank"}
-                              rel={
-                                isExpired ? undefined : "noopener noreferrer"
-                              }
+                            <Input
+                              readOnly
+                              value={getShareUrl(share.token)}
                               onClick={(e) => {
-                                if (isExpired) {
-                                  e.preventDefault();
+                                if (!isExpired) {
+                                  e.currentTarget.select();
                                 }
                               }}
                               className={cn(
-                                "flex-1 text-xs p-2 rounded truncate font-mono transition-colors",
+                                "flex-1 text-xs font-mono h-9 cursor-pointer",
                                 isExpired
-                                  ? "bg-destructive/10 text-destructive/70 cursor-not-allowed"
-                                  : "bg-muted text-foreground hover:bg-muted/80 cursor-pointer"
+                                  ? "bg-destructive/5 border-destructive/30 text-destructive/70 cursor-not-allowed"
+                                  : "bg-background border-border"
                               )}
-                            >
-                              {getShareUrl(share.token)}
-                            </a>
+                            />
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 flex-shrink-0"
+                              className="h-9 w-9 flex-shrink-0"
                               onClick={() => handleCopy(share.token)}
                               disabled={isExpired}
                             >
@@ -296,17 +290,16 @@ export function ShareDialog({ emailId }: ShareDialogProps) {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 flex-shrink-0 hover:bg-destructive/10"
+                              className="h-9 w-9 flex-shrink-0 hover:bg-destructive/10"
                               onClick={() => setDeleteTarget(share)}
                             >
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </div>
-                          <div className="flex items-center justify-between text-xs text-muted-foreground">
-                            <div className="flex gap-4">
+                          <div className="text-[11px] text-muted-foreground space-y-1">
+                            <div className="flex items-center justify-between">
                               <span>
-                                创建时间:{" "}
-                                {new Date(
+                                创建时间: {new Date(
                                   typeof share.createdAt === "number"
                                     ? share.createdAt
                                     : share.createdAt
@@ -319,30 +312,29 @@ export function ShareDialog({ emailId }: ShareDialogProps) {
                                   second: "2-digit",
                                 })}
                               </span>
-                              <span>
-                                过期时间:{" "}
-                                {share.expiresAt
-                                  ? new Date(
-                                      typeof share.expiresAt === "number"
-                                        ? share.expiresAt
-                                        : share.expiresAt
-                                    ).toLocaleString("zh-CN", {
-                                      year: "numeric",
-                                      month: "2-digit",
-                                      day: "2-digit",
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                      second: "2-digit",
-                                    })
-                                  : "永久"}
-                              </span>
+                              {isExpired && (
+                                <span className="text-destructive font-medium flex items-center gap-1">
+                                  <span className="w-1.5 h-1.5 bg-destructive rounded-full"></span>
+                                  已过期
+                                </span>
+                              )}
                             </div>
-                            {isExpired && (
-                              <span className="text-destructive font-medium flex items-center gap-1">
-                                <span className="w-2 h-2 bg-destructive rounded-full"></span>
-                                已过期
-                              </span>
-                            )}
+                            <div>
+                              过期时间: {share.expiresAt
+                                ? new Date(
+                                    typeof share.expiresAt === "number"
+                                      ? share.expiresAt
+                                      : share.expiresAt
+                                  ).toLocaleString("zh-CN", {
+                                    year: "numeric",
+                                    month: "2-digit",
+                                    day: "2-digit",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    second: "2-digit",
+                                  })
+                                : "永久"}
+                            </div>
                           </div>
                         </div>
                       );
