@@ -1,38 +1,33 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Copy } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import { useToast } from "@/components/ui/use-toast";
-import { ShareMessageDialog } from "./share-message-dialog";
+import { useCopy } from "@/hooks/use-copy";
 
 interface Message {
   id: string;
   from_address?: string;
   to_address?: string;
   subject: string;
-  content: string;
+  content?: string;
   html?: string;
   received_at?: number;
   sent_at?: number;
 }
 
-interface MessageViewProps {
-  emailId: string;
+interface SharedMessageDetailProps {
+  token: string;
   messageId: string;
-  messageType?: "received" | "sent";
-  onClose: () => void;
 }
 
 type ViewMode = "html" | "text";
 
-export function MessageView({
-  emailId,
-  messageId,
-  messageType = "received",
-}: MessageViewProps) {
+export function SharedMessageDetail({ token, messageId }: SharedMessageDetailProps) {
   const [message, setMessage] = useState<Message | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,6 +35,7 @@ export function MessageView({
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const { theme } = useTheme();
   const { toast } = useToast();
+  const { copyToClipboard } = useCopy();
 
   useEffect(() => {
     const fetchMessage = async () => {
@@ -47,11 +43,7 @@ export function MessageView({
         setLoading(true);
         setError(null);
 
-        const url = `/api/emails/${emailId}/${messageId}${
-          messageType === "sent" ? "?type=sent" : ""
-        }`;
-
-        const response = await fetch(url);
+        const response = await fetch(`/api/shared/${token}/messages/${messageId}`);
 
         if (!response.ok) {
           const errorData = await response.json();
@@ -71,7 +63,7 @@ export function MessageView({
         if (!data.message.html) {
           setViewMode("text");
         }
-      } catch (error) {
+      } catch {
         const errorMessage = "网络错误，请稍后重试";
         setError(errorMessage);
         toast({
@@ -79,115 +71,97 @@ export function MessageView({
           description: errorMessage,
           variant: "destructive",
         });
-        console.error("Failed to fetch message:", error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchMessage();
-  }, [emailId, messageId, messageType, toast]);
+  }, [token, messageId, toast]);
+
+  const handleCopyContent = async () => {
+    if (!message) return;
+    const content = viewMode === "html" ? message.html : message.content;
+    if (!content) return;
+
+    const success = await copyToClipboard(content);
+    if (success) {
+      toast({
+        title: "内容已复制",
+      });
+    } else {
+      toast({
+        title: "复制失败",
+        variant: "destructive",
+      });
+    }
+  };
 
   const updateIframeContent = useCallback(() => {
-    if (viewMode === "html" && message?.html && iframeRef.current) {
+    if (viewMode === "html" && message?.html) {
       const iframe = iframeRef.current;
+      if (!iframe) return;
+
       const doc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (!doc) return;
 
-      if (doc) {
-        doc.open();
-        doc.write(`
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <base target="_blank">
-              <style>
-                html, body {
-                  margin: 0;
-                  padding: 0;
-                  min-height: 100%;
-                  font-family: system-ui, -apple-system, sans-serif;
-                  color: ${theme === "dark" ? "#fff" : "#000"};
-                  background: ${theme === "dark" ? "#1a1a1a" : "#fff"};
-                }
-                body {
-                  padding: 20px;
-                }
-                img {
-                  max-width: 100%;
-                  height: auto;
-                }
-                a {
-                  color: #2563eb;
-                }
-                /* 滚动条样式 */
-                ::-webkit-scrollbar {
-                  width: 6px;
-                  height: 6px;
-                }
-                ::-webkit-scrollbar-track {
-                  background: transparent;
-                }
-                ::-webkit-scrollbar-thumb {
-                  background: ${
-                    theme === "dark"
-                      ? "rgba(130, 109, 217, 0.3)"
-                      : "rgba(130, 109, 217, 0.2)"
-                  };
-                  border-radius: 9999px;
-                  transition: background-color 0.2s;
-                }
-                ::-webkit-scrollbar-thumb:hover {
-                  background: ${
-                    theme === "dark"
-                      ? "rgba(130, 109, 217, 0.5)"
-                      : "rgba(130, 109, 217, 0.4)"
-                  };
-                }
-                /* Firefox 滚动条 */
-                * {
-                  scrollbar-width: thin;
-                  scrollbar-color: ${
-                    theme === "dark"
-                      ? "rgba(130, 109, 217, 0.3) transparent"
-                      : "rgba(130, 109, 217, 0.2) transparent"
-                  };
-                }
-              </style>
-            </head>
-            <body>${message.html}</body>
-          </html>
-        `);
-        doc.close();
-
-        // 更新高度以填充容器
-        const updateHeight = () => {
-          const container = iframe.parentElement;
-          if (container) {
-            iframe.style.height = `${container.clientHeight}px`;
-          }
-        };
-
-        updateHeight();
-        window.addEventListener("resize", updateHeight);
-
-        // 监听内容变化
-        const resizeObserver = new ResizeObserver(updateHeight);
-        resizeObserver.observe(doc.body);
-
-        // 监听图片加载
-        doc.querySelectorAll("img").forEach((img: HTMLImageElement) => {
-          img.onload = updateHeight;
-        });
-
-        return () => {
-          window.removeEventListener("resize", updateHeight);
-          resizeObserver.disconnect();
-        };
-      }
+      doc.open();
+      doc.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+              body {
+                margin: 0;
+                padding: 16px;
+                font-family: system-ui, -apple-system, sans-serif;
+                line-height: 1.6;
+                color: ${theme === "dark" ? "#e5e7eb" : "#1f2937"};
+                background: ${theme === "dark" ? "#1f2937" : "#ffffff"};
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+              }
+              img {
+                max-width: 100%;
+                height: auto;
+              }
+              a {
+                color: ${theme === "dark" ? "#a78bfa" : "#7c3aed"};
+              }
+              /* Webkit 滚动条 */
+              ::-webkit-scrollbar {
+                width: 8px;
+                height: 8px;
+              }
+              ::-webkit-scrollbar-track {
+                background: transparent;
+              }
+              ::-webkit-scrollbar-thumb {
+                background: ${
+                  theme === "dark"
+                    ? "rgba(130, 109, 217, 0.3)"
+                    : "rgba(130, 109, 217, 0.2)"
+                };
+                border-radius: 4px;
+              }
+              ::-webkit-scrollbar-thumb:hover {
+                background: ${
+                  theme === "dark"
+                    ? "rgba(130, 109, 217, 0.5)"
+                    : "rgba(130, 109, 217, 0.4)"
+                };
+              }
+            </style>
+          </head>
+          <body>${message.html}</body>
+        </html>
+      `);
+      doc.close();
     }
   }, [message, viewMode, theme]);
 
-  // 监听主题变化和内容变化
   useEffect(() => {
     updateIframeContent();
   }, [updateIframeContent]);
@@ -205,12 +179,6 @@ export function MessageView({
     return (
       <div className="flex flex-col items-center justify-center h-32 text-center">
         <p className="text-sm text-destructive mb-2">{error}</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="text-xs text-primary hover:underline"
-        >
-          点击重试
-        </button>
       </div>
     );
   }
@@ -222,9 +190,14 @@ export function MessageView({
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm p-4 space-y-3 border-b border-primary/20 shadow-sm">
         <div className="flex items-start justify-between gap-2">
           <h3 className="text-base font-bold flex-1">{message.subject}</h3>
-          {messageType === "received" && (
-            <ShareMessageDialog emailId={emailId} messageId={messageId} />
-          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={handleCopyContent}
+          >
+            <Copy className="h-4 w-4" />
+          </Button>
         </div>
         <div className="text-xs text-gray-500 space-y-1">
           {message.from_address && <p>发件人：{message.from_address}</p>}
@@ -260,26 +233,30 @@ export function MessageView({
                 htmlFor="text"
                 className="text-xs cursor-pointer font-medium"
               >
-                纯文本格式
+                纯文本
               </Label>
             </div>
           </RadioGroup>
         </div>
       )}
 
-      <div className="flex-1 overflow-auto relative">
+      <div className="flex-1 overflow-hidden">
         {viewMode === "html" && message.html ? (
           <iframe
             ref={iframeRef}
-            className="absolute inset-0 w-full h-full border-0 bg-transparent"
-            sandbox="allow-same-origin allow-popups"
+            className="w-full h-full border-0"
+            sandbox="allow-same-origin"
+            title="邮件内容"
           />
         ) : (
-          <div className="p-4 text-sm whitespace-pre-wrap">
-            {message.content}
+          <div className="h-full overflow-y-auto p-4">
+            <pre className="whitespace-pre-wrap break-words text-sm font-mono">
+              {message.content || "无内容"}
+            </pre>
           </div>
         )}
       </div>
     </div>
   );
 }
+

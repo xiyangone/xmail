@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useMemo, memo } from "react";
 import { useSession } from "next-auth/react";
 import { CreateDialog } from "./create-dialog";
+import { ShareDialog } from "./share-dialog";
 import { Mail, RefreshCw, Trash2, CheckSquare, Square } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -142,14 +143,17 @@ const EmailItem = memo(function EmailItem({
           )}
         </div>
       </div>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="opacity-0 group-hover:opacity-100 h-8 w-8 transition-opacity"
-        onClick={handleDelete}
-      >
-        <Trash2 className="h-4 w-4 text-destructive" />
-      </Button>
+      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <ShareDialog emailId={email.id} emailAddress={email.address} />
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={handleDelete}
+        >
+          <Trash2 className="h-4 w-4 text-destructive" />
+        </Button>
+      </div>
     </div>
   );
 });
