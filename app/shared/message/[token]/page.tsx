@@ -2,6 +2,8 @@ import { getSharedMessage } from "@/lib/shared-data";
 import { SharedErrorPage } from "@/components/emails/shared-error-page";
 import { SharedMessagePageClient } from "./page-client";
 
+export const runtime = 'edge';
+
 interface PageProps {
   params: Promise<{ token: string }>;
 }
