@@ -255,18 +255,6 @@ export function WebsiteConfigContent() {
             </Select>
           </div>
         </div>
-
-        <div className="text-xs text-muted-foreground bg-muted p-3 rounded-lg">
-          <strong>格式说明：</strong>
-          <ul className="mt-1 space-y-1 ml-4 list-disc">
-            <li>随机字符串：如 Rx4Tn2kP（默认）</li>
-            <li>名字+随机数字：如 james123、emma4567</li>
-            <li>名字+日期：如 john0524、mary1208</li>
-            <li>名字+年份：如 david1995、sarah2001</li>
-            <li>随机字符串+日期：如 abc0524、xyz1208</li>
-            <li>随机字符串+年份：如 xyz1995、abc2001</li>
-          </ul>
-        </div>
       </div>
 
       <div className="pt-4 border-t">
