@@ -227,18 +227,22 @@ export function ShareMessageDialog({
             {/* Active share links */}
             <div className="space-y-3">
               <Label className="text-sm font-medium">当前分享链接</Label>
-              <div className="h-[270px] overflow-y-auto">
+              <div className="h-[300px] overflow-y-auto">
                 {loading ? (
-                  <div className="text-sm text-gray-500 text-center py-8 flex flex-col items-center gap-2">
+                  <div className="text-sm text-gray-500 text-center py-12 flex flex-col items-center gap-2">
                     <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
                     <span>加载中...</span>
                   </div>
                 ) : shares.length === 0 ? (
-                  <div className="text-sm text-gray-500 text-center py-4">
-                    暂无分享链接
+                  <div className="text-sm text-gray-500 text-center py-12 flex flex-col items-center gap-3">
+                    <div className="text-4xl">📭</div>
+                    <div>
+                      <div className="font-medium mb-1">暂无分享链接</div>
+                      <div className="text-xs text-muted-foreground">创建链接后将在此显示</div>
+                    </div>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                     {shares.map((share) => {
                       const expiresAtTime = share.expiresAt
                         ? typeof share.expiresAt === "number"
@@ -251,7 +255,7 @@ export function ShareMessageDialog({
                         <div
                           key={share.id}
                           className={cn(
-                            "p-4 border rounded-lg space-y-3 transition-all",
+                            "p-3 border rounded-lg space-y-2.5 transition-all",
                             isExpired
                               ? "border-destructive/30 bg-destructive/5"
                               : "border-border bg-muted/30"
