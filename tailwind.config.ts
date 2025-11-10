@@ -66,9 +66,8 @@ const config = {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ["var(--font-jetbrains-mono)", "var(--font-maple-mono)"],
-        jetbrains: ["var(--font-jetbrains-mono)"],
-        maple: ["var(--font-maple-mono)"],
+        sans: ["var(--font-jetbrains-mono)", "Segoe UI", "system-ui", "sans-serif"],
+        jetbrains: ["var(--font-jetbrains-mono)", "Segoe UI", "system-ui", "sans-serif"],
       },
       keyframes: {
         "accordion-down": {

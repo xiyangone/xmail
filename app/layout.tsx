@@ -2,7 +2,7 @@ import { ThemeProvider } from "@/components/theme/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
 import type { Metadata, Viewport } from "next";
-import { mapleMono, jetBrainsMono } from "./fonts";
+import { jetBrainsMono } from "./fonts";
 import "./globals.css";
 import { Providers } from "./providers";
 import { FloatMenu } from "@/components/float-menu";
@@ -84,7 +84,6 @@ export default function RootLayout({
       <body
         className={cn(
           jetBrainsMono.variable,
-          mapleMono.variable,
           "font-jetbrains min-h-screen antialiased",
           "bg-background text-foreground",
           "transition-colors duration-300"

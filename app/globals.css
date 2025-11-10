@@ -127,13 +127,6 @@
 
   /* 字体家族 */
   .font-jetbrains {
-    font-family: var(--font-jetbrains-mono), var(--font-maple-mono),
-      ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-      "Courier New", monospace;
-  }
-
-  .font-maple {
-    font-family: var(--font-maple-mono), ui-monospace, SFMono-Regular, Menlo,
-      Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-family: var(--font-jetbrains-mono), "Segoe UI", system-ui, sans-serif;
   }
 }

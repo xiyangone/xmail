@@ -6,7 +6,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useTheme } from "next-themes";
 import { useToast } from "@/components/ui/use-toast";
-import { ShareMessageDialog } from "./share-message-dialog";
 
 interface Message {
   id: string;
@@ -220,12 +219,7 @@ export function MessageView({
   return (
     <div className="h-full flex flex-col animate-fade-in">
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm p-4 space-y-3 border-b border-primary/20 shadow-sm">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="text-base font-bold flex-1">{message.subject}</h3>
-          {messageType === "received" && (
-            <ShareMessageDialog emailId={emailId} messageId={messageId} />
-          )}
-        </div>
+        <h3 className="text-base font-bold">{message.subject}</h3>
         <div className="text-xs text-gray-500 space-y-1">
           {message.from_address && <p>发件人：{message.from_address}</p>}
           {message.to_address && <p>收件人：{message.to_address}</p>}
