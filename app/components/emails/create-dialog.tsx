@@ -119,6 +119,26 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
     }
   }, [config]);
 
+  // 鼠标滚轮切换域名
+  const handleDomainWheel = (e: React.WheelEvent) => {
+    if (!config?.emailDomainsArray || config.emailDomainsArray.length <= 1) return;
+
+    e.preventDefault();
+    const currentIndex = config.emailDomainsArray.indexOf(currentDomain);
+    if (currentIndex === -1) return;
+
+    let nextIndex: number;
+    if (e.deltaY > 0) {
+      // 向下滚动 - 下一个域名
+      nextIndex = (currentIndex + 1) % config.emailDomainsArray.length;
+    } else {
+      // 向上滚动 - 上一个域名
+      nextIndex = (currentIndex - 1 + config.emailDomainsArray.length) % config.emailDomainsArray.length;
+    }
+
+    setCurrentDomain(config.emailDomainsArray[nextIndex]);
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -141,18 +161,20 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
               className="flex-1"
             />
             {(config?.emailDomainsArray?.length ?? 0) > 1 && (
-              <Select value={currentDomain} onValueChange={setCurrentDomain}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {config?.emailDomainsArray?.map((d) => (
-                    <SelectItem key={d} value={d}>
-                      @{d}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div onWheel={handleDomainWheel}>
+                <Select value={currentDomain} onValueChange={setCurrentDomain}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {config?.emailDomainsArray?.map((d) => (
+                      <SelectItem key={d} value={d}>
+                        @{d}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             )}
             <Button
               variant="outline"
