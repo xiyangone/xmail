@@ -119,11 +119,13 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
     }
   }, [config]);
 
-  // 鼠标滚轮切换域名
+  // 鼠标滚轮切换域名 - 优化版本,鼠标悬停在域名选择器区域即可切换
   const handleDomainWheel = (e: React.WheelEvent) => {
     if (!config?.emailDomainsArray || config.emailDomainsArray.length <= 1) return;
 
     e.preventDefault();
+    e.stopPropagation();
+
     const currentIndex = config.emailDomainsArray.indexOf(currentDomain);
     if (currentIndex === -1) return;
 
@@ -161,9 +163,13 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
               className="flex-1"
             />
             {(config?.emailDomainsArray?.length ?? 0) > 1 && (
-              <div onWheel={handleDomainWheel}>
+              <div
+                onWheel={handleDomainWheel}
+                className="relative group"
+                title="鼠标滚轮可快速切换域名"
+              >
                 <Select value={currentDomain} onValueChange={setCurrentDomain}>
-                  <SelectTrigger className="w-[180px]">
+                  <SelectTrigger className="w-[180px] transition-all group-hover:ring-2 group-hover:ring-primary/20">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
