@@ -272,13 +272,20 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
         onEmailSelect(null);
       }
 
+      // 立即从列表中移除已删除的邮箱
+      setEmails((prev) => {
+        const updated = prev.filter((e) => e.id !== email.id);
+        setTotal(updated.length);
+        return updated;
+      });
+
+      // 从选中列表中移除
+      setSelectedEmails((prev) => prev.filter((id) => id !== email.id));
+
       toast({
         title: "成功",
         description: "邮箱已删除",
       });
-
-      // 无感刷新: 下次轮询时会自动过滤掉已删除的邮箱
-      // 不需要强制刷新,保持用户体验流畅
     } catch {
       toast({
         title: "错误",
@@ -318,6 +325,23 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
       ).length;
       const failCount = results.filter((r) => r.status === "rejected").length;
 
+      // 获取成功删除的邮箱ID列表
+      const successfullyDeletedIds = selectedEmails.filter((_, index) =>
+        results[index].status === "fulfilled"
+      );
+
+      // 立即从列表中移除成功删除的邮箱
+      setEmails((prev) => {
+        const updated = prev.filter((e) => !successfullyDeletedIds.includes(e.id));
+        setTotal(updated.length);
+        return updated;
+      });
+
+      // 如果当前选中的邮箱被删除了,清除选择
+      if (selectedEmailId && successfullyDeletedIds.includes(selectedEmailId)) {
+        onEmailSelect(null);
+      }
+
       toast({
         title: "删除完成",
         description: `成功删除 ${successCount} 个邮箱${
@@ -326,8 +350,6 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
       });
 
       setSelectedEmails([]);
-
-      // 无感刷新: 下次轮询时会自动过滤掉已删除的邮箱
     } catch {
       toast({
         title: "错误",
