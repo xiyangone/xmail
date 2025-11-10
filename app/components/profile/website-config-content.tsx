@@ -175,7 +175,7 @@ export function WebsiteConfigContent() {
         <div className="flex items-center gap-4">
           <span className="text-sm">刷新间隔:</span>
           <div className="flex-1 flex items-center gap-2">
-            <Input 
+            <Input
               type="number"
               min="3000"
               max="60000"
@@ -188,18 +188,6 @@ export function WebsiteConfigContent() {
               ({(parseInt(messagePollInterval) / 1000).toFixed(0)} 秒)
             </span>
           </div>
-        </div>
-
-        <div className="text-xs text-muted-foreground bg-muted p-3 rounded-lg">
-          <strong>建议值：</strong>
-          <ul className="mt-1 space-y-1 ml-4 list-disc">
-            <li>5000 (5秒) - 快速刷新，适合需要实时接收邮件的场景</li>
-            <li>15000 (15秒) - 平衡选择，默认值</li>
-            <li>30000 (30秒) - 降低服务器负载</li>
-          </ul>
-          <p className="mt-2 text-yellow-600 dark:text-yellow-500">
-            ⚠️ 刷新间隔过短可能会增加服务器负载，建议设置在 5-30 秒之间
-          </p>
         </div>
       </div>
 
