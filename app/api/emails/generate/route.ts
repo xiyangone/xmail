@@ -21,9 +21,12 @@ export async function POST(request: Request) {
   const userId = await getUserId();
   const userRole = await getUserRole(userId!);
 
+  console.log("Creating email - User ID:", userId, "Role:", userRole);
+
   // 检查是否为临时用户 - 临时用户不能创建新邮箱
   const tempUserInfo = await getTempUserInfo(userId!);
   if (tempUserInfo?.isTempUser) {
+    console.log("Temp user cannot create email");
     return NextResponse.json(
       { error: "临时用户无法创建新邮箱，只能使用卡密激活时分配的邮箱地址" },
       { status: 403 }
@@ -61,7 +64,10 @@ export async function POST(request: Request) {
       domain: string;
     }>();
 
+    console.log("Request params - name:", name, "expiryTime:", expiryTime, "domain:", domain);
+
     if (!EXPIRY_OPTIONS.some((option) => option.value === expiryTime)) {
+      console.log("Invalid expiry time:", expiryTime);
       return NextResponse.json({ error: "无效的过期时间" }, { status: 400 });
     }
 
@@ -103,11 +109,14 @@ export async function POST(request: Request) {
       localPart = generateEmailPrefix(prefixFormat, prefixLength);
     }
     const address = `${localPart}@${domain}`;
+    console.log("Generated email address:", address);
+
     const existingEmail = await db.query.emails.findFirst({
       where: eq(sql`LOWER(${emails.address})`, address.toLowerCase()),
     });
 
     if (existingEmail) {
+      console.log("Email address already exists:", address);
       return NextResponse.json(
         { error: "该邮箱地址已被使用" },
         { status: 409 }
@@ -131,6 +140,8 @@ export async function POST(request: Request) {
       .insert(emails)
       .values(emailData)
       .returning({ id: emails.id, address: emails.address });
+
+    console.log("Email created successfully:", result[0].address);
 
     return NextResponse.json({
       id: result[0].id,
