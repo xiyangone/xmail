@@ -220,10 +220,15 @@ export default function UsersPage() {
   };
 
   const toggleSelectAll = () => {
-    if (selectedUsers.length === users.length) {
+    // 过滤掉皇帝用户,不允许选中
+    const selectableUsers = users.filter(
+      (u) => u.roles?.[0]?.name !== ROLES.EMPEROR
+    );
+
+    if (selectedUsers.length === selectableUsers.length) {
       setSelectedUsers([]);
     } else {
-      setSelectedUsers(users.map((u) => u.id));
+      setSelectedUsers(selectableUsers.map((u) => u.id));
     }
   };
 
@@ -441,12 +446,15 @@ export default function UsersPage() {
                   return (
                     <TableRow key={user.id}>
                       <TableCell>
-                        <input
-                          type="checkbox"
-                          checked={selectedUsers.includes(user.id)}
-                          onChange={() => toggleSelectUser(user.id)}
-                          className="w-4 h-4 rounded border-gray-300 cursor-pointer"
-                        />
+                        {/* 皇帝用户不显示复选框 */}
+                        {currentRole !== ROLES.EMPEROR && (
+                          <input
+                            type="checkbox"
+                            checked={selectedUsers.includes(user.id)}
+                            onChange={() => toggleSelectUser(user.id)}
+                            className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+                          />
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">
@@ -523,20 +531,23 @@ export default function UsersPage() {
                               </SelectContent>
                             </Select>
                           )}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() =>
-                              openDeleteDialog(
-                                "single",
-                                user.id,
-                                user.name || user.username || "用户"
-                              )
-                            }
-                            className="h-8 w-8 text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          {/* 皇帝用户不显示删除按钮 */}
+                          {currentRole !== ROLES.EMPEROR && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() =>
+                                openDeleteDialog(
+                                  "single",
+                                  user.id,
+                                  user.name || user.username || "用户"
+                                )
+                              }
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>

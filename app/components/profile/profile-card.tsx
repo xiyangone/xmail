@@ -6,13 +6,24 @@ import { Button } from "@/components/ui/button"
 import { signOut } from "next-auth/react"
 import { Github, Settings, Crown, Sword, User2, Gem, Mail, CreditCard, Zap, Users } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { WebhookConfig } from "./webhook-config"
 import { useRolePermission } from "@/hooks/use-role-permission"
 import { PERMISSIONS } from "@/lib/permissions"
 import { CollapsibleSection } from "./collapsible-section"
-import { WebsiteConfigContent } from "./website-config-content"
-import { EmailServiceConfigContent } from "./email-service-config-content"
-import { ApiKeySection } from "./api-key-section"
+import dynamic from "next/dynamic"
+
+// 动态导入配置组件,提升页面加载速度
+const WebhookConfig = dynamic(() => import("./webhook-config").then(mod => ({ default: mod.WebhookConfig })), {
+  loading: () => <div className="text-sm text-muted-foreground">加载中...</div>
+})
+const WebsiteConfigContent = dynamic(() => import("./website-config-content").then(mod => ({ default: mod.WebsiteConfigContent })), {
+  loading: () => <div className="text-sm text-muted-foreground">加载中...</div>
+})
+const EmailServiceConfigContent = dynamic(() => import("./email-service-config-content").then(mod => ({ default: mod.EmailServiceConfigContent })), {
+  loading: () => <div className="text-sm text-muted-foreground">加载中...</div>
+})
+const ApiKeySection = dynamic(() => import("./api-key-section").then(mod => ({ default: mod.ApiKeySection })), {
+  loading: () => <div className="text-sm text-muted-foreground">加载中...</div>
+})
 
 interface ProfileCardProps {
   user: User

@@ -31,10 +31,12 @@ export async function POST(request: Request) {
   }
 
   try {
+    // 皇帝用户跳过邮箱数量限制检查
     if (userRole !== ROLES.EMPEROR) {
       const maxEmails =
         (await env.SITE_CONFIG.get("MAX_EMAILS")) ||
         EMAIL_CONFIG.MAX_ACTIVE_EMAILS.toString();
+
       const activeEmailsCount = await db
         .select({ count: sql<number>`count(*)` })
         .from(emails)
@@ -42,9 +44,12 @@ export async function POST(request: Request) {
           and(eq(emails.userId, userId!), gt(emails.expiresAt, new Date()))
         );
 
-      if (Number(activeEmailsCount[0].count) >= Number(maxEmails)) {
+      const currentCount = Number(activeEmailsCount[0]?.count || 0);
+      const maxCount = Number(maxEmails);
+
+      if (currentCount >= maxCount) {
         return NextResponse.json(
-          { error: `已达到最大邮箱数量限制 (${maxEmails})` },
+          { error: `已达到最大邮箱数量限制 (${maxCount})` },
           { status: 403 }
         );
       }
@@ -128,6 +133,12 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("Failed to generate email:", error);
-    return NextResponse.json({ error: "创建邮箱失败" }, { status: 500 });
+    // 返回更详细的错误信息用于调试
+    const errorMessage = error instanceof Error ? error.message : "创建邮箱失败";
+    console.error("Error details:", errorMessage);
+    return NextResponse.json({
+      error: "创建邮箱失败",
+      details: process.env.NODE_ENV === "development" ? errorMessage : undefined
+    }, { status: 500 });
   }
 }
