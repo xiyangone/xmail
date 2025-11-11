@@ -73,14 +73,19 @@ export async function POST(request: Request) {
     } else {
       // 普通用户可以使用所有配置的域名
       const domainString = await env.SITE_CONFIG.get("EMAIL_DOMAINS");
-      domains = domainString ? domainString.split(",") : ["moemail.app"];
+      domains = domainString
+        ? domainString.split(",").map(d => d.trim()).filter(d => d.length > 0)
+        : ["moemail.app"];
     }
 
+    console.log("Available domains:", domains);
+    console.log("Requested domain:", domain);
+
     if (!domains || !domains.includes(domain)) {
-      return NextResponse.json({ 
-        error: tempUserInfo?.isTempUser && tempUserInfo.mode === "multi" 
-          ? `多卡密临时用户只能使用域名：${tempUserInfo.emailDomain}` 
-          : "无效的域名" 
+      return NextResponse.json({
+        error: tempUserInfo?.isTempUser && tempUserInfo.mode === "multi"
+          ? `多卡密临时用户只能使用域名：${tempUserInfo.emailDomain}`
+          : `无效的域名。可用域名: ${domains.join(", ")}`
       }, { status: 400 });
     }
 
