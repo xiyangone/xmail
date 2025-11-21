@@ -30,8 +30,8 @@ const VERIFICATION_CODE_PATTERNS = [
   // 7. HTML 标签中的验证码 (h1-h6, b, strong)
   /<(?:h[1-6]|b|strong)[^>]*>\s*([0-9]{4,8})\s*<\/(?:h[1-6]|b|strong)>/i,
 
-  // 8. 大字体或特殊样式的验证码
-  /<[^>]*(?:font-size|font-weight)[^>]*>\s*([0-9]{4,8})\s*<\/[^>]+>/i,
+  // 8. 大字体或特殊样式的验证码 (包括 div 标签)
+  /<(?:div|span|p)[^>]*(?:font-size|font-weight|style)[^>]*>\s*([0-9]{4,8})\s*<\/(?:div|span|p)>/i,
 
   // 9. 6位纯数字 (最常见的验证码长度)
   /\b([0-9]{6})\b/,
