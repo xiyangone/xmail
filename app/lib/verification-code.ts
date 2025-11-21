@@ -33,6 +33,9 @@ const VERIFICATION_CODE_PATTERNS = [
   // 8. 大字体或特殊样式的验证码 (包括 div 标签)
   /<(?:div|span|p)[^>]*(?:font-size|font-weight|style)[^>]*>\s*([0-9]{4,8})\s*<\/(?:div|span|p)>/i,
 
+  // 8.5. 任意 div/span/p 标签包裹的纯数字（较宽松，用于处理复杂属性）
+  /<(?:div|span|p)[^>]*>\s*([0-9]{6})\s*<\/(?:div|span|p)>/i,
+
   // 9. 6位纯数字 (最常见的验证码长度)
   /\b([0-9]{6})\b/,
 
@@ -59,8 +62,8 @@ export function extractVerificationCode(text: string): string | null {
 
       // 验证码长度必须在 4-8 位之间
       if (code.length >= 4 && code.length <= 8) {
-        // 前8个模式优先级高,直接返回
-        if (i < 8) {
+        // 前9个模式优先级高,直接返回（包括HTML标签相关模式）
+        if (i < 9) {
           return code;
         }
 
