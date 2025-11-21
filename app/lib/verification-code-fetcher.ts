@@ -51,16 +51,20 @@ export async function getVerificationCode(
       // 获取邮件列表
       const emails = await getEmailList({ emailId, baseUrl, apiKey });
 
-      // 如果指定了发件人地址,查找匹配的邮件
-      const targetEmail = fromAddress
-        ? emails.find((e) => e.from_address?.includes(fromAddress))
-        : emails[0]; // 如果没有指定发件人,取最新的邮件
+      // 筛选邮件：如果指定了发件人地址，只检查匹配的邮件
+      const targetEmails = fromAddress
+        ? emails.filter((e) => e.from_address?.includes(fromAddress))
+        : emails; // 如果没有指定发件人，检查所有邮件
 
-      if (targetEmail) {
-        // 使用统一的验证码提取方法（与前端保持一致）
-        const code = extractVerificationCodeFromMessage(targetEmail);
+      // 遍历邮件列表，从最新到最旧，找到第一个包含验证码的邮件
+      for (const email of targetEmails) {
+        const code = extractVerificationCodeFromMessage(email);
         if (code) {
-          console.log(`[REGISTER] 获取到验证码: ${code}`);
+          console.log(
+            `[REGISTER] 获取到验证码: ${code} (来自: ${
+              email.from_address || "未知"
+            })`
+          );
           return code;
         }
       }
