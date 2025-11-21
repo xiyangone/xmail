@@ -12,7 +12,7 @@ export function SharedErrorPage({ status, message }: SharedErrorPageProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
       <div className="max-w-md w-full space-y-8">
-        <BrandHeader />
+        <BrandHeader showCTA={false} />
 
         <div className="bg-card border border-border rounded-lg p-8 shadow-lg space-y-6">
           <div className="flex flex-col items-center text-center space-y-4">
@@ -53,4 +53,3 @@ export function SharedErrorPage({ status, message }: SharedErrorPageProps) {
     </div>
   );
 }
-

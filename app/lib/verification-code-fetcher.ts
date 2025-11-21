@@ -3,7 +3,7 @@
  * 从邮件列表中智能提取验证码
  */
 
-import { extractVerificationCode } from "./verification-code";
+import { extractVerificationCodeFromMessage } from "./verification-code";
 
 export interface VerificationCodeConfig {
   emailId: string;
@@ -57,18 +57,8 @@ export async function getVerificationCode(
         : emails[0]; // 如果没有指定发件人,取最新的邮件
 
       if (targetEmail) {
-        // 尝试从邮件中提取验证码
-        const match = targetEmail.html?.match(/<h1 class="code">(\d+)<\/h1>/);
-        if (match && match[1]) {
-          const verificationCode = match[1];
-          console.log(`[REGISTER] 获取到验证码: ${verificationCode}`);
-          return verificationCode;
-        }
-
-        // 如果没有匹配到特定格式,尝试使用通用提取方法
-        const code = extractVerificationCode(
-          targetEmail.html || targetEmail.content || ""
-        );
+        // 使用统一的验证码提取方法（与前端保持一致）
+        const code = extractVerificationCodeFromMessage(targetEmail);
         if (code) {
           console.log(`[REGISTER] 获取到验证码: ${code}`);
           return code;
