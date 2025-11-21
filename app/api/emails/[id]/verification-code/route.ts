@@ -10,14 +10,14 @@ export const runtime = "edge";
 /**
  * 智能获取验证码 API
  * POST /api/emails/[id]/verification-code
- * 
+ *
  * 请求体:
  * {
  *   "fromAddress": "verify.windsurf.ai", // 可选,发件人地址过滤
  *   "interval": 3000, // 可选,轮询间隔(毫秒)
  *   "timeout": 60000 // 可选,超时时间(毫秒)
  * }
- * 
+ *
  * 响应:
  * {
  *   "code": "123456",
@@ -32,6 +32,8 @@ export async function POST(
     const userId = await getUserId();
     const { id } = await params;
     const db = createDb();
+    const requestOrigin = new URL(request.url).origin;
+    const apiKey = request.headers.get("x-api-key") ?? undefined;
 
     // 验证邮箱权限
     const email = await db.query.emails.findFirst({
@@ -55,6 +57,7 @@ export async function POST(
       fromAddress: body.fromAddress,
       verificationCodeInterval: body.interval || 3000,
       verificationCodeTimeout: body.timeout || 60000,
+      apiKey,
     });
 
     if (!code) {
@@ -66,18 +69,18 @@ export async function POST(
 
     return NextResponse.json({
       code,
+      baseUrl: requestOrigin,
+      apiKey,
       success: true,
     });
   } catch (error) {
     console.error("获取验证码失败:", error);
     return NextResponse.json(
       {
-        error:
-          error instanceof Error ? error.message : "获取验证码失败",
+        error: error instanceof Error ? error.message : "获取验证码失败",
         success: false,
       },
       { status: 500 }
     );
   }
 }
-

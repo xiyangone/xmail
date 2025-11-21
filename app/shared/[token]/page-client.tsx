@@ -36,7 +36,9 @@ export function SharedEmailPageClient({
   email,
   token,
 }: SharedEmailPageClientProps) {
-  const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
+  const [selectedMessageId, setSelectedMessageId] = useState<string | null>(
+    null
+  );
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -68,7 +70,8 @@ export function SharedEmailPageClient({
                 <h2 className="text-xl font-bold">{email.address}</h2>
               </div>
               <p className="text-sm text-muted-foreground">
-                邮箱过期时间：{new Date(email.expiresAt).toLocaleString("zh-CN", {
+                邮箱过期时间：
+                {new Date(email.expiresAt).toLocaleString("zh-CN", {
                   year: "numeric",
                   month: "2-digit",
                   day: "2-digit",
@@ -77,14 +80,6 @@ export function SharedEmailPageClient({
                   second: "2-digit",
                 })}
               </p>
-              <div className="pt-2">
-                <Button asChild className="gap-2">
-                  <Link href="/">
-                    <Mail className="h-4 w-4" />
-                    创建自己的临时邮箱
-                  </Link>
-                </Button>
-              </div>
             </div>
           </div>
         </div>
@@ -92,7 +87,6 @@ export function SharedEmailPageClient({
         {/* 邮件内容区域 */}
         <div className="max-w-7xl mx-auto">
           <div className="bg-card border border-border rounded-xl shadow-lg overflow-hidden">
-
             <div className="h-[600px] flex">
               {isMobile ? (
                 <>
@@ -156,4 +150,3 @@ export function SharedEmailPageClient({
     </div>
   );
 }
-

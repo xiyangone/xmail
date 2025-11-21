@@ -51,6 +51,9 @@ wrangler.cleanup.toml
 public/workbox-*.js
 public/sw.js
 
+# local memory cache
+.cunzhi-memory/
+
 wrangler.json
 wrangler.cleanup.json
 wrangler.email.json
