@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Mail, RefreshCw, Loader2 } from "lucide-react";
+import { Mail, RefreshCw, Loader2, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useThrottle } from "@/hooks/use-throttle";
 import { useToast } from "@/components/ui/use-toast";
@@ -41,7 +41,10 @@ export function SharedMessageList({
   const listRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  const fetchMessages = async (cursor: string | null = null, isRefresh = false) => {
+  const fetchMessages = async (
+    cursor: string | null = null,
+    isRefresh = false
+  ) => {
     try {
       if (isRefresh) {
         setRefreshing(true);
@@ -64,7 +67,9 @@ export function SharedMessageList({
       if (isRefresh) {
         setMessages(data.messages);
       } else {
-        setMessages((prev) => (cursor ? [...prev, ...data.messages] : data.messages));
+        setMessages((prev) =>
+          cursor ? [...prev, ...data.messages] : data.messages
+        );
       }
 
       setNextCursor(data.nextCursor);
@@ -124,11 +129,22 @@ export function SharedMessageList({
       <div className="p-3 border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-2">
           <RefreshCw
-            className={cn("h-4 w-4 cursor-pointer text-muted-foreground hover:text-primary transition-colors", refreshing && "animate-spin")}
+            className={cn(
+              "h-4 w-4 cursor-pointer text-muted-foreground hover:text-primary transition-colors",
+              refreshing && "animate-spin"
+            )}
             onClick={handleRefresh}
           />
           <span className="text-sm text-muted-foreground">{total}封邮件</span>
         </div>
+      </div>
+
+      <div className="mx-3 mt-3 p-2 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg flex items-start gap-2">
+        <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+        <p className="text-xs text-blue-700 dark:text-blue-300">
+          <strong>提示：</strong>
+          此页面不会自动刷新。获取验证码后，请点击左上角的刷新按钮或刷新网页以查看新邮件。
+        </p>
       </div>
 
       <div ref={listRef} className="flex-1 overflow-y-auto">
@@ -177,11 +193,12 @@ export function SharedMessageList({
         {loading && (
           <div className="flex items-center justify-center py-4">
             <Loader2 className="h-5 w-5 animate-spin text-primary/60" />
-            <span className="ml-2 text-sm text-muted-foreground">加载中...</span>
+            <span className="ml-2 text-sm text-muted-foreground">
+              加载中...
+            </span>
           </div>
         )}
       </div>
     </div>
   );
 }
-

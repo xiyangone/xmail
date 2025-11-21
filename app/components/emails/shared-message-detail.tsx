@@ -1,13 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Loader2, Copy } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import { useToast } from "@/components/ui/use-toast";
-import { useCopy } from "@/hooks/use-copy";
 
 interface Message {
   id: string;
@@ -27,7 +25,10 @@ interface SharedMessageDetailProps {
 
 type ViewMode = "html" | "text";
 
-export function SharedMessageDetail({ token, messageId }: SharedMessageDetailProps) {
+export function SharedMessageDetail({
+  token,
+  messageId,
+}: SharedMessageDetailProps) {
   const [message, setMessage] = useState<Message | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +36,6 @@ export function SharedMessageDetail({ token, messageId }: SharedMessageDetailPro
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const { theme } = useTheme();
   const { toast } = useToast();
-  const { copyToClipboard } = useCopy();
 
   useEffect(() => {
     const fetchMessage = async () => {
@@ -43,7 +43,9 @@ export function SharedMessageDetail({ token, messageId }: SharedMessageDetailPro
         setLoading(true);
         setError(null);
 
-        const response = await fetch(`/api/shared/${token}/messages/${messageId}`);
+        const response = await fetch(
+          `/api/shared/${token}/messages/${messageId}`
+        );
 
         if (!response.ok) {
           const errorData = await response.json();
@@ -78,24 +80,6 @@ export function SharedMessageDetail({ token, messageId }: SharedMessageDetailPro
 
     fetchMessage();
   }, [token, messageId, toast]);
-
-  const handleCopyContent = async () => {
-    if (!message) return;
-    const content = viewMode === "html" ? message.html : message.content;
-    if (!content) return;
-
-    const success = await copyToClipboard(content);
-    if (success) {
-      toast({
-        title: "内容已复制",
-      });
-    } else {
-      toast({
-        title: "复制失败",
-        variant: "destructive",
-      });
-    }
-  };
 
   const updateIframeContent = useCallback(() => {
     if (viewMode === "html" && message?.html) {
@@ -188,17 +172,7 @@ export function SharedMessageDetail({ token, messageId }: SharedMessageDetailPro
   return (
     <div className="h-full flex flex-col animate-fade-in">
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm p-4 space-y-3 border-b border-primary/20 shadow-sm">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="text-base font-bold flex-1">{message.subject}</h3>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={handleCopyContent}
-          >
-            <Copy className="h-4 w-4" />
-          </Button>
-        </div>
+        <h3 className="text-base font-bold">{message.subject}</h3>
         <div className="text-xs text-gray-500 space-y-1">
           {message.from_address && <p>发件人：{message.from_address}</p>}
           {message.to_address && <p>收件人：{message.to_address}</p>}
@@ -259,4 +233,3 @@ export function SharedMessageDetail({ token, messageId }: SharedMessageDetailPro
     </div>
   );
 }
-
