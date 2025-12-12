@@ -5,7 +5,6 @@ import { X, Plus } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@/components/ui/scroll-area"
 
 interface DomainEditorProps {
   value: string
@@ -100,10 +99,9 @@ export function DomainEditor({ value, onChange, placeholder }: DomainEditorProps
 
   return (
     <div className="space-y-3">
-      {/* 域名标签显示区域 */}
+      {/* 域名标签显示区域 - 响应式高度，根据域名数量自动调整 */}
       {domains.length > 0 && (
-        <ScrollArea className="w-full rounded-md border p-3" style={{ maxHeight: "200px" }}>
-          <div className="flex flex-wrap gap-2">
+        <div className="w-full rounded-md border p-3 flex flex-wrap gap-2 max-h-[200px] overflow-y-auto">
             {domains.map((domain) => (
               <Badge 
                 key={domain} 
@@ -120,8 +118,7 @@ export function DomainEditor({ value, onChange, placeholder }: DomainEditorProps
                 </button>
               </Badge>
             ))}
-          </div>
-        </ScrollArea>
+        </div>
       )}
 
       {/* 添加域名输入区 */}

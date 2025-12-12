@@ -367,7 +367,7 @@ const deployPages = () => {
     console.log("✅ Build completed successfully");
     
     console.log("🚀 Deploying to Cloudflare Pages...");
-    const deployOutput = execSync("pnpm dlx wrangler pages deploy .vercel/output/static --branch main --commit-message ci-deploy", { 
+    const deployOutput = execSync("pnpm dlx wrangler pages deploy .vercel/output/static --branch main --commit-message ci-deploy --commit-dirty=true", { 
       encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe'],
       maxBuffer: 10 * 1024 * 1024
