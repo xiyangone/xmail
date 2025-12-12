@@ -93,7 +93,7 @@ export function ApiKeyPanel() {
 
       const data = (await res.json()) as { key: string };
       setNewKey(data.key);
-      fetchApiKeys();
+      await fetchApiKeys(); // 添加 await 确保列表同步刷新
     } catch (error) {
       toast({
         title: "创建失败",

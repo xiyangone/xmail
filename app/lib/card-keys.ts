@@ -80,87 +80,123 @@ export async function activateCardKey(code: string) {
       .set({ expiresAt: expiresAt })
       .where(eq(emails.userId, userId));
   } else {
-    // 创建新的临时用户
-    const userName =
-      cardKey.mode === "single"
-        ? `临时用户_${cardKey.emailAddress.split("@")[0]}`
-        : `临时用户_${nanoid(6)}`;
+    // 创建新的临时用户 - 使用补偿模式
+    let createdUserId: string | null = null;
+    let createdEmailIds: string[] = [];
+    let createdTempAccountId: string | null = null;
 
-    const userEmail =
-      cardKey.mode === "single"
-        ? cardKey.emailAddress
-        : `temp_${nanoid(8)}@${cardKey.emailDomain || "temp.local"}`;
+    try {
+      const userName =
+        cardKey.mode === "single"
+          ? `临时用户_${cardKey.emailAddress.split("@")[0]}`
+          : `临时用户_${nanoid(6)}`;
 
-    const tempUser = await db
-      .insert(users)
-      .values({
-        name: userName,
-        email: userEmail,
-        username: `temp_${nanoid(8)}`,
-      })
-      .returning();
+      const userEmail =
+        cardKey.mode === "single"
+          ? cardKey.emailAddress
+          : `temp_${nanoid(8)}@${cardKey.emailDomain || "temp.local"}`;
 
-    userId = tempUser[0].id;
-
-    // 分配临时用户角色
-    const tempRole = await db.query.roles.findFirst({
-      where: eq(roles.name, ROLES.TEMP_USER),
-    });
-
-    if (!tempRole) {
-      // 如果临时用户角色不存在，创建它
-      const [newRole] = await db
-        .insert(roles)
+      const tempUser = await db
+        .insert(users)
         .values({
-          name: ROLES.TEMP_USER,
-          description: "临时用户，只能访问绑定的邮箱",
+          name: userName,
+          email: userEmail,
+          username: `temp_${nanoid(8)}`,
         })
         .returning();
 
-      await assignRoleToUser(db, userId, newRole.id);
-    } else {
-      await assignRoleToUser(db, userId, tempRole.id);
-    }
+      createdUserId = tempUser[0].id;
+      userId = createdUserId;
 
-    // 创建绑定的邮箱地址
-    if (cardKey.mode === "single") {
-      // 单卡密模式：创建一个固定邮箱
-      await db.insert(emails).values({
-        address: cardKey.emailAddress,
-        userId: userId,
-        createdAt: now,
-        expiresAt: expiresAt,
+      // 分配临时用户角色
+      const tempRole = await db.query.roles.findFirst({
+        where: eq(roles.name, ROLES.TEMP_USER),
       });
-    } else if (cardKey.mode === "multi") {
-      // 多卡密模式：创建管理员指定的邮箱地址列表
-      const emailAddresses = cardKey.emailAddress
-        .split(",")
-        .map((addr) => addr.trim())
-        .filter((addr) => addr.length > 0); // 过滤空字符串
 
-      if (emailAddresses.length === 0) {
-        throw new Error("多卡密模式下没有有效的邮箱地址");
+      if (!tempRole) {
+        // 如果临时用户角色不存在，创建它
+        const [newRole] = await db
+          .insert(roles)
+          .values({
+            name: ROLES.TEMP_USER,
+            description: "临时用户，只能访问绑定的邮箱",
+          })
+          .returning();
+
+        await assignRoleToUser(db, userId, newRole.id);
+      } else {
+        await assignRoleToUser(db, userId, tempRole.id);
       }
 
-      const emailsToCreate = emailAddresses.map((address) => ({
-        address,
+      // 创建绑定的邮箱地址
+      if (cardKey.mode === "single") {
+        // 单卡密模式：创建一个固定邮箱
+        const [createdEmail] = await db.insert(emails).values({
+          address: cardKey.emailAddress,
+          userId: userId,
+          createdAt: now,
+          expiresAt: expiresAt,
+        }).returning();
+        createdEmailIds.push(createdEmail.id);
+      } else if (cardKey.mode === "multi") {
+        // 多卡密模式：创建管理员指定的邮箱地址列表
+        const emailAddresses = cardKey.emailAddress
+          .split(",")
+          .map((addr) => addr.trim())
+          .filter((addr) => addr.length > 0); // 过滤空字符串
+
+        if (emailAddresses.length === 0) {
+          throw new Error("多卡密模式下没有有效的邮箱地址");
+        }
+
+        const emailsToCreate = emailAddresses.map((address) => ({
+          address,
+          userId: userId,
+          createdAt: now,
+          expiresAt: expiresAt,
+        }));
+
+        const createdEmails = await db.insert(emails).values(emailsToCreate).returning();
+        createdEmailIds = createdEmails.map(e => e.id);
+      }
+
+      // 创建临时账号记录
+      const [tempAccount] = await db.insert(tempAccounts).values({
         userId: userId,
+        cardKeyId: cardKey.id,
+        emailAddress:
+          cardKey.mode === "single" ? cardKey.emailAddress : cardKey.emailDomain!,
         createdAt: now,
         expiresAt: expiresAt,
-      }));
+      }).returning();
+      createdTempAccountId = tempAccount.id;
 
-      await db.insert(emails).values(emailsToCreate);
+    } catch (error) {
+      // 补偿逻辑：按创建顺序的逆序清理
+      console.error("卡密激活失败，执行回滚:", error);
+
+      try {
+        // 回滚临时账号
+        if (createdTempAccountId) {
+          await db.delete(tempAccounts).where(eq(tempAccounts.id, createdTempAccountId));
+        }
+
+        // 回滚邮箱
+        for (const emailId of createdEmailIds) {
+          await db.delete(emails).where(eq(emails.id, emailId));
+        }
+
+        // 回滚用户（会级联删除 userRoles）
+        if (createdUserId) {
+          await db.delete(users).where(eq(users.id, createdUserId));
+        }
+      } catch (rollbackError) {
+        console.error("回滚失败:", rollbackError);
+        console.error("需要手动清理的数据:", { createdUserId, createdEmailIds, createdTempAccountId });
+      }
+
+      throw error;
     }
-
-    // 创建临时账号记录
-    await db.insert(tempAccounts).values({
-      userId: userId,
-      cardKeyId: cardKey.id,
-      emailAddress:
-        cardKey.mode === "single" ? cardKey.emailAddress : cardKey.emailDomain!,
-      createdAt: now,
-      expiresAt: expiresAt,
-    });
   }
 
   // 标记卡密为已使用

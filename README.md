@@ -77,7 +77,7 @@
 
 ## 技术栈
 
-- **框架**: [Next.js](https://nextjs.org/) (App Router)
+- **框架**: [Next.js](https://nextjs.org/) 15.5.9 (App Router)
 - **平台**: [Cloudflare Pages](https://pages.cloudflare.com/)
 - **数据库**: [Cloudflare D1](https://developers.cloudflare.com/d1/) (SQLite)
 - **认证**: [NextAuth](https://authjs.dev/getting-started/installation?framework=Next.js) 配合 GitHub 登录

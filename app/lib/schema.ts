@@ -111,6 +111,24 @@ export const webhooks = sqliteTable("webhook", {
     .$defaultFn(() => new Date()),
 });
 
+// Webhook 失败日志表
+export const webhookLogs = sqliteTable("webhook_log", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  webhookId: text("webhook_id")
+    .references(() => webhooks.id, { onDelete: "cascade" }),
+  url: text("url").notNull(),
+  event: text("event").notNull(),
+  payload: text("payload").notNull(), // JSON 字符串
+  status: text("status").notNull(), // "success" | "failed"
+  errorMessage: text("error_message"),
+  attempts: integer("attempts").notNull().default(0),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
 export const roles = sqliteTable("role", {
   id: text("id")
     .primaryKey()
@@ -274,6 +292,7 @@ export const userRolesRelations = relations(userRoles, ({ one }) => ({
 export const usersRelations = relations(users, ({ many }) => ({
   userRoles: many(userRoles),
   apiKeys: many(apiKeys),
+  tempAccounts: many(tempAccounts),
 }));
 
 export const rolesRelations = relations(roles, ({ many }) => ({

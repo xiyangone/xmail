@@ -107,23 +107,42 @@ export async function POST(
       )
     }
 
-    await sendWithResend(to, subject, content, email.address, { apiKey })
-
-    await db.insert(messages).values({
+    // 先创建 pending 状态的消息记录
+    const [pendingMessage] = await db.insert(messages).values({
       emailId: email.id,
       fromAddress: email.address,
       toAddress: to,
       subject,
       content: '',
-      type: "sent",
+      type: "pending",
       html: content
-    })
+    }).returning()
 
-    return NextResponse.json({ 
-      success: true,
-      message: "邮件发送成功",
-      remainingEmails
-    })
+    try {
+      await sendWithResend(to, subject, content, email.address, { apiKey })
+
+      // 发送成功后更新状态为 sent
+      await db.update(messages)
+        .set({ type: "sent" })
+        .where(eq(messages.id, pendingMessage.id))
+
+      return NextResponse.json({
+        success: true,
+        message: "邮件发送成功",
+        remainingEmails
+      })
+    } catch (sendError) {
+      // 发送失败，更新状态为 failed
+      await db.update(messages)
+        .set({ type: "failed" })
+        .where(eq(messages.id, pendingMessage.id))
+
+      console.error('Failed to send email:', sendError)
+      return NextResponse.json(
+        { error: sendError instanceof Error ? sendError.message : "发送邮件失败" },
+        { status: 500 }
+      )
+    }
   } catch (error) {
     console.error('Failed to send email:', error)
     return NextResponse.json(

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Mail,
   Calendar,
@@ -62,6 +62,10 @@ interface MessageResponse {
   total: number;
 }
 
+// 指数退避常量
+const MAX_ERROR_COUNT = 5;
+const MAX_BACKOFF_INTERVAL = 5 * 60 * 1000; // 最大 5 分钟
+
 export function MessageList({
   email,
   messageType,
@@ -83,11 +87,28 @@ export function MessageList({
   const { toast } = useToast();
   const { config } = useConfig();
   const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null);
+  const [errorCount, setErrorCount] = useState(0); // 错误计数用于指数退避
 
   // 当 messages 改变时更新 ref
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
+
+  // 计算当前轮询间隔（考虑指数退避）
+  const getBackoffInterval = useCallback(() => {
+    const baseInterval = config?.messagePollInterval
+      ? parseInt(config.messagePollInterval)
+      : EMAIL_CONFIG.POLL_INTERVAL;
+
+    if (errorCount === 0) return baseInterval;
+
+    // 指数退避：基础间隔 * 2^errorCount，最大不超过 MAX_BACKOFF_INTERVAL
+    const backoff = Math.min(
+      baseInterval * Math.pow(2, errorCount),
+      MAX_BACKOFF_INTERVAL
+    );
+    return backoff;
+  }, [errorCount, config?.messagePollInterval]);
 
   const fetchMessages = async (cursor?: string, forceRefresh = false) => {
     try {
@@ -99,7 +120,16 @@ export function MessageList({
         url.searchParams.set("cursor", cursor);
       }
       const response = await fetch(url);
+
+      // 检查响应状态
+      if (!response.ok) {
+        throw new Error(`HTTP error: ${response.status}`);
+      }
+
       const data = (await response.json()) as MessageResponse;
+
+      // 请求成功，重置错误计数
+      setErrorCount(0);
 
       if (!cursor) {
         // 如果是强制刷新,直接替换所有数据
@@ -151,6 +181,8 @@ export function MessageList({
       setNextCursor(data.nextCursor);
     } catch (error) {
       console.error("Failed to fetch messages:", error);
+      // 增加错误计数，用于指数退避
+      setErrorCount(prev => Math.min(prev + 1, MAX_ERROR_COUNT));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -159,18 +191,16 @@ export function MessageList({
   };
 
   const resetCountdown = () => {
-    const pollInterval = config?.messagePollInterval
-      ? parseInt(config.messagePollInterval)
-      : EMAIL_CONFIG.POLL_INTERVAL;
+    // 使用指数退避后的间隔
+    const pollInterval = getBackoffInterval();
     const countdownSeconds = Math.floor(pollInterval / 1000);
     setCountdown(countdownSeconds);
   };
 
   const startPolling = () => {
     stopPolling();
-    const pollInterval = config?.messagePollInterval
-      ? parseInt(config.messagePollInterval)
-      : EMAIL_CONFIG.POLL_INTERVAL;
+    // 使用指数退避后的间隔
+    const pollInterval = getBackoffInterval();
 
     // 设置初始倒计时（转换为秒）
     const countdownSeconds = Math.floor(pollInterval / 1000);
@@ -204,13 +234,13 @@ export function MessageList({
     setCountdown(0);
   };
 
+  // 手动刷新时重置错误计数
   const handleRefresh = async () => {
     setRefreshing(true);
+    setErrorCount(0); // 手动刷新时重置错误计数
     await fetchMessages();
     // 手动刷新后重置倒计时
-    const pollInterval = config?.messagePollInterval
-      ? parseInt(config.messagePollInterval)
-      : EMAIL_CONFIG.POLL_INTERVAL;
+    const pollInterval = getBackoffInterval();
     setCountdown(Math.floor(pollInterval / 1000));
   };
 

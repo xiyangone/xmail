@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth, checkPermission, getUserRole } from "@/lib/auth"
 import { createDb } from "@/lib/db"
-import { users, userRoles, roles, tempAccounts } from "@/lib/schema"
+import { users, tempAccounts } from "@/lib/schema"
 import { PERMISSIONS, ROLES } from "@/lib/permissions"
-import { eq, desc, count } from "drizzle-orm"
+import { eq, desc, count, inArray } from "drizzle-orm"
 
 export const runtime = "edge"
 
@@ -27,47 +27,50 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * pageSize
 
     const db = createDb()
-    const userList = await db
-      .select({
-        id: users.id,
-        name: users.name,
-        username: users.username,
-        email: users.email,
-        image: users.image,
-      })
-      .from(users)
-      .orderBy(desc(users.id))
-      .limit(pageSize)
-      .offset(offset)
 
-    const usersWithRoles = await Promise.all(
-      userList.map(async (user) => {
-        const userRolesList = await db
-          .select({
-            name: roles.name,
-          })
-          .from(userRoles)
-          .innerJoin(roles, eq(userRoles.roleId, roles.id))
-          .where(eq(userRoles.userId, user.id))
-
-        // 如果是临时用户，获取到期时间
-        let expiresAt = null
-        const isTempUser = userRolesList.some(r => r.name === ROLES.TEMP_USER)
-        if (isTempUser) {
-          const tempAccount = await db.query.tempAccounts.findFirst({
-            where: eq(tempAccounts.userId, user.id)
-          })
-          expiresAt = tempAccount?.expiresAt ? tempAccount.expiresAt.toISOString() : null
+    // 使用关联查询一次获取用户和角色信息，避免 N+1 查询
+    const userList = await db.query.users.findMany({
+      limit: pageSize,
+      offset: offset,
+      orderBy: (users, { desc }) => [desc(users.id)],
+      with: {
+        userRoles: {
+          with: {
+            role: true
+          }
         }
+      }
+    })
 
-        return {
-          ...user,
-          roles: userRolesList,
-          createdAt: new Date().toISOString(),
-          expiresAt,
-        }
-      })
+    // 批量获取临时用户的到期时间
+    const userIds = userList.map(u => u.id)
+    const tempAccountsList = userIds.length > 0 ? await db.query.tempAccounts.findMany({
+      where: inArray(tempAccounts.userId, userIds)
+    }) : []
+
+    // 构建用户ID到临时账号的映射
+    const tempAccountMap = new Map(
+      tempAccountsList.map(ta => [ta.userId, ta])
     )
+
+    const usersWithRoles = userList.map((user) => {
+      const rolesList = user.userRoles.map(ur => ({ name: ur.role.name }))
+      const isTempUser = rolesList.some(r => r.name === ROLES.TEMP_USER)
+      const tempAccount = tempAccountMap.get(user.id)
+
+      return {
+        id: user.id,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        image: user.image,
+        roles: rolesList,
+        createdAt: new Date().toISOString(),
+        expiresAt: isTempUser && tempAccount?.expiresAt
+          ? tempAccount.expiresAt.toISOString()
+          : null,
+      }
+    })
 
     let filteredUsers = usersWithRoles
     if (roleFilter && roleFilter !== "all") {

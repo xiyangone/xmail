@@ -315,9 +315,13 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
 
   const handleBatchDelete = async () => {
     try {
-      const deletePromises = selectedEmails.map((emailId) =>
-        fetch(`/api/emails/${emailId}`, { method: "DELETE" })
-      );
+      const deletePromises = selectedEmails.map(async (emailId) => {
+        const response = await fetch(`/api/emails/${emailId}`, { method: "DELETE" });
+        if (!response.ok) {
+          throw new Error(`删除失败: ${response.status}`);
+        }
+        return emailId;
+      });
 
       const results = await Promise.allSettled(deletePromises);
       const successCount = results.filter(
@@ -325,10 +329,10 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
       ).length;
       const failCount = results.filter((r) => r.status === "rejected").length;
 
-      // 获取成功删除的邮箱ID列表
-      const successfullyDeletedIds = selectedEmails.filter((_, index) =>
-        results[index].status === "fulfilled"
-      );
+      // 获取成功删除的邮箱ID列表 (只有 fulfilled 且 response.ok 才是真正成功)
+      const successfullyDeletedIds = results
+        .filter((r): r is PromiseFulfilledResult<string> => r.status === "fulfilled")
+        .map((r) => r.value);
 
       // 立即从列表中移除成功删除的邮箱
       setEmails((prev) => {

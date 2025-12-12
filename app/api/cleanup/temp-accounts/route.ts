@@ -2,14 +2,14 @@ import { NextResponse } from "next/server"
 import { getRequestContext } from "@cloudflare/next-on-pages"
 import { createDb } from "@/lib/db"
 import { cardKeys, tempAccounts, users, emails } from "@/lib/schema"
-import { eq, and, lt } from "drizzle-orm"
+import { eq, and, lt, inArray } from "drizzle-orm"
 
 export const runtime = "edge"
 
 export async function POST() {
   try {
     const env = getRequestContext().env
-    
+
     // 读取清理配置
     const [deleteExpiredUsedCardKeys, deleteExpiredUnusedCardKeys, deleteExpiredEmails] =
       await Promise.all([
@@ -26,57 +26,53 @@ export async function POST() {
 
     // 1. 清理"已使用且过期"的卡密及关联的临时账号
     if (deleteExpiredUsedCardKeys !== "false") {
-      // 查询所有活跃的临时账号
+      // 使用关联查询一次获取临时账号及对应的卡密信息，避免 N+1
       const allActiveAccounts = await db.query.tempAccounts.findMany({
         where: eq(tempAccounts.isActive, true),
+        with: {
+          cardKey: true
+        }
       })
 
-      const expiredAccounts = []
-      
-      // 检查临时账号或对应的卡密是否过期
-      for (const account of allActiveAccounts) {
-        let isExpired = false
-        
+      // 过滤出过期的账号
+      const expiredAccounts = allActiveAccounts.filter(account => {
         // 检查临时账号是否过期
-        if (account.expiresAt < now) {
-          isExpired = true
-        }
-        
+        if (account.expiresAt < now) return true
         // 检查对应的卡密是否过期
-        if (account.cardKeyId) {
-          const cardKey = await db.query.cardKeys.findFirst({
-            where: eq(cardKeys.id, account.cardKeyId),
-          })
-          if (cardKey && cardKey.expiresAt < now) {
-            isExpired = true
+        if (account.cardKey && account.cardKey.expiresAt < now) return true
+        return false
+      })
+
+      if (expiredAccounts.length > 0) {
+        // 并行执行清理操作
+        const cleanupPromises = expiredAccounts.map(async (account) => {
+          try {
+            // 并行执行删除和更新操作
+            await Promise.all([
+              // 删除用户及相关数据（级联删除会处理邮箱和消息）
+              db.delete(users).where(eq(users.id, account.userId)),
+              // 标记临时账号为非活跃
+              db.update(tempAccounts)
+                .set({ isActive: false })
+                .where(eq(tempAccounts.id, account.id)),
+              // 删除对应的卡密
+              account.cardKeyId
+                ? db.delete(cardKeys).where(eq(cardKeys.id, account.cardKeyId))
+                : Promise.resolve()
+            ])
+            return true
+          } catch (error) {
+            console.error(`清理账号 ${account.id} 失败:`, error)
+            return false
           }
-        }
-        
-        if (isExpired) {
-          expiredAccounts.push(account)
-        }
+        })
+
+        const results = await Promise.all(cleanupPromises)
+        cleanedUsedCardKeys = results.filter(Boolean).length
       }
-
-      for (const account of expiredAccounts) {
-        // 删除用户及相关数据（级联删除会处理邮箱和消息）
-        await db.delete(users).where(eq(users.id, account.userId))
-
-        // 标记临时账号为非活跃
-        await db
-          .update(tempAccounts)
-          .set({ isActive: false })
-          .where(eq(tempAccounts.id, account.id))
-
-        // 删除对应的卡密
-        if (account.cardKeyId) {
-          await db.delete(cardKeys).where(eq(cardKeys.id, account.cardKeyId))
-        }
-      }
-
-      cleanedUsedCardKeys = expiredAccounts.length
     }
 
-    // 2. 清理"过期未使用"的卡密
+    // 2. 清理"过期未使用"的卡密 - 使用批量删除
     if (deleteExpiredUnusedCardKeys !== "false") {
       const unusedCardKeys = await db.query.cardKeys.findMany({
         where: and(
@@ -85,24 +81,26 @@ export async function POST() {
         ),
       })
 
-      for (const cardKey of unusedCardKeys) {
-        await db.delete(cardKeys).where(eq(cardKeys.id, cardKey.id))
+      if (unusedCardKeys.length > 0) {
+        const cardKeyIds = unusedCardKeys.map(ck => ck.id)
+        // 使用 inArray 批量删除
+        await db.delete(cardKeys).where(inArray(cardKeys.id, cardKeyIds))
+        cleanedUnusedCardKeys = unusedCardKeys.length
       }
-
-      cleanedUnusedCardKeys = unusedCardKeys.length
     }
 
-    // 3. 清理"已过期邮箱"（含消息）
+    // 3. 清理"已过期邮箱"（含消息）- 使用批量删除
     if (deleteExpiredEmails !== "false") {
-      const expiredEmails = await db.query.emails.findMany({
+      const expiredEmailsList = await db.query.emails.findMany({
         where: lt(emails.expiresAt, now),
       })
 
-      for (const email of expiredEmails) {
-        await db.delete(emails).where(eq(emails.id, email.id))
+      if (expiredEmailsList.length > 0) {
+        const emailIds = expiredEmailsList.map(e => e.id)
+        // 使用 inArray 批量删除
+        await db.delete(emails).where(inArray(emails.id, emailIds))
+        cleanedEmails = expiredEmailsList.length
       }
-
-      cleanedEmails = expiredEmails.length
     }
 
     return NextResponse.json({
@@ -115,9 +113,9 @@ export async function POST() {
   } catch (error) {
     console.error("清理失败:", error)
     return NextResponse.json(
-      { 
+      {
         success: false,
-        error: error instanceof Error ? error.message : "清理失败" 
+        error: error instanceof Error ? error.message : "清理失败"
       },
       { status: 500 }
     )
