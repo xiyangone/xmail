@@ -74,6 +74,9 @@
 - 🛡️ **皇帝用户保护**：用户管理页面皇帝用户无法被删除、无法被选中批量删除，确保系统管理员账号安全
 - 🔄 **实时UI更新**：邮箱删除后立即更新列表和选中状态，无需等待轮询，提供即时反馈
 - 🎯 **优雅的加载状态**：邮件列表加载时显示明显的"加载中..."提示和旋转动画，配合半透明骨架屏
+- 🌐 **域名验证增强**：支持带数字的顶级域名（如 `aaugment.de5.net`），更灵活的域名配置
+- 🔐 **OAuth注册控制**：关闭注册时同时阻止GitHub OAuth创建新用户，防止绕过注册限制
+- 🔤 **纯字母前缀格式**：新增纯随机字母（无数字）的邮箱前缀生成选项
 
 ## 技术栈
 
@@ -86,6 +89,7 @@
 - **邮件处理**: [Cloudflare Email Workers](https://developers.cloudflare.com/email-routing/)
 - **类型安全**: [TypeScript](https://www.typescriptlang.org/)
 - **ORM**: [Drizzle ORM](https://orm.drizzle.team/)
+- **PWA**: [Serwist](https://serwist.pages.dev/) (Service Worker)
 
 ## 本地运行
 
