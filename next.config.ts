@@ -1,5 +1,5 @@
 import type { NextConfig } from "next";
-import withPWA from 'next-pwa'
+import withSerwistInit from "@serwist/next";
 import { setupDevPlatform } from '@cloudflare/next-on-pages/next-dev';
 
 async function setup() {
@@ -9,6 +9,12 @@ async function setup() {
 }
 
 setup()
+
+const withSerwist = withSerwistInit({
+  swSrc: "app/sw.ts",
+  swDest: "public/sw.js",
+  disable: process.env.NODE_ENV === "development",
+});
 
 const nextConfig: NextConfig = {
   images: {
@@ -21,10 +27,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withPWA({
-  dest: 'public',
-  register: true,
-  skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development',
-  // @ts-expect-error "ignore the error"
-})(nextConfig);
+export default withSerwist(nextConfig);
