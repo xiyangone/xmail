@@ -148,6 +148,13 @@
       "when": 1762775962454,
       "tag": "0020_absurd_baron_strucker",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1765538019470,
+      "tag": "0021_right_grandmaster",
+      "breakpoints": true
     }
   ]
 }
