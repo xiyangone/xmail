@@ -224,6 +224,9 @@ export function WebsiteConfigContent() {
                 <SelectItem value={EMAIL_PREFIX_FORMATS.RANDOM}>
                   随机字符串（字母+数字）
                 </SelectItem>
+                <SelectItem value={EMAIL_PREFIX_FORMATS.RANDOM_ALPHA}>
+                  纯随机字母（无数字）
+                </SelectItem>
                 <SelectItem value={EMAIL_PREFIX_FORMATS.NAME_NUMBER}>
                   名字+随机数字
                 </SelectItem>

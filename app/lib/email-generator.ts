@@ -131,6 +131,18 @@ const COMMON_NAMES = [
 ];
 
 /**
+ * 生成纯随机字母字符串（无数字）
+ */
+function generateRandomAlpha(length: number): string {
+  const chars = "abcdefghijklmnopqrstuvwxyz";
+  let result = "";
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+/**
  * 生成随机字母数字字符串
  */
 function generateRandomAlphanumeric(length: number): string {
@@ -163,6 +175,10 @@ export function generateEmailPrefix(
     case EMAIL_PREFIX_FORMATS.RANDOM:
       // 纯随机字符串（字母+数字，URL安全）
       return nanoid(length);
+
+    case EMAIL_PREFIX_FORMATS.RANDOM_ALPHA:
+      // 纯随机字母字符串（无数字）
+      return generateRandomAlpha(length);
 
     case EMAIL_PREFIX_FORMATS.NAME_NUMBER: {
       // 名字+随机数字，确保总长度不超过配置

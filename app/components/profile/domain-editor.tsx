@@ -41,8 +41,8 @@ export function DomainEditor({ value, onChange, placeholder }: DomainEditorProps
   const addDomain = () => {
     const newDomain = inputValue.trim().toLowerCase()
     
-    // 验证域名格式 - 支持多级子域名和连字符
-    const domainRegex = /^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$/i
+    // 验证域名格式 - 支持多级子域名、连字符和带数字的顶级域名
+    const domainRegex = /^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z0-9]{2,}$/i
     
     if (newDomain && domainRegex.test(newDomain)) {
       if (!domains.includes(newDomain)) {
@@ -84,7 +84,7 @@ export function DomainEditor({ value, onChange, placeholder }: DomainEditorProps
       .split(/[,\s\n]+/)
       .map(d => d.trim().toLowerCase())
       .filter(d => {
-        const domainRegex = /^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$/i
+        const domainRegex = /^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z0-9]{2,}$/i
         return d && domainRegex.test(d) && !domains.includes(d)
       })
     

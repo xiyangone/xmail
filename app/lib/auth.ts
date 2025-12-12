@@ -235,6 +235,29 @@ const nextAuth = NextAuth(() => ({
     },
   },
   callbacks: {
+    async signIn({ user, account }) {
+      // 对于OAuth登录（如GitHub），检查是否允许新用户注册
+      if (account?.provider === "github") {
+        const db = createDb();
+
+        // 检查用户是否已存在（通过userRoles判断是否为已有用户）
+        const existingRole = await db.query.userRoles.findFirst({
+          where: eq(userRoles.userId, user.id!),
+        });
+
+        // 如果是新用户，检查注册开关
+        if (!existingRole) {
+          const allowRegister = await getRequestContext().env.SITE_CONFIG.get("ALLOW_REGISTER");
+          if (allowRegister === "false") {
+            // 删除DrizzleAdapter自动创建的用户记录
+            await db.delete(users).where(eq(users.id, user.id!));
+            await db.delete(accounts).where(eq(accounts.userId, user.id!));
+            return false; // 拒绝登录
+          }
+        }
+      }
+      return true;
+    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;

@@ -1,5 +1,6 @@
 export const EMAIL_PREFIX_FORMATS = {
-  RANDOM: 'random', // 纯随机字符串（默认）
+  RANDOM: 'random', // 纯随机字符串（默认，字母+数字）
+  RANDOM_ALPHA: 'random_alpha', // 纯随机字母（无数字）
   NAME_NUMBER: 'name_number', // 名字+随机数字
   NAME_DATE: 'name_date', // 名字+随机日期MMDD
   NAME_YEAR: 'name_year', // 名字+随机年份YYYY
