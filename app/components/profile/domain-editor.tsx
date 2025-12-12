@@ -102,7 +102,7 @@ export function DomainEditor({ value, onChange, placeholder }: DomainEditorProps
     <div className="space-y-3">
       {/* 域名标签显示区域 */}
       {domains.length > 0 && (
-        <ScrollArea className="w-full rounded-md border p-3" style={{ maxHeight: "120px" }}>
+        <ScrollArea className="w-full rounded-md border p-3" style={{ maxHeight: "200px" }}>
           <div className="flex flex-wrap gap-2">
             {domains.map((domain) => (
               <Badge 
