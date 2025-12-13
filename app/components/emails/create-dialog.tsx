@@ -119,38 +119,27 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
     }
   }, [config]);
 
-  // 域名选择器的ref，用于添加非被动滚轮事件监听器
-  const domainSelectorRef = useRef<HTMLDivElement>(null);
+  // 滚轮切换域名处理函数
+  const handleDomainWheel = (e: React.WheelEvent) => {
+    if (!config?.emailDomainsArray || config.emailDomainsArray.length <= 1) return;
 
-  // 鼠标滚轮切换域名 - 使用非被动事件监听器避免 preventDefault 警告
-  useEffect(() => {
-    const element = domainSelectorRef.current;
-    if (!element) return;
+    e.preventDefault();
+    e.stopPropagation();
 
-    const handleWheel = (e: WheelEvent) => {
-      if (!config?.emailDomainsArray || config.emailDomainsArray.length <= 1) return;
+    const currentIndex = config.emailDomainsArray.indexOf(currentDomain);
+    if (currentIndex === -1) return;
 
-      e.preventDefault();
-      e.stopPropagation();
+    let nextIndex: number;
+    if (e.deltaY > 0) {
+      // 向下滚动 - 下一个域名
+      nextIndex = (currentIndex + 1) % config.emailDomainsArray.length;
+    } else {
+      // 向上滚动 - 上一个域名
+      nextIndex = (currentIndex - 1 + config.emailDomainsArray.length) % config.emailDomainsArray.length;
+    }
 
-      const currentIndex = config.emailDomainsArray.indexOf(currentDomain);
-      if (currentIndex === -1) return;
-
-      let nextIndex: number;
-      if (e.deltaY > 0) {
-        // 向下滚动 - 下一个域名
-        nextIndex = (currentIndex + 1) % config.emailDomainsArray.length;
-      } else {
-        // 向上滚动 - 上一个域名
-        nextIndex = (currentIndex - 1 + config.emailDomainsArray.length) % config.emailDomainsArray.length;
-      }
-
-      setCurrentDomain(config.emailDomainsArray[nextIndex]);
-    };
-
-    element.addEventListener('wheel', handleWheel, { passive: false });
-    return () => element.removeEventListener('wheel', handleWheel);
-  }, [config?.emailDomainsArray, currentDomain]);
+    setCurrentDomain(config.emailDomainsArray[nextIndex]);
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -175,9 +164,9 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
             />
             {(config?.emailDomainsArray?.length ?? 0) > 1 && (
               <div
-                ref={domainSelectorRef}
                 className="relative group"
                 title="鼠标滚轮可快速切换域名"
+                onWheel={handleDomainWheel}
               >
                 <Select value={currentDomain} onValueChange={setCurrentDomain}>
                   <SelectTrigger className="w-[180px] transition-all group-hover:ring-2 group-hover:ring-primary/20">

@@ -6,7 +6,6 @@ import { SharedMessageList } from "@/components/emails/shared-message-list";
 import { SharedMessageDetail } from "@/components/emails/shared-message-detail";
 import { ArrowLeft, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
 
 interface Message {
   id: string;

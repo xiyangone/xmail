@@ -3,7 +3,7 @@ import { auth, checkPermission, getUserRole } from "@/lib/auth"
 import { createDb } from "@/lib/db"
 import { users, tempAccounts } from "@/lib/schema"
 import { PERMISSIONS, ROLES } from "@/lib/permissions"
-import { eq, desc, count, inArray } from "drizzle-orm"
+import { eq, count, inArray } from "drizzle-orm"
 
 export const runtime = "edge"
 
