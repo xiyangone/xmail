@@ -13,19 +13,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useTranslations } from "next-intl";
 
 const roleIcons = {
   [ROLES.DUKE]: Gem,
   [ROLES.KNIGHT]: Sword,
   [ROLES.CIVILIAN]: User2,
   [ROLES.TEMP_USER]: Clock,
-} as const;
-
-const roleNames = {
-  [ROLES.DUKE]: "公爵",
-  [ROLES.KNIGHT]: "骑士",
-  [ROLES.CIVILIAN]: "平民",
-  [ROLES.TEMP_USER]: "临时用户",
 } as const;
 
 type RoleWithoutEmperor = Exclude<Role, typeof ROLES.EMPEROR>;
@@ -37,6 +31,16 @@ export function PromotePanel() {
     ROLES.KNIGHT
   );
   const { toast } = useToast();
+  const t = useTranslations("profile");
+  const tr = useTranslations("roles");
+  const tc = useTranslations("common");
+
+  const roleNames = {
+    [ROLES.DUKE]: tr("duke"),
+    [ROLES.KNIGHT]: tr("knight"),
+    [ROLES.CIVILIAN]: tr("civilian"),
+    [ROLES.TEMP_USER]: tr("tempUser"),
+  } as const;
 
   const handleAction = async () => {
     if (!searchText) return;
@@ -59,12 +63,12 @@ export function PromotePanel() {
         error?: string;
       };
 
-      if (!res.ok) throw new Error(data.error || "未知错误");
+      if (!res.ok) throw new Error(data.error || t("unknownError"));
 
       if (!data.user) {
         toast({
-          title: "未找到用户",
-          description: "请确认用户名或邮箱地址是否正确",
+          title: t("userNotFound"),
+          description: t("userNotFoundDesc"),
           variant: "destructive",
         });
         return;
@@ -72,8 +76,8 @@ export function PromotePanel() {
 
       if (data.user.role === targetRole) {
         toast({
-          title: `用户已是${roleNames[targetRole]}`,
-          description: "无需重复设置",
+          title: t("userAlreadyRole", { role: roleNames[targetRole] }),
+          description: t("noNeedToRepeat"),
         });
         return;
       }
@@ -89,20 +93,21 @@ export function PromotePanel() {
 
       if (!promoteRes.ok) {
         const error = (await promoteRes.json()) as { error: string };
-        throw new Error(error.error || "设置失败");
+        throw new Error(error.error || t("setFailed"));
       }
 
       toast({
-        title: "设置成功",
-        description: `已将用户 ${data.user.username || data.user.email} 设为${
-          roleNames[targetRole]
-        }`,
+        title: t("setSuccess"),
+        description: t("setSuccessDesc", {
+          user: data.user.username || data.user.email,
+          role: roleNames[targetRole],
+        }),
       });
       setSearchText("");
     } catch (error) {
       toast({
-        title: "设置失败",
-        description: error instanceof Error ? error.message : "请稍后重试",
+        title: t("setFailed"),
+        description: error instanceof Error ? error.message : tc("pleaseRetryLater"),
         variant: "destructive",
       });
     } finally {
@@ -116,7 +121,7 @@ export function PromotePanel() {
     <div className="bg-background rounded-lg border-2 border-primary/20 p-6">
       <div className="flex items-center gap-2 mb-6">
         <Icon className="w-5 h-5 text-primary" />
-        <h2 className="text-lg font-semibold">角色管理</h2>
+        <h2 className="text-lg font-semibold">{t("roleManagement")}</h2>
       </div>
 
       <div className="space-y-4">
@@ -125,7 +130,7 @@ export function PromotePanel() {
             <Input
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
-              placeholder="输入用户名或邮箱"
+              placeholder={t("searchUserPlaceholder")}
             />
           </div>
           <Select
@@ -141,19 +146,19 @@ export function PromotePanel() {
               <SelectItem value={ROLES.DUKE}>
                 <div className="flex items-center gap-2">
                   <Gem className="w-4 h-4" />
-                  公爵
+                  {tr("duke")}
                 </div>
               </SelectItem>
               <SelectItem value={ROLES.KNIGHT}>
                 <div className="flex items-center gap-2">
                   <Sword className="w-4 h-4" />
-                  骑士
+                  {tr("knight")}
                 </div>
               </SelectItem>
               <SelectItem value={ROLES.CIVILIAN}>
                 <div className="flex items-center gap-2">
                   <User2 className="w-4 h-4" />
-                  平民
+                  {tr("civilian")}
                 </div>
               </SelectItem>
             </SelectContent>
@@ -168,7 +173,7 @@ export function PromotePanel() {
           {loading ? (
             <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
-            `设为${roleNames[targetRole]}`
+            t("setRole", { role: roleNames[targetRole] })
           )}
         </Button>
       </div>

@@ -10,6 +10,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRolePermission } from "@/hooks/use-role-permission";
 import { PERMISSIONS } from "@/lib/permissions";
+import { useTranslations } from "next-intl";
 
 interface CleanupConfig {
   deleteExpiredUsedCardKeys: boolean;
@@ -31,23 +32,26 @@ export default function CleanupSettingsPage() {
   const router = useRouter();
   const { checkPermission } = useRolePermission();
   const canManageConfig = checkPermission(PERMISSIONS.MANAGE_CONFIG);
+  const t = useTranslations("cleanup");
+  const tc = useTranslations("common");
+  const ta = useTranslations("admin");
 
   const fetchConfig = useCallback(async () => {
     try {
       const res = await fetch("/api/cleanup/config");
-      if (!res.ok) throw new Error("获取配置失败");
+      if (!res.ok) throw new Error(t("fetchFailed"));
       const data = (await res.json()) as CleanupConfig;
       setConfig(data);
     } catch (error) {
       toast({
-        title: "错误",
-        description: error instanceof Error ? error.message : "获取配置失败",
+        title: tc("error"),
+        description: error instanceof Error ? error.message : t("fetchFailed"),
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, t, tc]);
 
   useEffect(() => {
     if (canManageConfig) {
@@ -64,16 +68,16 @@ export default function CleanupSettingsPage() {
         body: JSON.stringify(config),
       });
 
-      if (!res.ok) throw new Error("保存失败");
+      if (!res.ok) throw new Error(t("saveFailed"));
 
       toast({
-        title: "保存成功",
-        description: "清理策略配置已更新",
+        title: t("saveSuccess"),
+        description: t("configUpdated"),
       });
     } catch (error) {
       toast({
-        title: "保存失败",
-        description: error instanceof Error ? error.message : "请稍后重试",
+        title: t("saveFailed"),
+        description: error instanceof Error ? error.message : tc("pleaseRetryLater"),
         variant: "destructive",
       });
     } finally {
@@ -86,7 +90,7 @@ export default function CleanupSettingsPage() {
       <div className="container mx-auto py-8">
         <div className="bg-background rounded-lg border p-6">
           <p className="text-center text-muted-foreground">
-            您没有权限访问此页面
+            {ta("noPermission")}
           </p>
         </div>
       </div>
@@ -114,33 +118,30 @@ export default function CleanupSettingsPage() {
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-3xl font-bold">清理与到期策略</h1>
+        <h1 className="text-3xl font-bold">{t("title")}</h1>
       </div>
 
       <div className="space-y-6">
         {/* 自动清理说明 */}
         <div className="bg-muted/50 rounded-lg p-6">
-          <h2 className="text-lg font-semibold mb-3">自动清理说明：</h2>
+          <h2 className="text-lg font-semibold mb-3">{t("autoCleanupTitle")}</h2>
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li>
-              • 清理任务由 Cloudflare Scheduled Triggers 定时触发（通常每 24
-              小时一次），也可手动调用 /api/cleanup/temp-accounts。
+              • {t("autoCleanupDesc1")}
             </li>
-            <li>• 关闭某项开关后，对应资源将不再被自动清理。</li>
+            <li>• {t("autoCleanupDesc2")}</li>
             <li>
-              •
-              &quot;清理过期邮箱&quot;会级联删除该邮箱下的所有消息，请谨慎启用。
+              • {t("autoCleanupDesc3")}
             </li>
             <li>
-              •
-              卡密过期规则受&quot;卡密默认有效期&quot;与卡密创建时的自定义参数共同影响。
+              • {t("autoCleanupDesc4")}
             </li>
           </ul>
         </div>
 
         {/* 卡密与邮箱清理开关 */}
         <div className="bg-background rounded-lg border-2 border-primary/20 p-6">
-          <h2 className="text-xl font-semibold mb-6">卡密与邮箱清理开关</h2>
+          <h2 className="text-xl font-semibold mb-6">{t("switchTitle")}</h2>
 
           <div className="space-y-6">
             <div className="flex items-start justify-between gap-4">
@@ -149,10 +150,10 @@ export default function CleanupSettingsPage() {
                   htmlFor="delete-used-card-keys"
                   className="text-base font-medium"
                 >
-                  删除&quot;已使用且过期&quot;的卡密
+                  {t("deleteUsedExpired")}
                 </Label>
                 <p className="text-sm text-muted-foreground">
-                  过期且已被使用的卡密，将连带清理对应的临时账号/用户及其数据。
+                  {t("deleteUsedExpiredDesc")}
                 </p>
               </div>
               <Switch
@@ -170,10 +171,10 @@ export default function CleanupSettingsPage() {
                   htmlFor="delete-unused-card-keys"
                   className="text-base font-medium"
                 >
-                  删除&quot;过期未使用&quot;的卡密
+                  {t("deleteUnusedExpired")}
                 </Label>
                 <p className="text-sm text-muted-foreground">
-                  仅删除已过期且未被使用的卡密；不涉及任何用户数据。
+                  {t("deleteUnusedExpiredDesc")}
                 </p>
               </div>
               <Switch
@@ -191,10 +192,10 @@ export default function CleanupSettingsPage() {
                   htmlFor="delete-expired-emails"
                   className="text-base font-medium"
                 >
-                  删除&quot;已过期邮箱（含消息）&quot;
+                  {t("deleteExpiredEmails")}
                 </Label>
                 <p className="text-sm text-muted-foreground">
-                  删除 emails 表中过期记录，会级联删除该邮箱下的消息。
+                  {t("deleteExpiredEmailsDesc")}
                 </p>
               </div>
               <Switch
@@ -210,14 +211,14 @@ export default function CleanupSettingsPage() {
 
         {/* 卡密默认有效期 */}
         <div className="bg-background rounded-lg border-2 border-primary/20 p-6">
-          <h2 className="text-xl font-semibold mb-6">卡密默认有效期</h2>
+          <h2 className="text-xl font-semibold mb-6">{t("defaultExpiryTitle")}</h2>
 
           <div className="flex items-center gap-4 max-w-md">
             <Label
               htmlFor="default-days"
               className="text-base whitespace-nowrap"
             >
-              默认有效期（天）
+              {t("defaultExpiryLabel")}
             </Label>
             <Input
               id="default-days"
@@ -245,7 +246,7 @@ export default function CleanupSettingsPage() {
             className="min-w-32"
           >
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            保存设置
+            {t("saveSettings")}
           </Button>
         </div>
       </div>

@@ -25,6 +25,7 @@ import { useUserRole } from "@/hooks/use-user-role";
 import { useConfig } from "@/hooks/use-config";
 import { EmailListSkeleton } from "@/components/ui/loading-skeletons";
 import { EmptyState } from "@/components/ui/empty-state";
+import { useTranslations } from "next-intl";
 
 interface Email {
   id: string;
@@ -62,6 +63,8 @@ const EmailItem = memo(function EmailItem({
   onDelete: (email: Email) => void;
   onToggleCheck: (emailId: string) => void;
 }) {
+  const tc = useTranslations("common");
+
   const { isExpiringSoon, isPermanent, formattedExpiry } = useMemo(() => {
     const expiryTime = new Date(email.expiresAt).getTime();
     const now = Date.now();
@@ -129,16 +132,16 @@ const EmailItem = memo(function EmailItem({
         <div className="flex items-center gap-2 text-xs text-gray-500">
           {isPermanent ? (
             <span className="px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 font-medium">
-              永久有效
+              {tc("permanent")}
             </span>
           ) : (
             <>
               {isExpiringSoon && (
                 <span className="px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 font-medium animate-pulse">
-                  即将过期
+                  {tc("expiringSoon")}
                 </span>
               )}
-              <span>过期: {formattedExpiry}</span>
+              <span>{tc("expiresAt", { time: formattedExpiry })}</span>
             </>
           )}
         </div>
@@ -172,6 +175,8 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
   const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
   const [batchDeleteDialogOpen, setBatchDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
+  const t = useTranslations("email");
+  const tc = useTranslations("common");
 
   const isTempUser = role === ROLES.TEMP_USER;
   const canCreateEmail = !isTempUser;
@@ -260,7 +265,7 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
       if (!response.ok) {
         const data = await response.json();
         toast({
-          title: "错误",
+          title: tc("error"),
           description: (data as { error: string }).error,
           variant: "destructive",
         });
@@ -283,13 +288,13 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
       setSelectedEmails((prev) => prev.filter((id) => id !== email.id));
 
       toast({
-        title: "成功",
-        description: "邮箱已删除",
+        title: tc("success"),
+        description: t("delete.success"),
       });
     } catch {
       toast({
-        title: "错误",
-        description: "删除邮箱失败",
+        title: tc("error"),
+        description: t("delete.failed"),
         variant: "destructive",
       });
     } finally {
@@ -347,17 +352,17 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
       }
 
       toast({
-        title: "删除完成",
-        description: `成功删除 ${successCount} 个邮箱${
-          failCount > 0 ? `，${failCount} 个失败` : ""
-        }`,
+        title: t("delete.batchComplete"),
+        description: failCount > 0
+          ? t("delete.batchResultWithFail", { success: successCount, fail: failCount })
+          : t("delete.batchResult", { success: successCount }),
       });
 
       setSelectedEmails([]);
     } catch {
       toast({
-        title: "错误",
-        description: "批量删除失败",
+        title: tc("error"),
+        description: t("delete.batchFailed"),
         variant: "destructive",
       });
     } finally {
@@ -378,7 +383,7 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
               onClick={handleRefresh}
               disabled={refreshing}
               className={cn("h-8 w-8", refreshing && "animate-spin")}
-              title="手动刷新"
+              title={tc("manualRefresh")}
             >
               <RefreshCw className="h-4 w-4" />
             </Button>
@@ -391,8 +396,8 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
                   className="h-8 w-8"
                   title={
                     selectedEmails.length === emails.length
-                      ? "取消全选"
-                      : "全选"
+                      ? t("deselectAll")
+                      : t("selectAll")
                   }
                 >
                   {selectedEmails.length === emails.length ? (
@@ -409,17 +414,15 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
                     className="h-8 text-destructive hover:text-destructive"
                   >
                     <Trash2 className="h-4 w-4 mr-1" />
-                    删除 ({selectedEmails.length})
+                    {t("deleteCount", { count: selectedEmails.length })}
                   </Button>
                 )}
               </>
             )}
             <span className="text-xs text-gray-500">
               {role === ROLES.EMPEROR
-                ? `${total}/∞ 个邮箱`
-                : `${total}/${
-                    config?.maxEmails || EMAIL_CONFIG.MAX_ACTIVE_EMAILS
-                  } 个邮箱`}
+                ? t("mailCountUnlimited", { count: total })
+                : t("mailCount", { count: total, max: config?.maxEmails || EMAIL_CONFIG.MAX_ACTIVE_EMAILS })}
             </span>
           </div>
           {canCreateEmail && <CreateDialog onEmailCreated={handleRefresh} />}
@@ -444,15 +447,15 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
               ))}
               {loadingMore && (
                 <div className="text-center text-sm text-gray-500 py-2 animate-pulse">
-                  加载更多...
+                  {tc("loadingMore")}
                 </div>
               )}
             </div>
           ) : (
             <EmptyState
               icon={Mail}
-              title="还没有临时邮箱"
-              description="点击右上角的「创建新邮箱」按钮开始使用"
+              title={t("create.noMailbox")}
+              description={t("create.noMailboxHint")}
             />
           )}
         </div>
@@ -464,19 +467,18 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>确认删除</AlertDialogTitle>
+            <AlertDialogTitle>{t("delete.confirmTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              确定要删除邮箱 {emailToDelete?.address}{" "}
-              吗？此操作将同时删除该邮箱中的所有邮件，且不可恢复。
+              {t("delete.confirmEmail", { address: emailToDelete?.address ?? "" })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogCancel>{tc("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive hover:bg-destructive/90"
               onClick={() => emailToDelete && handleDelete(emailToDelete)}
             >
-              删除
+              {tc("delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -487,19 +489,18 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>确认批量删除</AlertDialogTitle>
+            <AlertDialogTitle>{t("delete.confirmBatchTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              确定要删除选中的 {selectedEmails.length}{" "}
-              个邮箱吗？此操作将同时删除这些邮箱中的所有邮件，且不可恢复。
+              {t("delete.confirmBatch", { count: selectedEmails.length })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogCancel>{tc("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive hover:bg-destructive/90"
               onClick={handleBatchDelete}
             >
-              删除
+              {tc("delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

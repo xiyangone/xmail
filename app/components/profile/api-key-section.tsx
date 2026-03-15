@@ -21,6 +21,7 @@ import { useRolePermission } from "@/hooks/use-role-permission"
 import { PERMISSIONS } from "@/lib/permissions"
 import { CollapsibleSection } from "./collapsible-section"
 import { ApiKeyPanelContent } from "./api-key-panel-content"
+import { useTranslations } from "next-intl"
 
 export function ApiKeySection() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
@@ -32,6 +33,8 @@ export function ApiKeySection() {
   const { copyToClipboard } = useCopy()
   const { checkPermission } = useRolePermission()
   const canManageApiKey = checkPermission(PERMISSIONS.MANAGE_API_KEY)
+  const t = useTranslations("apiKey")
+  const tc = useTranslations("common")
 
   const createApiKey = async () => {
     if (!newKeyName.trim()) return
@@ -44,15 +47,15 @@ export function ApiKeySection() {
         body: JSON.stringify({ name: newKeyName })
       })
 
-      if (!res.ok) throw new Error("创建 API Key 失败")
+      if (!res.ok) throw new Error(t("createFailed"))
 
       const data = await res.json() as { key: string }
       setNewKey(data.key)
       setRefreshTrigger(prev => prev + 1)
     } catch (error) {
       toast({
-        title: "创建失败",
-        description: error instanceof Error ? error.message : "请稍后重试",
+        title: t("createFailed"),
+        description: error instanceof Error ? error.message : tc("pleaseRetryLater"),
         variant: "destructive"
       })
       setCreateDialogOpen(false)
@@ -70,22 +73,22 @@ export function ApiKeySection() {
   const createButton = canManageApiKey ? (
     <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
       <DialogTrigger asChild>
-        <Button 
+        <Button
           className="gap-2 bg-orange-500 hover:bg-orange-600 dark:bg-purple-600 dark:hover:bg-purple-700"
           onClick={() => setCreateDialogOpen(true)}
         >
           <Plus className="w-4 h-4" />
-          创建 API Key
+          {t("createApiKey")}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {newKey ? "API Key 创建成功" : "创建新的 API Key"}
+            {newKey ? t("createSuccess") : t("createNew")}
           </DialogTitle>
           {newKey && (
             <DialogDescription className="text-destructive">
-              请立即保存此密钥，它只会显示一次且无法恢复
+              {t("saveWarning")}
             </DialogDescription>
           )}
         </DialogHeader>
@@ -93,11 +96,11 @@ export function ApiKeySection() {
         {!newKey ? (
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label>名称</Label>
+              <Label>{t("nameLabel")}</Label>
               <Input
                 value={newKeyName}
                 onChange={(e) => setNewKeyName(e.target.value)}
-                placeholder="为你的 API Key 起个名字"
+                placeholder={t("namePlaceholder")}
               />
             </div>
           </div>
@@ -130,7 +133,7 @@ export function ApiKeySection() {
               onClick={handleDialogClose}
               disabled={loading}
             >
-              {newKey ? "完成" : "取消"}
+              {newKey ? t("done") : tc("cancel")}
             </Button>
           </DialogClose>
           {!newKey && (
@@ -141,7 +144,7 @@ export function ApiKeySection() {
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                "创建"
+                t("create")
               )}
             </Button>
           )}
@@ -151,9 +154,9 @@ export function ApiKeySection() {
   ) : null
 
   return (
-    <CollapsibleSection 
-      title="API Keys" 
-      icon={Key} 
+    <CollapsibleSection
+      title="API Keys"
+      icon={Key}
       storageKey="profile-api-keys-open"
       action={createButton}
     >

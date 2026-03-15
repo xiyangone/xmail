@@ -16,6 +16,7 @@ import { useCopy } from "@/hooks/use-copy";
 import { useRolePermission } from "@/hooks/use-role-permission";
 import { PERMISSIONS } from "@/lib/permissions";
 import { useConfig } from "@/hooks/use-config";
+import { useTranslations } from "next-intl";
 
 type ApiKey = {
   id: string;
@@ -35,24 +36,26 @@ export function ApiKeyPanelContent() {
   const { checkPermission } = useRolePermission();
   const canManageApiKey = checkPermission(PERMISSIONS.MANAGE_API_KEY);
   const { config } = useConfig();
+  const t = useTranslations("apiKey");
+  const tc = useTranslations("common");
 
   const fetchApiKeys = useCallback(async () => {
     try {
       const res = await fetch("/api/api-keys");
-      if (!res.ok) throw new Error("获取 API Keys 失败");
+      if (!res.ok) throw new Error(t("fetchFailed"));
       const data = (await res.json()) as { apiKeys: ApiKey[] };
       setApiKeys(data.apiKeys);
     } catch (error) {
       console.error(error);
       toast({
-        title: "获取失败",
-        description: "获取 API Keys 列表失败",
+        title: t("fetchListFailed"),
+        description: t("fetchListFailed"),
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, [toast, t]);
 
   useEffect(() => {
     if (canManageApiKey) {
@@ -68,7 +71,7 @@ export function ApiKeyPanelContent() {
         body: JSON.stringify({ enabled }),
       });
 
-      if (!res.ok) throw new Error("更新失败");
+      if (!res.ok) throw new Error(t("updateFailed"));
 
       setApiKeys((keys) =>
         keys.map((key) => (key.id === id ? { ...key, enabled } : key))
@@ -76,8 +79,8 @@ export function ApiKeyPanelContent() {
     } catch (error) {
       console.error(error);
       toast({
-        title: "更新失败",
-        description: "更新 API Key 状态失败",
+        title: t("updateFailed"),
+        description: t("updateStatusFailed"),
         variant: "destructive",
       });
     }
@@ -89,11 +92,11 @@ export function ApiKeyPanelContent() {
         method: "DELETE",
       });
 
-      if (!res.ok) throw new Error("删除失败");
+      if (!res.ok) throw new Error(t("deleteFailed"));
 
       toast({
-        title: "删除成功",
-        description: "API Key 已删除",
+        title: t("deleteSuccess"),
+        description: t("deleteSuccessDesc"),
       });
 
       // 强制刷新列表,清除缓存
@@ -101,8 +104,8 @@ export function ApiKeyPanelContent() {
     } catch (error) {
       console.error(error);
       toast({
-        title: "删除失败",
-        description: "删除 API Key 失败",
+        title: t("deleteFailed"),
+        description: t("deleteKeyFailed"),
         variant: "destructive",
       });
     }
@@ -112,10 +115,10 @@ export function ApiKeyPanelContent() {
     <div className="space-y-4">
       {!canManageApiKey ? (
         <div className="text-center text-muted-foreground py-8">
-          <p>需要公爵或更高权限才能管理 API Key</p>
-          <p className="mt-2">请联系网站管理员升级您的角色</p>
+          <p>{t("noPermission")}</p>
+          <p className="mt-2">{t("contactAdmin")}</p>
           {config?.adminContact && (
-            <p className="mt-2">管理员联系方式：{config.adminContact}</p>
+            <p className="mt-2">{t("adminContactLabel", { contact: config.adminContact })}</p>
           )}
         </div>
       ) : isLoading ? (
@@ -124,7 +127,7 @@ export function ApiKeyPanelContent() {
             <Loader2 className="w-6 h-6 text-primary animate-spin" />
           </div>
           <div>
-            <p className="text-sm text-muted-foreground">加载中...</p>
+            <p className="text-sm text-muted-foreground">{tc("loading")}</p>
           </div>
         </div>
       ) : apiKeys.length === 0 ? (
@@ -133,9 +136,9 @@ export function ApiKeyPanelContent() {
             <Key className="w-6 h-6 text-primary" />
           </div>
           <div>
-            <h3 className="text-lg font-medium">没有 API Keys</h3>
+            <h3 className="text-lg font-medium">{t("noApiKeys")}</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              点击上方的创建 &quot;API Key&quot; 按钮来创建你的第一个 API Key
+              {t("noApiKeysHint")}
             </p>
           </div>
         </div>
@@ -149,7 +152,7 @@ export function ApiKeyPanelContent() {
               <div className="space-y-1">
                 <div className="font-medium">{key.name}</div>
                 <div className="text-sm text-muted-foreground">
-                  创建于 {new Date(key.createdAt).toLocaleString()}
+                  {t("createdAtLabel", { time: new Date(key.createdAt).toLocaleString() })}
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -179,14 +182,14 @@ export function ApiKeyPanelContent() {
               ) : (
                 <ChevronDown className="w-4 h-4" />
               )}
-              查看使用文档
+              {t("viewDocs")}
             </button>
 
             {showExamples && (
               <div className="rounded-lg border bg-card p-4 space-y-4">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <div className="text-sm font-medium">获取系统配置</div>
+                    <div className="text-sm font-medium">{t("getConfig")}</div>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -207,7 +210,7 @@ export function ApiKeyPanelContent() {
                 </div>
 
                 <div className="text-xs text-muted-foreground mt-4">
-                  <p>注意：所有请求都需要包含 X-API-Key 请求头</p>
+                  <p>{t("apiNote")}</p>
                 </div>
               </div>
             )}

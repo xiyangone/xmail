@@ -2,6 +2,8 @@ import { ThemeProvider } from "@/components/theme/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
 import type { Metadata, Viewport } from "next";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 import { jetBrainsMono } from "./fonts";
 import "./globals.css";
 import { Providers } from "./providers";
@@ -58,6 +60,8 @@ export const metadata: Metadata = {
   icons: [{ rel: "apple-touch-icon", url: "/icons/icon-192x192.png" }],
 };
 
+export const runtime = "edge";
+
 export const viewport: Viewport = {
   themeColor: "#FF8A3D",
   width: "device-width",
@@ -66,13 +70,16 @@ export const viewport: Viewport = {
   userScalable: false,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    <html lang="zh" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <head>
         <meta name="application-name" content="XiYang Mail" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -96,7 +103,9 @@ export default function RootLayout({
           disableTransitionOnChange={false}
           storageKey="temp-mail-theme"
         >
-          <Providers>{children}</Providers>
+          <NextIntlClientProvider messages={messages}>
+            <Providers>{children}</Providers>
+          </NextIntlClientProvider>
           <Toaster />
           <FloatMenu />
         </ThemeProvider>

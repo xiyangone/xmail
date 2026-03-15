@@ -1,4 +1,7 @@
+"use client";
+
 import { AlertCircle, Clock } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { BrandHeader } from "@/components/ui/brand-header";
 
 interface SharedErrorPageProps {
@@ -7,6 +10,7 @@ interface SharedErrorPageProps {
 }
 
 export function SharedErrorPage({ status, message }: SharedErrorPageProps) {
+  const t = useTranslations("shared");
   const isExpired = status === 410;
 
   return (
@@ -24,26 +28,26 @@ export function SharedErrorPage({ status, message }: SharedErrorPageProps) {
 
             <div className="space-y-2">
               <h2 className="text-2xl font-bold">
-                {isExpired ? "分享链接已过期" : "分享链接不存在"}
+                {isExpired ? t("linkExpired") : t("linkNotFound")}
               </h2>
               <p className="text-sm text-muted-foreground">
                 {message ||
                   (isExpired
-                    ? "此分享链接已过期，无法访问。"
-                    : "此分享链接不存在或已被删除。")}
+                    ? t("linkExpiredDesc")
+                    : t("linkNotFoundDesc"))}
               </p>
             </div>
 
             <div className="pt-4 space-y-2 text-xs text-muted-foreground">
               {isExpired ? (
                 <>
-                  <p>• 分享链接可能已超过有效期</p>
-                  <p>• 请联系分享者重新创建分享链接</p>
+                  <p>• {t("linkMayExpired")}</p>
+                  <p>• {t("contactOwner")}</p>
                 </>
               ) : (
                 <>
-                  <p>• 请检查链接是否完整</p>
-                  <p>• 分享链接可能已被删除</p>
+                  <p>• {t("checkLink")}</p>
+                  <p>• {t("linkMayDeleted")}</p>
                 </>
               )}
             </div>

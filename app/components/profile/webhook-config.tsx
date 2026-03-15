@@ -14,6 +14,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { useTranslations } from "next-intl"
 
 export function WebhookConfig() {
   const [enabled, setEnabled] = useState(false)
@@ -23,6 +24,8 @@ export function WebhookConfig() {
   const [showDocs, setShowDocs] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
   const { toast } = useToast()
+  const t = useTranslations("webhook")
+  const tc = useTranslations("common")
 
   useEffect(() => {
     fetch("/api/webhook")
@@ -42,7 +45,7 @@ export function WebhookConfig() {
           <Loader2 className="w-6 h-6 text-primary animate-spin" />
         </div>
         <div>
-          <p className="text-sm text-muted-foreground">加载中...</p>
+          <p className="text-sm text-muted-foreground">{tc("loading")}</p>
         </div>
       </div>
     )
@@ -63,13 +66,13 @@ export function WebhookConfig() {
       if (!res.ok) throw new Error("Failed to save")
 
       toast({
-        title: "保存成功",
-        description: "Webhook 配置已更新"
+        title: t("saveSuccess"),
+        description: t("webhookUpdated")
       })
     } catch (_error) {
       toast({
-        title: "保存失败",
-        description: "请稍后重试",
+        title: t("saveFailed"),
+        description: tc("pleaseRetryLater"),
         variant: "destructive"
       })
     } finally {
@@ -88,16 +91,16 @@ export function WebhookConfig() {
         body: JSON.stringify({ url })
       })
 
-      if (!res.ok) throw new Error("测试失败")
+      if (!res.ok) throw new Error(t("testFailed"))
 
       toast({
-        title: "测试成功",
-        description: "Webhook 调用成功,请检查目标服务器是否收到请求"
+        title: t("testSuccess"),
+        description: t("testSuccessDesc")
       })
     } catch (_error) {
       toast({
-        title: "测试失败",
-        description: "请检查 URL 是否正确且可访问",
+        title: t("testFailed"),
+        description: t("testFailedDesc"),
         variant: "destructive"
       })
     } finally {
@@ -109,9 +112,9 @@ export function WebhookConfig() {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
-          <Label>启用 Webhook</Label>
+          <Label>{t("enableWebhook")}</Label>
           <div className="text-sm text-muted-foreground">
-            当收到新邮件时通知指定的 URL
+            {t("webhookDesc")}
           </div>
         </div>
         <Switch
@@ -137,7 +140,7 @@ export function WebhookConfig() {
                 {loading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  "保存"
+                  tc("save")
                 )}
               </Button>
               <TooltipProvider>
@@ -157,13 +160,13 @@ export function WebhookConfig() {
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>发送测试消息到此 Webhook</p>
+                    <p>{t("sendTestMessage")}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </div>
             <p className="text-xs text-muted-foreground">
-              我们会向此 URL 发送 POST 请求,包含新邮件的相关信息
+              {t("webhookPostDesc")}
             </p>
           </div>
 
@@ -174,26 +177,26 @@ export function WebhookConfig() {
               onClick={() => setShowDocs(!showDocs)}
             >
               {showDocs ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              查看数据格式说明
+              {t("viewDocsFormat")}
             </button>
 
             {showDocs && (
               <div className="rounded-md bg-muted p-4 text-sm space-y-3">
-                <p>当收到新邮件时，我们会向配置的 URL 发送 POST 请求，请求头包含:</p>
+                <p>{t("docsHeader")}</p>
                 <pre className="bg-background p-2 rounded text-xs">
                   Content-Type: application/json{'\n'}
                   X-Webhook-Event: new_message
                 </pre>
 
-                <p>请求体示例:</p>
+                <p>{t("docsBodyExample")}</p>
                 <pre className="bg-background p-2 rounded text-xs overflow-auto">
                   {`{
   "emailId": "email-uuid",
   "messageId": "message-uuid",
   "fromAddress": "sender@example.com",
-  "subject": "邮件主题",
-  "content": "邮件文本内容",
-  "html": "邮件HTML内容",
+  "subject": "${t("docsSubject")}",
+  "content": "${t("docsContent")}",
+  "html": "${t("docsHtml")}",
   "receivedAt": "2024-01-01T12:00:00.000Z",
   "toAddress": "your-email@${window.location.host}"
 }`}
@@ -205,4 +208,4 @@ export function WebhookConfig() {
       )}
     </form>
   )
-} 
+}

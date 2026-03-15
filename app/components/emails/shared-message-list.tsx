@@ -5,6 +5,7 @@ import { Mail, RefreshCw, Loader2, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useThrottle } from "@/hooks/use-throttle";
 import { useToast } from "@/components/ui/use-toast";
+import { useTranslations } from "next-intl";
 
 interface Message {
   id: string;
@@ -40,6 +41,9 @@ export function SharedMessageList({
   const [total, setTotal] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const t = useTranslations("shared");
+  const te = useTranslations("email");
+  const tc = useTranslations("common");
 
   const fetchMessages = async (
     cursor: string | null = null,
@@ -78,7 +82,7 @@ export function SharedMessageList({
     } catch (error) {
       console.error("Failed to fetch messages:", error);
       toast({
-        title: "获取消息失败",
+        title: t("fetchMessagesFailed"),
         description: String(error),
         variant: "destructive",
       });
@@ -135,15 +139,15 @@ export function SharedMessageList({
             )}
             onClick={handleRefresh}
           />
-          <span className="text-sm text-muted-foreground">{total}封邮件</span>
+          <span className="text-sm text-muted-foreground">{t("messageCount", { count: total })}</span>
         </div>
       </div>
 
       <div className="mx-3 mt-3 p-2 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg flex items-start gap-2">
         <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
         <p className="text-xs text-blue-700 dark:text-blue-300">
-          <strong>提示：</strong>
-          此页面不会自动刷新。获取验证码后，请点击左上角的刷新按钮或刷新网页以查看新邮件。
+          <strong>{t("refreshHintTitle")}</strong>
+          {t("refreshHint")}
         </p>
       </div>
 
@@ -151,7 +155,7 @@ export function SharedMessageList({
         {messages.length === 0 && !loading ? (
           <div className="flex flex-col items-center justify-center h-32 text-center text-muted-foreground">
             <Mail className="h-8 w-8 mb-2 opacity-50" />
-            <p className="text-sm">暂无邮件</p>
+            <p className="text-sm">{te("noEmails")}</p>
           </div>
         ) : (
           messages.map((message, index) => (
@@ -169,10 +173,10 @@ export function SharedMessageList({
               <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-1" />
               <div className="flex-1 min-w-0 space-y-1">
                 <div className="font-medium truncate">
-                  {message.subject || "(无主题)"}
+                  {message.subject || te("noSubject")}
                 </div>
                 <div className="text-xs text-muted-foreground truncate">
-                  {message.from_address || "未知发件人"}
+                  {message.from_address || t("unknownSender")}
                 </div>
                 <div className="text-xs text-muted-foreground">
                   {new Date(
@@ -194,7 +198,7 @@ export function SharedMessageList({
           <div className="flex items-center justify-center py-4">
             <Loader2 className="h-5 w-5 animate-spin text-primary/60" />
             <span className="ml-2 text-sm text-muted-foreground">
-              加载中...
+              {tc("loading")}
             </span>
           </div>
         )}

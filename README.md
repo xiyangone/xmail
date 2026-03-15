@@ -80,6 +80,7 @@
 - 🛡️ **安全加固**：PBKDF2 密码哈希、API Key 哈希存储、iframe XSS 防护（srcdoc + sandbox + CSP）、安全响应头
 - 🤖 **Turnstile 人机验证**：集成 Cloudflare Turnstile，登录/注册/卡密登录全链路防机器人
 - ⚛️ **数据一致性**：卡密激活使用 D1 db.batch() 原子操作，杜绝中途失败导致的脏数据
+- 🌐 **国际化 (i18n)**：基于 next-intl 的中英文双语支持，cookie 切换语言，无路由前缀，全页面覆盖
 
 ## 技术栈
 
@@ -93,12 +94,13 @@
 - **类型安全**: [TypeScript](https://www.typescriptlang.org/)
 - **ORM**: [Drizzle ORM](https://orm.drizzle.team/)
 - **PWA**: [Serwist](https://serwist.pages.dev/) (Service Worker)
+- **国际化**: [next-intl](https://next-intl.dev/) (中英双语)
 
 ## 本地运行
 
 ### 前置要求
 
-- Node.js 18+
+- Node.js 22+
 - Pnpm
 - Wrangler CLI
 - Cloudflare 账号

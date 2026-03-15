@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 import withSerwistInit from "@serwist/next";
+import createNextIntlPlugin from "next-intl/plugin";
+// @ts-ignore - this module exists at runtime but lacks type declarations
 import { setupDevPlatform } from '@cloudflare/next-on-pages/next-dev';
+
+const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
 async function setup() {
   if (process.env.NODE_ENV === 'development') {
@@ -52,4 +56,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSerwist(nextConfig);
+export default withNextIntl(withSerwist(nextConfig));

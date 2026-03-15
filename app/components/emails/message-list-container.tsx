@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/tabs";
 import { MessageList } from "./message-list";
 import { useSendPermission } from "@/hooks/use-send-permission";
+import { useTranslations } from "next-intl";
 
 interface MessageListContainerProps {
   email: {
@@ -32,6 +33,7 @@ export function MessageListContainer({
 }: MessageListContainerProps) {
   const [activeTab, setActiveTab] = useState<"received" | "sent">("received");
   const { canSend: canSendEmails } = useSendPermission();
+  const t = useTranslations("email");
 
   // 当邮箱切换时,重置 tab 到收件箱
   useEffect(() => {
@@ -55,11 +57,11 @@ export function MessageListContainer({
             <SlidingTabsList>
               <SlidingTabsTrigger value="received">
                 <Inbox className="h-4 w-4" />
-                收件箱
+                {t("inbox")}
               </SlidingTabsTrigger>
               <SlidingTabsTrigger value="sent">
                 <Send className="h-4 w-4" />
-                已发送
+                {t("sent")}
               </SlidingTabsTrigger>
             </SlidingTabsList>
           </div>

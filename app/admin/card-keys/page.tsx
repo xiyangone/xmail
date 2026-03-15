@@ -52,6 +52,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useRolePermission } from "@/hooks/use-role-permission";
 import { PERMISSIONS } from "@/lib/permissions";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 interface CardKey {
   id: string;
@@ -99,6 +100,9 @@ export default function CardKeysPage() {
   const { checkPermission } = useRolePermission();
   const router = useRouter();
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const t = useTranslations("cardKey");
+  const tc = useTranslations("common");
+  const ta = useTranslations("admin");
 
   const canManageCardKeys = checkPermission(PERMISSIONS.MANAGE_CARD_KEYS);
 
@@ -127,7 +131,7 @@ export default function CardKeysPage() {
         setAllowedDomains(domains);
       }
     } catch (error) {
-      console.error("获取域名列表失败:", error);
+      console.error("Failed to fetch domains:", error);
     }
   }, []);
 
@@ -135,21 +139,21 @@ export default function CardKeysPage() {
     try {
       const response = await fetch("/api/admin/card-keys");
       if (!response.ok) {
-        throw new Error("获取卡密列表失败");
+        throw new Error(t("fetchFailed"));
       }
       const data = (await response.json()) as { cardKeys: CardKey[] };
       setCardKeys(data.cardKeys);
     } catch (error) {
       toast({
-        title: "错误",
+        title: tc("error"),
         description:
-          error instanceof Error ? error.message : "获取卡密列表失败",
+          error instanceof Error ? error.message : t("fetchFailed"),
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, t, tc]);
 
   // 使用 useMemo 优化过滤逻辑
   const filteredCardKeys = useMemo(() => {
@@ -218,8 +222,8 @@ export default function CardKeysPage() {
 
       if (addresses.length === 0) {
         toast({
-          title: "错误",
-          description: "请输入至少一个邮箱地址",
+          title: tc("error"),
+          description: t("enterAtLeastOne"),
           variant: "destructive",
         });
         return;
@@ -233,10 +237,8 @@ export default function CardKeysPage() {
 
       if (invalidEmails.length > 0) {
         toast({
-          title: "错误",
-          description: `以下邮箱地址的域名不在允许的域名列表中：${invalidEmails.join(
-            ", "
-          )}`,
+          title: tc("error"),
+          description: t("invalidDomains", { emails: invalidEmails.join(", ") }),
           variant: "destructive",
         });
         return;
@@ -250,8 +252,8 @@ export default function CardKeysPage() {
 
       if (addresses.length === 0) {
         toast({
-          title: "错误",
-          description: "请输入至少一个邮箱地址",
+          title: tc("error"),
+          description: t("enterAtLeastOne"),
           variant: "destructive",
         });
         return;
@@ -265,10 +267,8 @@ export default function CardKeysPage() {
 
       if (invalidEmails.length > 0) {
         toast({
-          title: "错误",
-          description: `以下邮箱地址的域名不在允许的域名列表中：${invalidEmails.join(
-            ", "
-          )}`,
+          title: tc("error"),
+          description: t("invalidDomains", { emails: invalidEmails.join(", ") }),
           variant: "destructive",
         });
         return;
@@ -312,7 +312,7 @@ export default function CardKeysPage() {
         cardKeys: { code: string; emailAddress: string }[];
       };
       toast({
-        title: "成功",
+        title: tc("success"),
         description: data.message,
       });
 
@@ -325,8 +325,8 @@ export default function CardKeysPage() {
       fetchCardKeys();
     } catch (error) {
       toast({
-        title: "错误",
-        description: error instanceof Error ? error.message : "生成卡密失败",
+        title: tc("error"),
+        description: error instanceof Error ? error.message : t("generateFailed"),
         variant: "destructive",
       });
     } finally {
@@ -337,16 +337,16 @@ export default function CardKeysPage() {
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast({
-      title: "已复制",
-      description: "卡密已复制到剪贴板",
+      title: tc("copied"),
+      description: t("copiedToClipboard"),
     });
   };
 
   const openDeleteDialog = (type: "single" | "batch", id?: string) => {
     if (type === "batch" && selectedKeys.length === 0) {
       toast({
-        title: "提示",
-        description: "请先选择要删除的卡密",
+        title: tc("warning"),
+        description: t("selectToDelete"),
         variant: "destructive",
       });
       return;
@@ -386,8 +386,8 @@ export default function CardKeysPage() {
       }
 
       toast({
-        title: "成功",
-        description: "卡密删除成功",
+        title: tc("success"),
+        description: t("deleteSuccess"),
       });
 
       // 从选中列表中移除已删除的卡密
@@ -396,8 +396,8 @@ export default function CardKeysPage() {
       fetchCardKeys();
     } catch (error) {
       toast({
-        title: "错误",
-        description: error instanceof Error ? error.message : "删除卡密失败",
+        title: tc("error"),
+        description: error instanceof Error ? error.message : t("deleteFailed"),
         variant: "destructive",
       });
       throw error;
@@ -418,21 +418,21 @@ export default function CardKeysPage() {
       const failCount = results.filter((r) => r.status === "rejected").length;
 
       toast({
-        title: "删除完成",
-        description: `成功删除 ${successCount} 个卡密${
-          failCount > 0 ? `，${failCount} 个失败` : ""
-        }`,
+        title: t("deleteComplete"),
+        description: failCount > 0
+          ? t("deleteResultWithFail", { success: successCount, fail: failCount })
+          : t("deleteResult", { success: successCount }),
       });
 
       setSelectedKeys([]);
       fetchCardKeys();
     } catch {
       toast({
-        title: "错误",
-        description: "批量删除失败",
+        title: tc("error"),
+        description: t("batchDeleteFailed"),
         variant: "destructive",
       });
-      throw new Error("批量删除失败");
+      throw new Error(t("batchDeleteFailed"));
     }
   };
 
@@ -448,15 +448,15 @@ export default function CardKeysPage() {
       }
 
       toast({
-        title: "成功",
-        description: "卡密已重置，可以再次使用",
+        title: tc("success"),
+        description: t("resetSuccess"),
       });
 
       fetchCardKeys();
     } catch (error) {
       toast({
-        title: "错误",
-        description: error instanceof Error ? error.message : "重置卡密失败",
+        title: tc("error"),
+        description: error instanceof Error ? error.message : t("resetFailed"),
         variant: "destructive",
       });
     }
@@ -484,27 +484,27 @@ export default function CardKeysPage() {
 
     if (cardKey.isUsed) {
       return {
-        label: "已使用",
+        label: t("used"),
         color:
           "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
         icon: CheckCircle2,
       };
     } else if (expiresAt <= now) {
       return {
-        label: "已过期",
+        label: tc("expired"),
         color: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
         icon: XCircle,
       };
     } else if (expiresAt <= oneDayFromNow) {
       return {
-        label: "即将过期",
+        label: tc("expiringSoon"),
         color:
           "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
         icon: AlertCircle,
       };
     } else {
       return {
-        label: "未使用",
+        label: t("unused"),
         color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
         icon: Clock,
       };
@@ -517,7 +517,7 @@ export default function CardKeysPage() {
         <Card>
           <CardContent className="pt-6">
             <p className="text-center text-muted-foreground">
-              您没有权限访问此页面
+              {ta("noPermission")}
             </p>
           </CardContent>
         </Card>
@@ -526,10 +526,10 @@ export default function CardKeysPage() {
   }
 
   const filterOptions = [
-    { value: "all", label: "全部", icon: Filter, count: cardKeys.length },
+    { value: "all", label: t("filterAll"), icon: Filter, count: cardKeys.length },
     {
       value: "unused",
-      label: "未使用",
+      label: t("unused"),
       icon: Clock,
       count: cardKeys.filter(
         (k) => !k.isUsed && new Date(k.expiresAt) > new Date()
@@ -537,13 +537,13 @@ export default function CardKeysPage() {
     },
     {
       value: "used",
-      label: "已使用",
+      label: t("used"),
       icon: CheckCircle2,
       count: cardKeys.filter((k) => k.isUsed).length,
     },
     {
       value: "expiring-soon",
-      label: "即将过期",
+      label: tc("expiringSoon"),
       icon: AlertCircle,
       count: cardKeys.filter((k) => {
         const now = new Date();
@@ -568,7 +568,7 @@ export default function CardKeysPage() {
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-3xl font-bold">卡密管理</h1>
+          <h1 className="text-3xl font-bold">{t("management")}</h1>
         </div>
         <div className="flex gap-2">
           {selectedKeys.length > 0 && (
@@ -577,28 +577,28 @@ export default function CardKeysPage() {
               onClick={() => openDeleteDialog("batch")}
             >
               <Trash2 className="mr-2 h-4 w-4" />
-              删除选中 ({selectedKeys.length})
+              {t("deleteSelected", { count: selectedKeys.length })}
             </Button>
           )}
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
-                生成卡密
+                {t("generateCardKeys")}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle className="text-xl">生成卡密</DialogTitle>
+                <DialogTitle className="text-xl">{t("generateTitle")}</DialogTitle>
                 <DialogDescription className="text-sm">
-                  选择卡密类型并填写相关信息,生成后的卡密可用于创建临时账号
+                  {t("dialogDesc")}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-6 py-2">
                 {/* 卡密模式选择 */}
                 <div className="space-y-3">
                   <div>
-                    <Label className="text-sm font-semibold">卡密类型</Label>
+                    <Label className="text-sm font-semibold">{t("cardKeyType")}</Label>
                   </div>
                   <Select
                     value={cardKeyMode}
@@ -612,17 +612,17 @@ export default function CardKeysPage() {
                     <SelectContent>
                       <SelectItem value="single">
                         <div className="flex flex-col items-start py-1">
-                          <span className="font-medium">单卡密模式</span>
+                          <span className="font-medium">{t("singleMode")}</span>
                           <span className="text-xs text-muted-foreground">
-                            一个卡密绑定一个固定邮箱地址
+                            {t("singleModeDesc")}
                           </span>
                         </div>
                       </SelectItem>
                       <SelectItem value="multi">
                         <div className="flex flex-col items-start py-1">
-                          <span className="font-medium">多卡密模式</span>
+                          <span className="font-medium">{t("multiMode")}</span>
                           <span className="text-xs text-muted-foreground">
-                            一个卡密绑定多个固定邮箱地址
+                            {t("multiModeDesc")}
                           </span>
                         </div>
                       </SelectItem>
@@ -631,8 +631,8 @@ export default function CardKeysPage() {
                   <div className="bg-muted/50 rounded-lg p-3 border border-muted">
                     <p className="text-xs text-muted-foreground leading-relaxed">
                       {cardKeyMode === "single"
-                        ? "💡 单卡密：用户使用卡密登录后，只能使用一个预设的邮箱地址,适合单用户使用"
-                        : "💡 多卡密：一个卡密绑定多个预设的邮箱地址，用户登录后只能使用这些邮箱,适合批量分配"}
+                        ? `💡 ${t("singleModeTip")}`
+                        : `💡 ${t("multiModeTip")}`}
                     </p>
                   </div>
                 </div>
@@ -642,10 +642,10 @@ export default function CardKeysPage() {
                   <div className="space-y-3">
                     <div>
                       <Label htmlFor="emails" className="text-sm font-semibold">
-                        邮箱地址列表
+                        {t("emailListLabel")}
                       </Label>
                       <p className="text-xs text-muted-foreground mt-1">
-                        每行一个邮箱地址,每个邮箱将生成一个独立的卡密
+                        {t("singleEmailHint")}
                       </p>
                     </div>
                     <Textarea
@@ -663,7 +663,7 @@ export default function CardKeysPage() {
                     {allowedDomains.length > 0 && (
                       <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-3 border border-blue-200 dark:border-blue-900">
                         <p className="text-xs text-blue-700 dark:text-blue-300">
-                          <span className="font-semibold">允许的域名：</span>
+                          <span className="font-semibold">{t("allowedDomains")}</span>
                           {allowedDomains.map((domain, index) => (
                             <span key={domain}>
                               {index > 0 && ", "}
@@ -686,10 +686,10 @@ export default function CardKeysPage() {
                         htmlFor="multi-emails"
                         className="text-sm font-semibold"
                       >
-                        邮箱地址列表
+                        {t("emailListLabel")}
                       </Label>
                       <p className="text-xs text-muted-foreground mt-1">
-                        每行一个邮箱地址,所有邮箱将绑定到同一个卡密
+                        {t("multiEmailHint")}
                       </p>
                     </div>
                     <Textarea
@@ -709,7 +709,7 @@ export default function CardKeysPage() {
                     {allowedDomains.length > 0 && (
                       <div className="bg-purple-50 dark:bg-purple-950/20 rounded-lg p-3 border border-purple-200 dark:border-purple-900">
                         <p className="text-xs text-purple-700 dark:text-purple-300 mb-2">
-                          <span className="font-semibold">允许的域名：</span>
+                          <span className="font-semibold">{t("allowedDomains")}</span>
                           {allowedDomains.map((domain, index) => (
                             <span key={domain}>
                               {index > 0 && ", "}
@@ -721,7 +721,7 @@ export default function CardKeysPage() {
                         </p>
                         <p className="text-xs text-purple-600 dark:text-purple-400">
                           💡
-                          一个卡密将绑定上述所有邮箱地址，用户登录后只能使用这些邮箱
+                          {t("multiCardKeyTip")}
                         </p>
                       </div>
                     )}
@@ -730,10 +730,10 @@ export default function CardKeysPage() {
                 <div className="space-y-3">
                   <div>
                     <Label htmlFor="expiry" className="text-sm font-semibold">
-                      有效期
+                      {t("expiryLabel")}
                     </Label>
                     <p className="text-xs text-muted-foreground mt-1">
-                      设置卡密激活后的账号有效期
+                      {t("expiryHint")}
                     </p>
                   </div>
                   <div className="flex gap-3">
@@ -744,7 +744,7 @@ export default function CardKeysPage() {
                       value={expiryValue}
                       onChange={(e) => setExpiryValue(e.target.value)}
                       className="flex-1 h-11"
-                      placeholder="输入数值"
+                      placeholder={t("expiryPlaceholder")}
                     />
                     <Select
                       value={expiryUnit}
@@ -756,9 +756,9 @@ export default function CardKeysPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="minutes">分钟</SelectItem>
-                        <SelectItem value="hours">小时</SelectItem>
-                        <SelectItem value="days">天</SelectItem>
+                        <SelectItem value="minutes">{t("minutes")}</SelectItem>
+                        <SelectItem value="hours">{t("hours")}</SelectItem>
+                        <SelectItem value="days">{t("days")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -772,7 +772,7 @@ export default function CardKeysPage() {
                   {generating && (
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                   )}
-                  {generating ? "生成中..." : "生成卡密"}
+                  {generating ? t("generating") : t("generateCardKeys")}
                 </Button>
               </div>
             </DialogContent>
@@ -784,7 +784,7 @@ export default function CardKeysPage() {
       <div className="flex items-center justify-between mb-4">
         <Input
           ref={searchInputRef}
-          placeholder="搜索卡密代码、邮箱或使用者..."
+          placeholder={t("searchPlaceholder")}
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
           className="max-w-md"
@@ -801,7 +801,7 @@ export default function CardKeysPage() {
               className="w-4 h-4 rounded border-gray-300 cursor-pointer"
             />
             <span className="text-sm text-muted-foreground">
-              全选 ({selectedKeys.length}/{filteredCardKeys.length})
+              {t("selectAll", { selected: selectedKeys.length, total: filteredCardKeys.length })}
             </span>
           </div>
         )}
@@ -841,11 +841,11 @@ export default function CardKeysPage() {
         </div>
       ) : filteredCardKeys.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
-          暂无
-          {filterStatus !== "all"
-            ? filterOptions.find((o) => o.value === filterStatus)?.label
-            : ""}
-          卡密
+          {t("noCardKeysFiltered", {
+            filter: filterStatus !== "all"
+              ? (filterOptions.find((o) => o.value === filterStatus)?.label ?? "")
+              : ""
+          })}
         </div>
       ) : (
         <div className="grid gap-4">
@@ -898,8 +898,7 @@ export default function CardKeysPage() {
                               cardKey.emailAddress.includes(",") ? (
                                 <div className="space-y-1">
                                   <div className="text-xs font-semibold text-foreground mb-1">
-                                    绑定邮箱 (
-                                    {cardKey.emailAddress.split(",").length}个):
+                                    {t("boundEmails", { count: cardKey.emailAddress.split(",").length })}
                                   </div>
                                   <div className="flex flex-wrap gap-1">
                                     {cardKey.emailAddress
@@ -924,7 +923,7 @@ export default function CardKeysPage() {
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <Calendar className="h-4 w-4 flex-shrink-0" />
                             <span>
-                              创建:{" "}
+                              {t("created")}{" "}
                               {new Date(cardKey.createdAt).toLocaleString(
                                 "zh-CN",
                                 {
@@ -940,7 +939,7 @@ export default function CardKeysPage() {
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <Clock className="h-4 w-4 flex-shrink-0" />
                             <span>
-                              过期:{" "}
+                              {t("expires")}{" "}
                               {new Date(cardKey.expiresAt).toLocaleString(
                                 "zh-CN",
                                 {
@@ -957,7 +956,7 @@ export default function CardKeysPage() {
                             <div className="flex items-center gap-2 text-muted-foreground">
                               <User className="h-4 w-4 flex-shrink-0" />
                               <span>
-                                使用者:{" "}
+                                {t("usedByLabel")}{" "}
                                 <span className="font-medium text-foreground">
                                   {cardKey.usedBy.name ||
                                     cardKey.usedBy.username}
@@ -981,7 +980,7 @@ export default function CardKeysPage() {
                               size="sm"
                               onClick={() => resetCardKey(cardKey.id)}
                               className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                              title="重置卡密，允许再次使用"
+                              title={t("resetTitle")}
                             >
                               <RefreshCw className="h-4 w-4" />
                             </Button>
@@ -1011,24 +1010,24 @@ export default function CardKeysPage() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>确认删除</AlertDialogTitle>
+            <AlertDialogTitle>{t("confirmDeleteTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
               {deleteTarget?.type === "batch"
-                ? `确定要删除选中的 ${deleteTarget.count} 个卡密吗？`
-                : "确定要删除这个卡密吗？"}
+                ? t("confirmDeleteBatch", { count: deleteTarget.count ?? 0 })
+                : t("confirmDeleteSingle")}
               <br />
               <span className="text-destructive font-medium">
-                此操作将同时删除关联的临时用户和所有数据，且不可恢复。
+                {t("confirmDeleteWarning")}
               </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogCancel>{tc("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
               className="bg-destructive hover:bg-destructive/90"
             >
-              确认删除
+              {t("confirmDelete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

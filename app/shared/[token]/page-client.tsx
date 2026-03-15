@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { BrandHeader } from "@/components/ui/brand-header";
 import { SharedMessageList } from "@/components/emails/shared-message-list";
 import { SharedMessageDetail } from "@/components/emails/shared-message-detail";
@@ -35,6 +36,7 @@ export function SharedEmailPageClient({
   email,
   token,
 }: SharedEmailPageClientProps) {
+  const t = useTranslations("shared");
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(
     null
   );
@@ -69,14 +71,15 @@ export function SharedEmailPageClient({
                 <h2 className="text-xl font-bold">{email.address}</h2>
               </div>
               <p className="text-sm text-muted-foreground">
-                邮箱过期时间：
-                {new Date(email.expiresAt).toLocaleString("zh-CN", {
-                  year: "numeric",
-                  month: "2-digit",
-                  day: "2-digit",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  second: "2-digit",
+                {t("expiresAt", {
+                  time: new Date(email.expiresAt).toLocaleString("zh-CN", {
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                  }),
                 })}
               </p>
             </div>
@@ -107,7 +110,7 @@ export function SharedEmailPageClient({
                           className="gap-2"
                         >
                           <ArrowLeft className="h-4 w-4" />
-                          返回列表
+                          {t("backToList")}
                         </Button>
                       </div>
                       <div className="flex-1 overflow-hidden">
@@ -136,7 +139,7 @@ export function SharedEmailPageClient({
                       />
                     ) : (
                       <div className="flex items-center justify-center h-full text-muted-foreground">
-                        <p className="text-sm">选择邮件查看详情</p>
+                        <p className="text-sm">{t("selectMessage")}</p>
                       </div>
                     )}
                   </div>

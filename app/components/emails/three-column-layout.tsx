@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { useCopy } from "@/hooks/use-copy";
 import { useSendPermission } from "@/hooks/use-send-permission";
 import { Copy } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface Email {
   id: string;
@@ -26,6 +27,7 @@ export function ThreeColumnLayout() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const { copyToClipboard } = useCopy();
   const { canSend: canSendEmails } = useSendPermission();
+  const t = useTranslations("email");
 
   const columnClass =
     "border-2 border-primary/20 bg-background rounded-lg overflow-hidden flex flex-col";
@@ -64,7 +66,7 @@ export function ThreeColumnLayout() {
       <div className="hidden lg:grid grid-cols-12 gap-4 h-full min-h-0">
         <div className={cn("col-span-3", columnClass)}>
           <div className={headerClass}>
-            <h2 className={titleClass}>我的邮箱</h2>
+            <h2 className={titleClass}>{t("myMailbox")}</h2>
           </div>
           <div className="flex-1 overflow-auto">
             <EmailList
@@ -103,7 +105,7 @@ export function ThreeColumnLayout() {
                   )}
                 </div>
               ) : (
-                "选择邮箱查看消息"
+                t("noEmailSelected")
               )}
             </h2>
           </div>
@@ -122,7 +124,7 @@ export function ThreeColumnLayout() {
         <div className={cn("col-span-5", columnClass)}>
           <div className={headerClass}>
             <h2 className={titleClass}>
-              {selectedMessageId ? "邮件内容" : "选择邮件查看详情"}
+              {selectedMessageId ? t("messageContent") : t("noMessageSelected")}
             </h2>
           </div>
           {selectedEmail && selectedMessageId && (
@@ -144,7 +146,7 @@ export function ThreeColumnLayout() {
           {mobileView === "list" && (
             <>
               <div className={headerClass}>
-                <h2 className={titleClass}>我的邮箱</h2>
+                <h2 className={titleClass}>{t("myMailbox")}</h2>
               </div>
               <div className="flex-1 overflow-auto">
                 <EmailList
@@ -168,7 +170,7 @@ export function ThreeColumnLayout() {
                   }}
                   className="text-sm text-primary shrink-0"
                 >
-                  ← 返回邮箱列表
+                  {t("backToMailbox")}
                 </button>
                 <div className="flex-1 flex justify-between items-center gap-2 min-w-0">
                   <div className="flex items-center gap-2">
@@ -209,9 +211,9 @@ export function ThreeColumnLayout() {
                   onClick={() => setSelectedMessageId(null)}
                   className="text-sm text-primary"
                 >
-                  ← 返回消息列表
+                  {t("backToMessages")}
                 </button>
-                <span className="text-sm font-medium">邮件内容</span>
+                <span className="text-sm font-medium">{t("messageContent")}</span>
               </div>
               <div className="flex-1 overflow-auto">
                 <MessageView

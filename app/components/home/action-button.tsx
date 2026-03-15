@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Mail } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { SignButton } from "../auth/sign-button"
+import { useTranslations } from "next-intl"
 
 interface ActionButtonProps {
   isLoggedIn?: boolean
@@ -11,6 +12,7 @@ interface ActionButtonProps {
 
 export function ActionButton({ isLoggedIn }: ActionButtonProps) {
   const router = useRouter()
+  const t = useTranslations("home")
 
   if (isLoggedIn) {
     return (
@@ -20,7 +22,7 @@ export function ActionButton({ isLoggedIn }: ActionButtonProps) {
         className="gap-2 bg-primary hover:bg-primary/90 text-white px-8"
       >
         <Mail className="w-5 h-5" />
-        进入邮箱
+        {t("enterMailbox")}
       </Button>
     )
   }

@@ -24,6 +24,7 @@ import {
 import { EXPIRY_OPTIONS } from "@/types/email";
 import { useCopy } from "@/hooks/use-copy";
 import { useConfig } from "@/hooks/use-config";
+import { useTranslations } from "next-intl";
 
 interface CreateDialogProps {
   onEmailCreated: () => void;
@@ -41,6 +42,8 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
   const { toast } = useToast();
   const { copyToClipboard } = useCopy();
   const emailNameInputRef = useRef<HTMLInputElement>(null);
+  const t = useTranslations("email");
+  const tc = useTranslations("common");
 
   // 对话框打开时自动聚焦到邮箱名输入框
   useEffect(() => {
@@ -88,7 +91,7 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
       if (!response.ok) {
         const data = await response.json();
         toast({
-          title: "错误",
+          title: tc("error"),
           description: (data as { error: string }).error,
           variant: "destructive",
         });
@@ -96,16 +99,16 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
       }
 
       toast({
-        title: "成功",
-        description: "已创建新的临时邮箱",
+        title: tc("success"),
+        description: t("create.success"),
       });
       onEmailCreated();
       setOpen(false);
       setEmailName("");
     } catch {
       toast({
-        title: "错误",
-        description: "创建邮箱失败",
+        title: tc("error"),
+        description: t("create.failed"),
         variant: "destructive",
       });
     } finally {
@@ -146,12 +149,12 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
       <DialogTrigger asChild>
         <Button className="gap-2">
           <Plus className="w-4 h-4" />
-          创建新邮箱
+          {t("create.button")}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>创建新的临时邮箱</DialogTitle>
+          <DialogTitle>{t("create.title")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="flex gap-2">
@@ -159,13 +162,13 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
               ref={emailNameInputRef}
               value={emailName}
               onChange={(e) => setEmailName(e.target.value)}
-              placeholder="输入邮箱名"
+              placeholder={t("create.prefixPlaceholder")}
               className="flex-1"
             />
             {(config?.emailDomainsArray?.length ?? 0) > 1 && (
               <div
                 className="relative group"
-                title="鼠标滚轮可快速切换域名"
+                title={t("create.domainScrollHint")}
                 onWheel={handleDomainWheel}
               >
                 <Select value={currentDomain} onValueChange={setCurrentDomain}>
@@ -187,14 +190,14 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
               size="icon"
               onClick={generateRandomName}
               type="button"
-              title="根据配置生成前缀"
+              title={t("create.randomPrefix")}
             >
               <RefreshCw className="w-4 h-4" />
             </Button>
           </div>
 
           <div className="flex items-center gap-4">
-            <Label className="shrink-0 text-muted-foreground">过期时间</Label>
+            <Label className="shrink-0 text-muted-foreground">{t("create.expiry")}</Label>
             <RadioGroup
               value={expiryTime}
               onValueChange={setExpiryTime}
@@ -218,7 +221,7 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
           </div>
 
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span className="shrink-0">完整邮箱地址将为:</span>
+            <span className="shrink-0">{t("fullAddress")}</span>
             {emailName ? (
               <div className="flex items-center gap-2 min-w-0">
                 <span className="truncate">{`${emailName}@${currentDomain}`}</span>
@@ -240,10 +243,10 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
             onClick={() => setOpen(false)}
             disabled={loading}
           >
-            取消
+            {tc("cancel")}
           </Button>
           <Button onClick={createEmail} disabled={loading}>
-            {loading ? "创建中..." : "创建"}
+            {loading ? t("create.creating") : t("create.createButton")}
           </Button>
         </div>
       </DialogContent>

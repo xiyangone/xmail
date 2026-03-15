@@ -3,11 +3,13 @@ import { auth } from "@/lib/auth"
 import { Shield, Mail, Clock } from "lucide-react"
 import { ActionButton } from "@/components/home/action-button"
 import { FeatureCard } from "@/components/home/feature-card"
+import { getTranslations } from "next-intl/server"
 
 export const runtime = "edge"
 
 export default async function Home() {
   const session = await auth()
+  const t = await getTranslations("home")
 
   return (
     <div className="bg-gradient-to-b from-gray-50 to-gray-100 dark:from-[#2a2140] dark:to-[#3d2e5a] h-screen">
@@ -25,25 +27,25 @@ export default async function Home() {
                   </span>
                 </h1>
                 <p className="text-lg sm:text-xl md:text-2xl text-gray-600 dark:text-gray-300 tracking-wide">
-                  夕阳邮箱服务 ✨
+                  {t("subtitle")}
                 </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 px-4 sm:px-0">
                 <FeatureCard
                   icon={<Shield className="w-5 h-5" />}
-                  title="隐私保护"
-                  description="保护您的真实邮箱地址"
+                  title={t("features.privacy.title")}
+                  description={t("features.privacy.description")}
                 />
                 <FeatureCard
                   icon={<Mail className="w-5 h-5" />}
-                  title="即时收件"
-                  description="实时接收邮件通知"
+                  title={t("features.instant.title")}
+                  description={t("features.instant.description")}
                 />
                 <FeatureCard
                   icon={<Clock className="w-5 h-5" />}
-                  title="自动过期"
-                  description="到期自动失效"
+                  title={t("features.autoExpiry.title")}
+                  description={t("features.autoExpiry.description")}
                 />
               </div>
 

@@ -18,6 +18,7 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Settings } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
 
 export function WebsiteConfigContent() {
   const [defaultRole, setDefaultRole] = useState<string>("")
@@ -31,6 +32,9 @@ export function WebsiteConfigContent() {
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
   const router = useRouter()
+  const t = useTranslations("websiteConfig")
+  const tr = useTranslations("roles")
+  const tc = useTranslations("common")
 
   useEffect(() => {
     fetchConfig()
@@ -39,7 +43,7 @@ export function WebsiteConfigContent() {
   const fetchConfig = async () => {
     const res = await fetch("/api/config")
     if (res.ok) {
-      const data = await res.json() as { 
+      const data = await res.json() as {
         defaultRole: Exclude<Role, typeof ROLES.EMPEROR>,
         emailDomains: string,
         adminContact: string,
@@ -66,8 +70,8 @@ export function WebsiteConfigContent() {
       const res = await fetch("/api/config", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          defaultRole, 
+        body: JSON.stringify({
+          defaultRole,
           emailDomains,
           adminContact,
           maxEmails: maxEmails || EMAIL_CONFIG.MAX_ACTIVE_EMAILS.toString(),
@@ -80,17 +84,17 @@ export function WebsiteConfigContent() {
 
       if (!res.ok) {
         const errorData = await res.json() as { error?: string }
-        throw new Error(errorData.error || "保存失败")
+        throw new Error(errorData.error || t("saveFailed"))
       }
 
       toast({
-        title: "保存成功",
-        description: "网站设置已更新",
+        title: t("saveSuccess"),
+        description: t("websiteUpdated"),
       })
     } catch (error) {
       toast({
-        title: "保存失败",
-        description: error instanceof Error ? error.message : "请稍后重试",
+        title: t("saveFailed"),
+        description: error instanceof Error ? error.message : tc("pleaseRetryLater"),
         variant: "destructive",
       })
     } finally {
@@ -103,10 +107,10 @@ export function WebsiteConfigContent() {
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
           <Label htmlFor="allow-register" className="text-sm font-medium">
-            允许新用户注册
+            {t("allowRegister")}
           </Label>
           <p className="text-xs text-muted-foreground">
-            关闭后，/api/auth/register 将拒绝新注册
+            {t("allowRegisterDesc")}
           </p>
         </div>
         <Switch
@@ -117,43 +121,43 @@ export function WebsiteConfigContent() {
       </div>
 
       <div className="flex items-center gap-4">
-        <span className="text-sm">新用户默认角色:</span>
+        <span className="text-sm">{t("defaultRole")}</span>
         <Select value={defaultRole} onValueChange={setDefaultRole}>
           <SelectTrigger className="w-32">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ROLES.DUKE}>公爵</SelectItem>
-            <SelectItem value={ROLES.KNIGHT}>骑士</SelectItem>
-            <SelectItem value={ROLES.CIVILIAN}>平民</SelectItem>
+            <SelectItem value={ROLES.DUKE}>{tr("duke")}</SelectItem>
+            <SelectItem value={ROLES.KNIGHT}>{tr("knight")}</SelectItem>
+            <SelectItem value={ROLES.CIVILIAN}>{tr("civilian")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <div className="space-y-2">
-        <span className="text-sm font-medium">邮箱域名:</span>
-        <DomainEditor 
+        <span className="text-sm font-medium">{t("emailDomains")}</span>
+        <DomainEditor
           value={emailDomains}
           onChange={setEmailDomains}
-          placeholder="输入域名，如: moemail.app"
+          placeholder={t("domainPlaceholder")}
         />
       </div>
 
       <div className="flex items-center gap-4">
-        <span className="text-sm">管理员联系方式:</span>
+        <span className="text-sm">{t("adminContact")}</span>
         <div className="flex-1">
-          <Input 
+          <Input
             value={adminContact}
             onChange={(e) => setAdminContact(e.target.value)}
-            placeholder="如: 微信号、邮箱等"
+            placeholder={t("adminContactPlaceholder")}
           />
         </div>
       </div>
 
       <div className="flex items-center gap-4">
-        <span className="text-sm">最大邮箱数量:</span>
+        <span className="text-sm">{t("maxEmails")}</span>
         <div className="flex-1">
-          <Input 
+          <Input
             type="number"
             min="1"
             max="100"
@@ -166,14 +170,14 @@ export function WebsiteConfigContent() {
 
       <div className="space-y-4 pt-4 border-t">
         <div className="space-y-2">
-          <Label className="text-sm font-medium">消息自动刷新配置</Label>
+          <Label className="text-sm font-medium">{t("pollConfig")}</Label>
           <p className="text-xs text-muted-foreground">
-            设置邮件列表的自动刷新间隔时间（毫秒）
+            {t("pollConfigDesc")}
           </p>
         </div>
 
         <div className="flex items-center gap-4">
-          <span className="text-sm">刷新间隔:</span>
+          <span className="text-sm">{t("pollInterval")}</span>
           <div className="flex-1 flex items-center gap-2">
             <Input
               type="number"
@@ -185,7 +189,7 @@ export function WebsiteConfigContent() {
               placeholder={`默认为 ${EMAIL_CONFIG.POLL_INTERVAL} 毫秒`}
             />
             <span className="text-xs text-muted-foreground whitespace-nowrap">
-              ({(parseInt(messagePollInterval) / 1000).toFixed(0)} 秒)
+              {t("pollIntervalSeconds", { seconds: (parseInt(messagePollInterval) / 1000).toFixed(0) })}
             </span>
           </div>
         </div>
@@ -193,16 +197,16 @@ export function WebsiteConfigContent() {
 
       <div className="space-y-4 pt-4 border-t">
         <div className="space-y-2">
-          <Label className="text-sm font-medium">邮箱前缀生成配置</Label>
+          <Label className="text-sm font-medium">{t("prefixConfig")}</Label>
           <p className="text-xs text-muted-foreground">
-            用户不输入前缀时，系统将根据以下配置自动生成
+            {t("prefixConfigDesc")}
           </p>
         </div>
 
         <div className="flex items-center gap-4">
-          <span className="text-sm">前缀长度:</span>
+          <span className="text-sm">{t("prefixLength")}</span>
           <div className="flex-1">
-            <Input 
+            <Input
               type="number"
               min="4"
               max="20"
@@ -214,7 +218,7 @@ export function WebsiteConfigContent() {
         </div>
 
         <div className="flex items-center gap-4">
-          <span className="text-sm">生成格式:</span>
+          <span className="text-sm">{t("prefixFormat")}</span>
           <div className="flex-1">
             <Select value={emailPrefixFormat} onValueChange={setEmailPrefixFormat}>
               <SelectTrigger>
@@ -222,25 +226,25 @@ export function WebsiteConfigContent() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={EMAIL_PREFIX_FORMATS.RANDOM}>
-                  随机字符串（字母+数字）
+                  {t("formatRandom")}
                 </SelectItem>
                 <SelectItem value={EMAIL_PREFIX_FORMATS.RANDOM_ALPHA}>
-                  纯随机字母（无数字）
+                  {t("formatRandomAlpha")}
                 </SelectItem>
                 <SelectItem value={EMAIL_PREFIX_FORMATS.NAME_NUMBER}>
-                  名字+随机数字
+                  {t("formatNameNumber")}
                 </SelectItem>
                 <SelectItem value={EMAIL_PREFIX_FORMATS.NAME_DATE}>
-                  名字+日期（MMDD）
+                  {t("formatNameDate")}
                 </SelectItem>
                 <SelectItem value={EMAIL_PREFIX_FORMATS.NAME_YEAR}>
-                  名字+年份（YYYY）
+                  {t("formatNameYear")}
                 </SelectItem>
                 <SelectItem value={EMAIL_PREFIX_FORMATS.RANDOM_DATE}>
-                  随机字符串+日期（MMDD）
+                  {t("formatRandomDate")}
                 </SelectItem>
                 <SelectItem value={EMAIL_PREFIX_FORMATS.RANDOM_YEAR}>
-                  随机字符串+年份（YYYY）
+                  {t("formatRandomYear")}
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -249,22 +253,22 @@ export function WebsiteConfigContent() {
       </div>
 
       <div className="pt-4 border-t">
-        <Button 
+        <Button
           variant="outline"
           onClick={() => router.push("/admin/settings/cleanup")}
           className="w-full gap-2"
         >
           <Settings className="w-4 h-4" />
-          清理与到期策略
+          {t("cleanupPolicy")}
         </Button>
       </div>
 
-      <Button 
+      <Button
         onClick={handleSave}
         disabled={loading}
         className="w-full"
       >
-        保存
+        {tc("save")}
       </Button>
     </div>
   )

@@ -6,6 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useTheme } from "next-themes";
 import { useToast } from "@/components/ui/use-toast";
+import { useTranslations } from "next-intl";
 
 interface Message {
   id: string;
@@ -38,6 +39,8 @@ export function MessageView({
   const [viewMode, setViewMode] = useState<ViewMode>("html");
   const { theme } = useTheme();
   const { toast } = useToast();
+  const t = useTranslations("email");
+  const tc = useTranslations("common");
 
   useEffect(() => {
     const fetchMessage = async () => {
@@ -54,10 +57,10 @@ export function MessageView({
         if (!response.ok) {
           const errorData = await response.json();
           const errorMessage =
-            (errorData as { error?: string }).error || "获取邮件详情失败";
+            (errorData as { error?: string }).error || t("fetchDetailFailed");
           setError(errorMessage);
           toast({
-            title: "错误",
+            title: tc("error"),
             description: errorMessage,
             variant: "destructive",
           });
@@ -70,10 +73,10 @@ export function MessageView({
           setViewMode("text");
         }
       } catch (error) {
-        const errorMessage = "网络错误，请稍后重试";
+        const errorMessage = tc("networkError");
         setError(errorMessage);
         toast({
-          title: "错误",
+          title: tc("error"),
           description: errorMessage,
           variant: "destructive",
         });
@@ -84,7 +87,7 @@ export function MessageView({
     };
 
     fetchMessage();
-  }, [emailId, messageId, messageType, toast]);
+  }, [emailId, messageId, messageType, toast, t, tc]);
 
   const iframeSrcDoc = useCallback(() => {
     if (viewMode !== "html" || !message?.html) return undefined;
@@ -154,7 +157,7 @@ export function MessageView({
     return (
       <div className="flex items-center justify-center h-32">
         <Loader2 className="w-5 h-5 animate-spin text-primary/60" />
-        <span className="ml-2 text-sm text-gray-500">加载邮件详情...</span>
+        <span className="ml-2 text-sm text-gray-500">{t("loadingDetail")}</span>
       </div>
     );
   }
@@ -167,7 +170,7 @@ export function MessageView({
           onClick={() => window.location.reload()}
           className="text-xs text-primary hover:underline"
         >
-          点击重试
+          {tc("clickToRetry")}
         </button>
       </div>
     );
@@ -180,13 +183,12 @@ export function MessageView({
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm p-4 space-y-3 border-b border-primary/20 shadow-sm">
         <h3 className="text-base font-bold">{message.subject}</h3>
         <div className="text-xs text-gray-500 space-y-1">
-          {message.from_address && <p>发件人：{message.from_address}</p>}
-          {message.to_address && <p>收件人：{message.to_address}</p>}
+          {message.from_address && <p>{t("from", { address: message.from_address })}</p>}
+          {message.to_address && <p>{t("to", { address: message.to_address })}</p>}
           <p>
-            时间：
-            {new Date(
+            {t("time", { time: new Date(
               message.sent_at || message.received_at || 0
-            ).toLocaleString()}
+            ).toLocaleString() })}
           </p>
         </div>
       </div>
@@ -204,7 +206,7 @@ export function MessageView({
                 htmlFor="html"
                 className="text-xs cursor-pointer font-medium"
               >
-                HTML 格式
+                {t("htmlView")}
               </Label>
             </div>
             <div className="flex items-center space-x-2">
@@ -213,7 +215,7 @@ export function MessageView({
                 htmlFor="text"
                 className="text-xs cursor-pointer font-medium"
               >
-                纯文本格式
+                {t("textView")}
               </Label>
             </div>
           </RadioGroup>
@@ -226,7 +228,7 @@ export function MessageView({
             className="absolute inset-0 w-full h-full border-0 bg-transparent"
             sandbox="allow-popups"
             srcDoc={iframeSrcDoc()}
-            title="邮件内容"
+            title={t("messageContent")}
           />
         ) : (
           <div className="p-4 text-sm whitespace-pre-wrap">

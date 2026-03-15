@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
+import { useTranslations } from "next-intl"
 
 interface EmailServiceConfig {
   enabled: boolean
@@ -30,6 +31,8 @@ export function EmailServiceConfigContent() {
   const [loading, setLoading] = useState(false)
   const [showToken, setShowToken] = useState(false)
   const { toast } = useToast()
+  const t = useTranslations("emailService")
+  const tc = useTranslations("common")
 
   useEffect(() => {
     fetchConfig()
@@ -64,17 +67,17 @@ export function EmailServiceConfigContent() {
 
       if (!res.ok) {
         const error = await res.json() as { error: string }
-        throw new Error(error.error || "保存失败")
+        throw new Error(error.error || t("saveFailed"))
       }
 
       toast({
-        title: "保存成功",
-        description: "Resend 发件服务配置已更新",
+        title: t("saveSuccess"),
+        description: t("resendUpdated"),
       })
     } catch (error) {
       toast({
-        title: "保存失败",
-        description: error instanceof Error ? error.message : "请稍后重试",
+        title: t("saveFailed"),
+        description: error instanceof Error ? error.message : tc("pleaseRetryLater"),
         variant: "destructive",
       })
     } finally {
@@ -87,10 +90,10 @@ export function EmailServiceConfigContent() {
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
           <Label htmlFor="enabled" className="text-sm font-medium">
-            启用 Resend 发件服务
+            {t("enableResend")}
           </Label>
           <p className="text-xs text-muted-foreground">
-            开启后将使用 Resend 发送邮件
+            {t("enableResendDesc")}
           </p>
         </div>
         <Switch
@@ -114,7 +117,7 @@ export function EmailServiceConfigContent() {
                 type={showToken ? "text" : "password"}
                 value={config.apiKey}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfig((prev: EmailServiceConfig) => ({ ...prev, apiKey: e.target.value }))}
-                placeholder="输入 Resend API Key"
+                placeholder={t("apiKeyPlaceholder")}
               />
               <Button
                 type="button"
@@ -134,43 +137,43 @@ export function EmailServiceConfigContent() {
 
           <div className="space-y-2">
             <Label className="text-sm font-medium">
-              允许使用发件功能的角色
+              {t("allowedRoles")}
             </Label>
             <div className="space-y-4">
               <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg text-sm">
                 <p className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
                   <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  固定权限规则
+                  {t("fixedRules")}
                 </p>
                 <div className="space-y-2 text-blue-800">
                   <div className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                    <span><strong>Emperor (皇帝)</strong> - 可以无限发件，不受任何限制</span>
+                    <span><strong>{t("emperorRule")}</strong></span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
-                    <span><strong>Civilian (平民)</strong> - 永远不能发件</span>
+                    <span><strong>{t("civilianRule")}</strong></span>
                   </div>
                 </div>
               </div>
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                  <p className="text-sm font-medium text-gray-900">可配置的角色权限</p>
+                  <p className="text-sm font-medium text-gray-900">{t("configurableRoles")}</p>
                 </div>
                 {[
-                  { value: "duke", label: "Duke (公爵)", key: "duke" as const },
-                  { value: "knight", label: "Knight (骑士)", key: "knight" as const }
+                  { value: "duke", label: t("dukeLabel"), key: "duke" as const },
+                  { value: "knight", label: t("knightLabel"), key: "knight" as const }
                 ].map((role) => {
                   const isDisabled = config.roleLimits[role.key] === -1
                   const isEnabled = !isDisabled
-                  
+
                   return (
-                    <div 
-                      key={role.value} 
+                    <div
+                      key={role.value}
                       className={`group relative p-4 border-2 rounded-xl transition-all duration-200 ${
                         isEnabled
-                          ? 'border-primary/30 bg-primary/5 shadow-sm' 
+                          ? 'border-primary/30 bg-primary/5 shadow-sm'
                           : 'border-gray-200 hover:border-primary/20 hover:shadow-sm'
                       }`}
                     >
@@ -192,8 +195,8 @@ export function EmailServiceConfigContent() {
                             />
                           </div>
                           <div>
-                            <Label 
-                              htmlFor={`role-${role.value}`} 
+                            <Label
+                              htmlFor={`role-${role.value}`}
                               className="text-base font-semibold cursor-pointer select-none flex items-center gap-2"
                             >
                               <span className="text-2xl">
@@ -202,19 +205,19 @@ export function EmailServiceConfigContent() {
                               {role.label}
                             </Label>
                             <p className="text-xs text-muted-foreground mt-1">
-                              {isEnabled ? '已启用发件权限' : '未启用发件权限'}
+                              {isEnabled ? t("sendEnabled") : t("sendDisabled")}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center space-x-3">
                           <div className="text-right">
-                            <Label className="text-xs font-medium text-gray-600 block mb-1">每日限制</Label>
+                            <Label className="text-xs font-medium text-gray-600 block mb-1">{t("dailyLimit")}</Label>
                             <div className="flex items-center space-x-2">
                               <Input
                                 type="number"
                                 min="-1"
                                 value={config.roleLimits[role.key]}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                                   setConfig((prev: EmailServiceConfig) => ({
                                     ...prev,
                                     roleLimits: {
@@ -227,9 +230,9 @@ export function EmailServiceConfigContent() {
                                 placeholder="0"
                                 disabled={isDisabled}
                               />
-                              <span className="text-xs text-muted-foreground whitespace-nowrap">封/天</span>
+                              <span className="text-xs text-muted-foreground whitespace-nowrap">{t("perDay")}</span>
                             </div>
-                            <p className="text-xs text-muted-foreground mt-1">0 = 无限制</p>
+                            <p className="text-xs text-muted-foreground mt-1">{t("unlimitedHint")}</p>
                           </div>
                         </div>
                       </div>
@@ -242,12 +245,12 @@ export function EmailServiceConfigContent() {
         </>
       )}
 
-      <Button 
+      <Button
         onClick={handleSave}
         disabled={loading}
         className="w-full"
       >
-        {loading ? "保存中..." : "保存配置"}
+        {loading ? t("saving") : t("saveConfig")}
       </Button>
     </div>
   )

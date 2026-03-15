@@ -30,6 +30,7 @@ import {
 import { MessageListSkeleton } from "@/components/ui/loading-skeletons";
 import { EmptyState } from "@/components/ui/empty-state";
 import { extractVerificationCodeFromMessage } from "@/lib/verification-code";
+import { useTranslations } from "next-intl";
 
 interface Message {
   id: string;
@@ -88,6 +89,8 @@ export function MessageList({
   const { config } = useConfig();
   const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null);
   const [errorCount, setErrorCount] = useState(0); // 错误计数用于指数退避
+  const t = useTranslations("email");
+  const tc = useTranslations("common");
 
   // 当 messages 改变时更新 ref
   useEffect(() => {
@@ -271,7 +274,7 @@ export function MessageList({
       if (!response.ok) {
         const data = await response.json();
         toast({
-          title: "错误",
+          title: tc("error"),
           description: (data as { error: string }).error,
           variant: "destructive",
         });
@@ -283,8 +286,8 @@ export function MessageList({
       }
 
       toast({
-        title: "成功",
-        description: "邮件已删除",
+        title: tc("success"),
+        description: t("delete.messageDeletd"),
       });
 
       // 强制刷新列表,清除缓存
@@ -292,8 +295,8 @@ export function MessageList({
       await fetchMessages(undefined, true);
     } catch {
       toast({
-        title: "错误",
-        description: "删除邮件失败",
+        title: tc("error"),
+        description: t("delete.messageFailed"),
         variant: "destructive",
       });
     } finally {
@@ -306,14 +309,14 @@ export function MessageList({
       await navigator.clipboard.writeText(code);
       setCopiedCodeId(messageId);
       toast({
-        title: "已复制",
-        description: `验证码 ${code} 已复制到剪贴板`,
+        title: tc("copied"),
+        description: t("verificationCodeCopied", { code }),
       });
       setTimeout(() => setCopiedCodeId(null), 2000);
     } catch {
       toast({
-        title: "复制失败",
-        description: "无法复制到剪贴板",
+        title: tc("copyFailed"),
+        description: tc("copyFailed"),
         variant: "destructive",
       });
     }
@@ -406,7 +409,7 @@ export function MessageList({
             )}
           </div>
           <span className="text-xs text-gray-500">
-            {total > 0 ? `${total} 封邮件` : "暂无邮件"}
+            {total > 0 ? t("messageCount", { count: total }) : t("noMessages")}
           </span>
         </div>
 
@@ -441,10 +444,10 @@ export function MessageList({
                                 e.stopPropagation();
                                 handleCopyCode(verificationCode, message.id);
                               }}
-                              title="点击复制验证码"
+                              title={t("copyVerificationCode")}
                             >
                               <span className="text-[10px] text-orange-600 dark:text-orange-400 font-medium">
-                                验证码
+                                {t("verificationCode")}
                               </span>
                               <span
                                 className="text-sm font-bold text-orange-700 dark:text-orange-300 tracking-wider"
@@ -491,7 +494,7 @@ export function MessageList({
               })}
               {loadingMore && (
                 <div className="text-center text-sm text-gray-500 py-2">
-                  加载更多...
+                  {tc("loadingMore")}
                 </div>
               )}
             </div>
@@ -499,12 +502,12 @@ export function MessageList({
             <EmptyState
               icon={messageType === "sent" ? SendIcon : Inbox}
               title={
-                messageType === "sent" ? "暂无发送的邮件" : "暂无收到的邮件"
+                messageType === "sent" ? t("noSentMessages") : t("noReceivedMessages")
               }
               description={
                 messageType === "sent"
-                  ? "使用此邮箱发送邮件后，将在这里显示"
-                  : "当有人向此邮箱发送邮件时，将在这里显示"
+                  ? t("sentHint")
+                  : t("receivedHint")
               }
             />
           )}
@@ -516,18 +519,18 @@ export function MessageList({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>确认删除</AlertDialogTitle>
+            <AlertDialogTitle>{t("delete.confirmTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              确定要删除邮件 {messageToDelete?.subject} 吗？
+              {t("delete.confirmMessage", { subject: messageToDelete?.subject ?? "" })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogCancel>{tc("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive hover:bg-destructive/90"
               onClick={() => messageToDelete && handleDelete(messageToDelete)}
             >
-              删除
+              {tc("delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

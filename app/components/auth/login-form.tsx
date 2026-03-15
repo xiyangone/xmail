@@ -15,6 +15,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Github, Loader2, KeyRound, User2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 interface FormErrors {
   username?: string;
@@ -32,6 +33,8 @@ export function LoginForm() {
   const [activeTab, setActiveTab] = useState("login");
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const { toast } = useToast();
+  const t = useTranslations("auth");
+  const tc = useTranslations("common");
 
   const loginUsernameRef = useRef<HTMLInputElement>(null);
   const registerUsernameRef = useRef<HTMLInputElement>(null);
@@ -118,25 +121,25 @@ export function LoginForm() {
 
   const validateLoginForm = () => {
     const newErrors: FormErrors = {};
-    if (!username) newErrors.username = "请输入用户名";
-    if (!password) newErrors.password = "请输入密码";
-    if (username.includes("@")) newErrors.username = "用户名不能包含 @ 符号";
+    if (!username) newErrors.username = t("errors.usernameRequired");
+    if (!password) newErrors.password = t("errors.passwordRequired");
+    if (username.includes("@")) newErrors.username = t("errors.usernameNoAt");
     if (password && password.length < 8)
-      newErrors.password = "密码长度必须大于等于8位";
+      newErrors.password = t("errors.passwordMinLength");
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const validateRegisterForm = () => {
     const newErrors: FormErrors = {};
-    if (!username) newErrors.username = "请输入用户名";
-    if (!password) newErrors.password = "请输入密码";
-    if (username.includes("@")) newErrors.username = "用户名不能包含 @ 符号";
+    if (!username) newErrors.username = t("errors.usernameRequired");
+    if (!password) newErrors.password = t("errors.passwordRequired");
+    if (username.includes("@")) newErrors.username = t("errors.usernameNoAt");
     if (password && password.length < 8)
-      newErrors.password = "密码长度必须大于等于8位";
-    if (!confirmPassword) newErrors.confirmPassword = "请确认密码";
+      newErrors.password = t("errors.passwordMinLength");
+    if (!confirmPassword) newErrors.confirmPassword = t("errors.passwordMismatch");
     if (password !== confirmPassword)
-      newErrors.confirmPassword = "两次输入的密码不一致";
+      newErrors.confirmPassword = t("errors.passwordMismatch");
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -155,8 +158,8 @@ export function LoginForm() {
 
       if (result?.error) {
         toast({
-          title: "登录失败",
-          description: "用户名或密码错误",
+          title: t("errors.loginFailed"),
+          description: t("errors.invalidCredentials"),
           variant: "destructive",
         });
         resetTurnstile();
@@ -167,8 +170,8 @@ export function LoginForm() {
       window.location.href = "/";
     } catch (error) {
       toast({
-        title: "登录失败",
-        description: error instanceof Error ? error.message : "请稍后重试",
+        title: t("errors.loginFailed"),
+        description: error instanceof Error ? error.message : tc("pleaseRetryLater"),
         variant: "destructive",
       });
       resetTurnstile();
@@ -191,8 +194,8 @@ export function LoginForm() {
 
       if (!response.ok) {
         toast({
-          title: "注册失败",
-          description: data.error || "请稍后重试",
+          title: t("errors.registerFailed"),
+          description: data.error || tc("pleaseRetryLater"),
           variant: "destructive",
         });
         resetTurnstile();
@@ -210,8 +213,8 @@ export function LoginForm() {
 
       if (result?.error) {
         toast({
-          title: "登录失败",
-          description: "自动登录失败，请手动登录",
+          title: t("errors.loginFailed"),
+          description: t("autoLoginFailed"),
           variant: "destructive",
         });
         resetTurnstile();
@@ -222,8 +225,8 @@ export function LoginForm() {
       window.location.href = "/";
     } catch (error) {
       toast({
-        title: "注册失败",
-        description: error instanceof Error ? error.message : "请稍后重试",
+        title: t("errors.registerFailed"),
+        description: error instanceof Error ? error.message : tc("pleaseRetryLater"),
         variant: "destructive",
       });
       resetTurnstile();
@@ -234,8 +237,8 @@ export function LoginForm() {
   const handleCardKeyLogin = async () => {
     if (!cardKey.trim()) {
       toast({
-        title: "错误",
-        description: "请输入卡密",
+        title: tc("error"),
+        description: t("errors.cardKeyRequired"),
         variant: "destructive",
       });
       return;
@@ -251,7 +254,7 @@ export function LoginForm() {
 
       if (result?.error) {
         toast({
-          title: "卡密登录失败",
+          title: t("errors.cardKeyLoginFailed"),
           description: result.error,
           variant: "destructive",
         });
@@ -261,14 +264,14 @@ export function LoginForm() {
       }
 
       toast({
-        title: "登录成功",
-        description: "欢迎使用临时邮箱服务",
+        title: t("loginSuccess"),
+        description: t("loginSuccessDesc"),
       });
       window.location.href = "/";
     } catch (error) {
       toast({
-        title: "卡密登录失败",
-        description: error instanceof Error ? error.message : "请稍后重试",
+        title: t("errors.cardKeyLoginFailed"),
+        description: error instanceof Error ? error.message : tc("pleaseRetryLater"),
         variant: "destructive",
       });
       resetTurnstile();
@@ -293,18 +296,18 @@ export function LoginForm() {
     <Card className="w-[95%] max-w-lg border-2 border-primary/20">
       <CardHeader className="space-y-2">
         <CardTitle className="text-2xl text-center bg-gradient-to-r from-[#FF8A3D] to-[#FF5E62] bg-clip-text text-transparent">
-          欢迎使用 XiYang Mail
+          {t("welcome")}
         </CardTitle>
         <CardDescription className="text-center">
-          夕阳邮箱服务 (。・∀・)ノ
+          {t("subtitle")}
         </CardDescription>
       </CardHeader>
       <CardContent className="px-6">
         <Tabs defaultValue="login" className="w-full" onValueChange={clearForm}>
           <TabsList className="grid w-full grid-cols-3 mb-6">
-            <TabsTrigger value="login">登录</TabsTrigger>
-            <TabsTrigger value="register">注册</TabsTrigger>
-            <TabsTrigger value="cardkey">卡密</TabsTrigger>
+            <TabsTrigger value="login">{t("loginTab")}</TabsTrigger>
+            <TabsTrigger value="register">{t("registerTab")}</TabsTrigger>
+            <TabsTrigger value="cardkey">{t("cardKeyTab")}</TabsTrigger>
           </TabsList>
           <div className="min-h-[220px]">
             <TabsContent value="login" className="space-y-4 mt-0">
@@ -321,7 +324,7 @@ export function LoginForm() {
                         errors.username &&
                           "border-destructive focus-visible:ring-destructive"
                       )}
-                      placeholder="用户名"
+                      placeholder={t("usernamePlaceholder")}
                       value={username}
                       onChange={(e) => {
                         setUsername(e.target.value);
@@ -348,7 +351,7 @@ export function LoginForm() {
                           "border-destructive focus-visible:ring-destructive"
                       )}
                       type="password"
-                      placeholder="密码"
+                      placeholder={t("passwordPlaceholder")}
                       value={password}
                       onChange={(e) => {
                         setPassword(e.target.value);
@@ -372,7 +375,7 @@ export function LoginForm() {
                   disabled={loading}
                 >
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  登录
+                  {t("login")}
                 </Button>
 
                 <div className="relative">
@@ -381,7 +384,7 @@ export function LoginForm() {
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
                     <span className="bg-background px-2 text-muted-foreground">
-                      或者
+                      {tc("or")}
                     </span>
                   </div>
                 </div>
@@ -392,7 +395,7 @@ export function LoginForm() {
                   onClick={handleGithubLogin}
                 >
                   <Github className="mr-2 h-4 w-4" />
-                  使用 GitHub 账号登录
+                  {t("loginWithGithub")}
                 </Button>
               </div>
             </TabsContent>
@@ -410,7 +413,7 @@ export function LoginForm() {
                         errors.username &&
                           "border-destructive focus-visible:ring-destructive"
                       )}
-                      placeholder="用户名"
+                      placeholder={t("usernamePlaceholder")}
                       value={username}
                       onChange={(e) => {
                         setUsername(e.target.value);
@@ -437,7 +440,7 @@ export function LoginForm() {
                           "border-destructive focus-visible:ring-destructive"
                       )}
                       type="password"
-                      placeholder="密码"
+                      placeholder={t("passwordPlaceholder")}
                       value={password}
                       onChange={(e) => {
                         setPassword(e.target.value);
@@ -464,7 +467,7 @@ export function LoginForm() {
                           "border-destructive focus-visible:ring-destructive"
                       )}
                       type="password"
-                      placeholder="确认密码"
+                      placeholder={t("confirmPasswordPlaceholder")}
                       value={confirmPassword}
                       onChange={(e) => {
                         setConfirmPassword(e.target.value);
@@ -488,7 +491,7 @@ export function LoginForm() {
                   disabled={loading}
                 >
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  注册
+                  {t("register")}
                 </Button>
               </div>
             </TabsContent>
@@ -502,7 +505,7 @@ export function LoginForm() {
                     <Input
                       ref={cardKeyRef}
                       className="h-9 pl-9 pr-3"
-                      placeholder="请输入卡密 (格式: XYMAIL-XXXX-XXXX-XXXX)"
+                      placeholder={t("cardKeyPlaceholder")}
                       value={cardKey}
                       onChange={(e) => {
                         setCardKey(e.target.value);
@@ -521,7 +524,7 @@ export function LoginForm() {
                   disabled={loading}
                 >
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  使用卡密登录
+                  {t("cardKeyLogin")}
                 </Button>
               </div>
             </TabsContent>

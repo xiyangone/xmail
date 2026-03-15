@@ -34,6 +34,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { EXPIRY_OPTIONS } from "@/types/email";
+import { useTranslations } from "next-intl";
 
 interface ShareDialogProps {
   emailId: string;
@@ -51,6 +52,8 @@ interface ShareLink {
 export function ShareDialog({ emailId }: ShareDialogProps) {
   const { toast } = useToast();
   const { copyToClipboard } = useCopy();
+  const t = useTranslations("email");
+  const tc = useTranslations("common");
 
   const [open, setOpen] = useState(false);
   const [shares, setShares] = useState<ShareLink[]>([]);
@@ -72,7 +75,7 @@ export function ShareDialog({ emailId }: ShareDialogProps) {
     } catch (error) {
       console.error("Failed to fetch shares:", error);
       toast({
-        title: "获取分享链接失败",
+        title: t("share.fetchFailed"),
         description: String(error),
         variant: "destructive",
       });
@@ -96,12 +99,12 @@ export function ShareDialog({ emailId }: ShareDialogProps) {
       setShares((prev) => [share, ...prev]);
 
       toast({
-        title: "分享链接创建成功",
+        title: t("share.createSuccess"),
       });
     } catch (error) {
       console.error("Failed to create share:", error);
       toast({
-        title: "创建分享链接失败",
+        title: t("share.createFailed"),
         description: String(error),
         variant: "destructive",
       });
@@ -124,12 +127,12 @@ export function ShareDialog({ emailId }: ShareDialogProps) {
       setShares((prev) => prev.filter((s) => s.id !== share.id));
 
       toast({
-        title: "分享链接已删除",
+        title: t("share.deleteSuccess"),
       });
     } catch (error) {
       console.error("Failed to delete share:", error);
       toast({
-        title: "删除分享链接失败",
+        title: t("share.deleteFailed"),
         description: String(error),
         variant: "destructive",
       });
@@ -148,11 +151,11 @@ export function ShareDialog({ emailId }: ShareDialogProps) {
 
     if (success) {
       toast({
-        title: "链接已复制",
+        title: t("share.linkCopied"),
       });
     } else {
       toast({
-        title: "复制失败",
+        title: tc("copyFailed"),
         variant: "destructive",
       });
     }
@@ -183,14 +186,14 @@ export function ShareDialog({ emailId }: ShareDialogProps) {
           }}
         >
           <DialogHeader>
-            <DialogTitle>分享邮箱</DialogTitle>
-            <DialogDescription>创建分享链接，让其他人可以查看此邮箱中的邮件</DialogDescription>
+            <DialogTitle>{t("share.title")}</DialogTitle>
+            <DialogDescription>{t("share.description")}</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-6">
             {/* Create new share link */}
             <div className="space-y-3">
-              <Label className="text-sm font-medium">链接有效期</Label>
+              <Label className="text-sm font-medium">{t("share.linkExpiry")}</Label>
               <div className="flex gap-2">
                 <Select value={expiryTime} onValueChange={setExpiryTime}>
                   <SelectTrigger className="flex-1">
@@ -212,26 +215,26 @@ export function ShareDialog({ emailId }: ShareDialogProps) {
                   disabled={creating}
                   className="min-w-[100px]"
                 >
-                  {creating ? "创建中..." : "创建链接"}
+                  {creating ? t("share.creatingLink") : t("share.createLink")}
                 </Button>
               </div>
             </div>
 
             {/* Active share links */}
             <div className="space-y-3">
-              <Label className="text-sm font-medium">当前分享链接</Label>
+              <Label className="text-sm font-medium">{t("share.currentLinks")}</Label>
               <div className="max-h-[240px] overflow-y-auto">
                 {loading ? (
                   <div className="text-sm text-gray-500 text-center py-8 flex flex-col items-center gap-2">
                     <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                    <span>加载中...</span>
+                    <span>{tc("loading")}</span>
                   </div>
                 ) : shares.length === 0 ? (
                   <div className="text-sm text-gray-500 text-center py-8 flex flex-col items-center gap-2">
                     <div className="text-3xl">📭</div>
                     <div>
-                      <div className="font-medium mb-0.5">暂无分享链接</div>
-                      <div className="text-xs text-muted-foreground">创建链接后将在此显示</div>
+                      <div className="font-medium mb-0.5">{t("share.noLinks")}</div>
+                      <div className="text-xs text-muted-foreground">{t("share.noLinksHint")}</div>
                     </div>
                   </div>
                 ) : (
@@ -299,7 +302,7 @@ export function ShareDialog({ emailId }: ShareDialogProps) {
                           <div className="text-[11px] text-muted-foreground space-y-1">
                             <div className="flex items-center justify-between">
                               <span>
-                                创建时间: {new Date(
+                                {tc("createdAt", { time: new Date(
                                   typeof share.createdAt === "number"
                                     ? share.createdAt
                                     : share.createdAt
@@ -310,18 +313,18 @@ export function ShareDialog({ emailId }: ShareDialogProps) {
                                   hour: "2-digit",
                                   minute: "2-digit",
                                   second: "2-digit",
-                                })}
+                                }) })}
                               </span>
                               {isExpired && (
                                 <span className="text-destructive font-medium flex items-center gap-1">
                                   <span className="w-1.5 h-1.5 bg-destructive rounded-full"></span>
-                                  已过期
+                                  {tc("expired")}
                                 </span>
                               )}
                             </div>
                             <div>
-                              过期时间: {share.expiresAt
-                                ? new Date(
+                              {share.expiresAt
+                                ? tc("expiresAtTime", { time: new Date(
                                     typeof share.expiresAt === "number"
                                       ? share.expiresAt
                                       : share.expiresAt
@@ -332,8 +335,8 @@ export function ShareDialog({ emailId }: ShareDialogProps) {
                                     hour: "2-digit",
                                     minute: "2-digit",
                                     second: "2-digit",
-                                  })
-                                : "永久"}
+                                  }) })
+                                : tc("expiresAtTime", { time: tc("neverExpires") })}
                             </div>
                           </div>
                         </div>
@@ -353,18 +356,18 @@ export function ShareDialog({ emailId }: ShareDialogProps) {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>确认删除</AlertDialogTitle>
+            <AlertDialogTitle>{t("delete.confirmTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              确定要删除这个分享链接吗？删除后该链接将无法访问。
+              {t("share.deleteConfirm")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogCancel>{tc("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive hover:bg-destructive/90"
               onClick={() => deleteTarget && deleteShare(deleteTarget)}
             >
-              删除
+              {tc("delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -372,4 +375,3 @@ export function ShareDialog({ emailId }: ShareDialogProps) {
     </>
   );
 }
-

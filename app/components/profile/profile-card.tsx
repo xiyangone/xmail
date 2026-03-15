@@ -10,6 +10,7 @@ import { useRolePermission } from "@/hooks/use-role-permission"
 import { PERMISSIONS } from "@/lib/permissions"
 import { CollapsibleSection } from "./collapsible-section"
 import dynamic from "next/dynamic"
+import { useTranslations } from "next-intl"
 
 // 动态导入配置组件,提升页面加载速度
 const WebhookConfig = dynamic(() => import("./webhook-config").then(mod => ({ default: mod.WebhookConfig })), {
@@ -29,13 +30,6 @@ interface ProfileCardProps {
   user: User
 }
 
-const roleConfigs = {
-  emperor: { name: '皇帝', icon: Crown },
-  duke: { name: '公爵', icon: Gem },
-  knight: { name: '骑士', icon: Sword },
-  civilian: { name: '平民', icon: User2 },
-} as const
-
 export function ProfileCard({ user }: ProfileCardProps) {
   const router = useRouter()
   const { checkPermission } = useRolePermission()
@@ -43,6 +37,16 @@ export function ProfileCard({ user }: ProfileCardProps) {
   const canPromote = checkPermission(PERMISSIONS.PROMOTE_USER)
   const canManageConfig = checkPermission(PERMISSIONS.MANAGE_CONFIG)
   const canManageCardKeys = checkPermission(PERMISSIONS.MANAGE_CARD_KEYS)
+  const t = useTranslations("profile")
+  const tr = useTranslations("roles")
+  const ta = useTranslations("auth")
+
+  const roleConfigs = {
+    emperor: { name: tr('emperor'), icon: Crown },
+    duke: { name: tr('duke'), icon: Gem },
+    knight: { name: tr('knight'), icon: Sword },
+    civilian: { name: tr('civilian'), icon: User2 },
+  } as const
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in-up">
@@ -53,7 +57,7 @@ export function ProfileCard({ user }: ProfileCardProps) {
               <>
                 <Image
                   src={user.image}
-                  alt={user.name || "用户头像"}
+                  alt={user.name || ta("userAvatar")}
                   width={80}
                   height={80}
                   className="rounded-full ring-2 ring-primary/20 group-hover:ring-primary/40 transition-all duration-300 group-hover:scale-105"
@@ -70,14 +74,14 @@ export function ProfileCard({ user }: ProfileCardProps) {
                   // 先简单实现，后续再完善
                   <div className="flex items-center gap-1 text-xs text-primary bg-primary/10 px-2 py-0.5 rounded-full flex-shrink-0">
                     <Github className="w-3 h-3" />
-                    已关联
+                    {t("githubLinked")}
                   </div>
                 )
               }
             </div>
             <p className="text-sm text-muted-foreground truncate mt-1">
               {
-                user.email ? user.email : `用户名: ${user.username}`
+                user.email ? user.email : t("usernameLabel", { name: user.username ?? "" })
               }
             </p>
             {user.roles && (
@@ -86,7 +90,7 @@ export function ProfileCard({ user }: ProfileCardProps) {
                   const roleConfig = roleConfigs[name as keyof typeof roleConfigs]
                   const Icon = roleConfig.icon
                   return (
-                    <div 
+                    <div
                       key={name}
                       className="flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded"
                       title={roleConfig.name}
@@ -103,19 +107,19 @@ export function ProfileCard({ user }: ProfileCardProps) {
       </div>
 
       {canManageWebhook && (
-        <CollapsibleSection title="Webhook 配置" icon={Settings} storageKey="profile-webhook-open">
+        <CollapsibleSection title={t("webhookConfig")} icon={Settings} storageKey="profile-webhook-open">
           <WebhookConfig />
         </CollapsibleSection>
       )}
 
       {canManageConfig && (
-        <CollapsibleSection title="网站设置" icon={Settings} storageKey="profile-website-open">
+        <CollapsibleSection title={t("websiteSettings")} icon={Settings} storageKey="profile-website-open">
           <WebsiteConfigContent />
         </CollapsibleSection>
       )}
 
       {canManageConfig && (
-        <CollapsibleSection title="Resend 发件服务配置" icon={Zap} storageKey="profile-email-service-open">
+        <CollapsibleSection title={t("resendConfig")} icon={Zap} storageKey="profile-email-service-open">
           <EmailServiceConfigContent />
         </CollapsibleSection>
       )}
@@ -128,18 +132,18 @@ export function ProfileCard({ user }: ProfileCardProps) {
             <div className="flex items-center gap-4 flex-1 min-w-0">
               <CreditCard className="w-6 h-6 text-primary flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-semibold">卡密管理</h3>
+                <h3 className="text-lg font-semibold">{t("cardKeyManagement")}</h3>
                 <p className="text-sm text-muted-foreground">
-                  管理卡密系统，生成和管理临时账号卡密
+                  {t("cardKeyManagementDesc")}
                 </p>
               </div>
             </div>
-            <Button 
+            <Button
               onClick={() => router.push("/admin/card-keys")}
               className="gap-2 flex-shrink-0 bg-orange-500 hover:bg-orange-600 dark:bg-purple-600 dark:hover:bg-purple-700"
             >
               <CreditCard className="w-4 h-4" />
-              管理卡密
+              {t("manageCardKeys")}
             </Button>
           </div>
         </div>
@@ -151,39 +155,39 @@ export function ProfileCard({ user }: ProfileCardProps) {
             <div className="flex items-center gap-4 flex-1 min-w-0">
               <Users className="w-6 h-6 text-primary flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-semibold">用户管理</h3>
+                <h3 className="text-lg font-semibold">{t("userManagement")}</h3>
                 <p className="text-sm text-muted-foreground">
-                  管理系统用户，查看和修改用户角色权限
+                  {t("userManagementDesc")}
                 </p>
               </div>
             </div>
-            <Button 
+            <Button
               onClick={() => router.push("/admin/users")}
               className="gap-2 flex-shrink-0 bg-orange-500 hover:bg-orange-600 dark:bg-purple-600 dark:hover:bg-purple-700"
             >
               <Users className="w-4 h-4" />
-              管理用户
+              {t("manageUsers")}
             </Button>
           </div>
         </div>
       )}
 
       <div className="flex flex-col sm:flex-row gap-4 px-1">
-        <Button 
+        <Button
           onClick={() => router.push("/moe")}
           className="gap-2 flex-1"
         >
           <Mail className="w-4 h-4" />
-          返回邮箱
+          {t("backToMailbox")}
         </Button>
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           onClick={() => signOut({ callbackUrl: "/" })}
           className="flex-1"
         >
-          退出登录
+          {ta("logout")}
         </Button>
       </div>
     </div>
   )
-} 
+}

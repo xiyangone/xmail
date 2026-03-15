@@ -5,6 +5,7 @@ import { X, Plus } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { useTranslations } from "next-intl"
 
 interface DomainEditorProps {
   value: string
@@ -17,6 +18,8 @@ export function DomainEditor({ value, onChange, placeholder }: DomainEditorProps
   const [inputValue, setInputValue] = useState("")
   const [showInput, setShowInput] = useState(false)
   const isUpdatingRef = useRef(false)
+  const t = useTranslations("domain")
+  const tc = useTranslations("common")
 
   // 初始化域名列表
   useEffect(() => {
@@ -39,10 +42,10 @@ export function DomainEditor({ value, onChange, placeholder }: DomainEditorProps
   // 添加域名
   const addDomain = () => {
     const newDomain = inputValue.trim().toLowerCase()
-    
+
     // 验证域名格式 - 支持多级子域名、连字符和带数字的顶级域名
     const domainRegex = /^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z0-9]{2,}$/i
-    
+
     if (newDomain && domainRegex.test(newDomain)) {
       if (!domains.includes(newDomain)) {
         const updatedDomains = [...domains, newDomain]
@@ -78,7 +81,7 @@ export function DomainEditor({ value, onChange, placeholder }: DomainEditorProps
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault()
     const pastedText = e.clipboardData.getData('text')
-    
+
     const pastedDomains = pastedText
       .split(/[,\s\n]+/)
       .map(d => d.trim().toLowerCase())
@@ -86,7 +89,7 @@ export function DomainEditor({ value, onChange, placeholder }: DomainEditorProps
         const domainRegex = /^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z0-9]{2,}$/i
         return d && domainRegex.test(d) && !domains.includes(d)
       })
-    
+
     if (pastedDomains.length > 0) {
       const updatedDomains = [...domains, ...pastedDomains]
       setDomains(updatedDomains)
@@ -103,16 +106,16 @@ export function DomainEditor({ value, onChange, placeholder }: DomainEditorProps
       {domains.length > 0 && (
         <div className="w-full rounded-md border p-3 flex flex-wrap gap-2 max-h-[200px] overflow-y-auto">
             {domains.map((domain) => (
-              <Badge 
-                key={domain} 
-                variant="secondary" 
+              <Badge
+                key={domain}
+                variant="secondary"
                 className="px-2 py-1 text-sm font-normal"
               >
                 <span className="mr-1">{domain}</span>
                 <button
                   onClick={() => removeDomain(domain)}
                   className="ml-1 hover:text-destructive transition-colors"
-                  aria-label={`移除 ${domain}`}
+                  aria-label={t("remove", { domain })}
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -130,7 +133,7 @@ export function DomainEditor({ value, onChange, placeholder }: DomainEditorProps
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyPress}
               onPaste={handlePaste}
-              placeholder={placeholder || "输入域名，如: example.com"}
+              placeholder={placeholder || t("placeholder")}
               className="flex-1"
               autoFocus
             />
@@ -140,7 +143,7 @@ export function DomainEditor({ value, onChange, placeholder }: DomainEditorProps
               onClick={addDomain}
               disabled={!inputValue.trim()}
             >
-              添加
+              {t("add")}
             </Button>
             <Button
               size="sm"
@@ -150,7 +153,7 @@ export function DomainEditor({ value, onChange, placeholder }: DomainEditorProps
                 setInputValue("")
               }}
             >
-              取消
+              {tc("cancel")}
             </Button>
           </>
         ) : (
@@ -161,16 +164,16 @@ export function DomainEditor({ value, onChange, placeholder }: DomainEditorProps
             className="w-full"
           >
             <Plus className="h-4 w-4 mr-1" />
-            添加域名
+            {t("addDomain")}
           </Button>
         )}
       </div>
 
       {/* 提示文字 */}
       <p className="text-xs text-muted-foreground">
-        {domains.length === 0 
-          ? "点击添加域名，支持批量粘贴多个域名" 
-          : `已添加 ${domains.length} 个域名，点击标签上的 × 可以删除`}
+        {domains.length === 0
+          ? t("emptyHint")
+          : t("countHint", { count: domains.length })}
       </p>
     </div>
   )

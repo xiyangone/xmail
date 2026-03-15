@@ -19,6 +19,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useTranslations } from "next-intl";
 
 interface SendDialogProps {
   emailId: string;
@@ -38,6 +39,8 @@ export function SendDialog({
   const [content, setContent] = useState("");
   const { toast } = useToast();
   const toInputRef = useRef<HTMLInputElement>(null);
+  const t = useTranslations("email");
+  const tc = useTranslations("common");
 
   // 对话框打开时自动聚焦到收件人输入框
   useEffect(() => {
@@ -52,8 +55,8 @@ export function SendDialog({
   const handleSend = async () => {
     if (!to.trim() || !subject.trim() || !content.trim()) {
       toast({
-        title: "错误",
-        description: "收件人、主题和内容都是必填项",
+        title: tc("error"),
+        description: t("send.requiredFields"),
         variant: "destructive",
       });
       return;
@@ -70,7 +73,7 @@ export function SendDialog({
       if (!response.ok) {
         const data = await response.json();
         toast({
-          title: "错误",
+          title: tc("error"),
           description: (data as { error: string }).error,
           variant: "destructive",
         });
@@ -78,8 +81,8 @@ export function SendDialog({
       }
 
       toast({
-        title: "成功",
-        description: "邮件已发送",
+        title: tc("success"),
+        description: t("send.success"),
       });
       setOpen(false);
       setTo("");
@@ -89,8 +92,8 @@ export function SendDialog({
       onSendSuccess?.();
     } catch {
       toast({
-        title: "错误",
-        description: "发送邮件失败",
+        title: tc("error"),
+        description: t("send.failed"),
         variant: "destructive",
       });
     } finally {
@@ -110,22 +113,22 @@ export function SendDialog({
                 className="h-8 gap-2 hover:bg-primary/10 hover:text-primary transition-colors"
               >
                 <Send className="h-4 w-4" />
-                <span className="hidden sm:inline">发送邮件</span>
+                <span className="hidden sm:inline">{t("send.button")}</span>
               </Button>
             </TooltipTrigger>
           </DialogTrigger>
           <TooltipContent className="sm:hidden">
-            <p>使用此邮箱发送新邮件</p>
+            <p>{t("send.tooltip")}</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>发送新邮件</DialogTitle>
+          <DialogTitle>{t("send.title")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="text-sm text-muted-foreground">
-            发件人: {fromAddress}
+            {t("sender", { address: fromAddress })}
           </div>
           <Input
             ref={toInputRef}
@@ -133,21 +136,21 @@ export function SendDialog({
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               setTo(e.target.value)
             }
-            placeholder="收件人邮箱地址"
+            placeholder={t("send.toPlaceholder")}
           />
           <Input
             value={subject}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               setSubject(e.target.value)
             }
-            placeholder="邮件主题"
+            placeholder={t("send.subjectPlaceholder")}
           />
           <Textarea
             value={content}
             onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
               setContent(e.target.value)
             }
-            placeholder="邮件内容"
+            placeholder={t("send.contentPlaceholder")}
             rows={6}
           />
         </div>
@@ -157,10 +160,10 @@ export function SendDialog({
             onClick={() => setOpen(false)}
             disabled={loading}
           >
-            取消
+            {tc("cancel")}
           </Button>
           <Button onClick={handleSend} disabled={loading}>
-            {loading ? "发送中..." : "发送"}
+            {loading ? t("send.sending") : t("send.send")}
           </Button>
         </div>
       </DialogContent>

@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useTranslations } from "next-intl";
 
 interface CardKey {
   id: string;
@@ -40,26 +41,28 @@ export function CardKeyPanel() {
   const [expiryDays, setExpiryDays] = useState("30");
   const [dialogOpen, setDialogOpen] = useState(false);
   const { toast } = useToast();
+  const t = useTranslations("cardKey");
+  const tc = useTranslations("common");
 
   const fetchCardKeys = useCallback(async () => {
     try {
       const response = await fetch("/api/admin/card-keys");
       if (!response.ok) {
-        throw new Error("获取卡密列表失败");
+        throw new Error(t("fetchFailed"));
       }
       const data = (await response.json()) as { cardKeys: CardKey[] };
       setCardKeys(data.cardKeys);
     } catch (error) {
       toast({
-        title: "错误",
+        title: tc("error"),
         description:
-          error instanceof Error ? error.message : "获取卡密列表失败",
+          error instanceof Error ? error.message : t("fetchFailed"),
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, t, tc]);
 
   useEffect(() => {
     fetchCardKeys();
@@ -73,8 +76,8 @@ export function CardKeyPanel() {
 
     if (addresses.length === 0) {
       toast({
-        title: "错误",
-        description: "请输入至少一个邮箱地址",
+        title: tc("error"),
+        description: t("enterAtLeastOne"),
         variant: "destructive",
       });
       return;
@@ -102,7 +105,7 @@ export function CardKeyPanel() {
       };
 
       toast({
-        title: "成功",
+        title: tc("success"),
         description: data.message,
       });
 
@@ -112,8 +115,8 @@ export function CardKeyPanel() {
       fetchCardKeys();
     } catch (error) {
       toast({
-        title: "错误",
-        description: error instanceof Error ? error.message : "生成卡密失败",
+        title: tc("error"),
+        description: error instanceof Error ? error.message : t("generateFailed"),
         variant: "destructive",
       });
     } finally {
@@ -140,8 +143,8 @@ export function CardKeyPanel() {
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast({
-      title: "已复制",
-      description: "卡密已复制到剪贴板",
+      title: tc("copied"),
+      description: t("copiedToClipboard"),
     });
   };
 
@@ -157,16 +160,16 @@ export function CardKeyPanel() {
       }
 
       toast({
-        title: "成功",
-        description: "卡密删除成功",
+        title: tc("success"),
+        description: t("deleteSuccess"),
       });
 
       // 强制刷新列表,清除缓存
       await fetchCardKeys();
     } catch (error) {
       toast({
-        title: "错误",
-        description: error instanceof Error ? error.message : "删除卡密失败",
+        title: tc("error"),
+        description: error instanceof Error ? error.message : t("deleteFailed"),
         variant: "destructive",
       });
     }
@@ -187,19 +190,19 @@ export function CardKeyPanel() {
           <DialogTrigger asChild>
             <Button size="sm">
               <Plus className="mr-2 h-4 w-4" />
-              生成卡密
+              {t("generate")}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>生成卡密</DialogTitle>
+              <DialogTitle>{t("generateTitle")}</DialogTitle>
               <DialogDescription>
-                为指定的邮箱地址生成卡密，每行一个邮箱地址
+                {t("generateDesc")}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="emails">邮箱地址</Label>
+                <Label htmlFor="emails">{t("emailAddresses")}</Label>
                 <Textarea
                   id="emails"
                   placeholder="user1@example.com&#10;user2@example.com"
@@ -209,7 +212,7 @@ export function CardKeyPanel() {
                 />
               </div>
               <div>
-                <Label htmlFor="expiry">有效期（天）</Label>
+                <Label htmlFor="expiry">{t("expiryDays")}</Label>
                 <Input
                   id="expiry"
                   type="number"
@@ -227,7 +230,7 @@ export function CardKeyPanel() {
                 {generating && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                生成卡密
+                {t("generate")}
               </Button>
             </div>
           </DialogContent>
@@ -240,9 +243,9 @@ export function CardKeyPanel() {
             <Loader2 className="w-6 h-6 text-primary" />
           </div>
           <div>
-            <h3 className="text-lg font-medium">没有卡密</h3>
+            <h3 className="text-lg font-medium">{t("noCardKeys")}</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              点击右上角的 &quot;生成卡密&quot; 按钮来创建新的卡密
+              {t("noCardKeysHint")}
             </p>
           </div>
         </div>
@@ -272,7 +275,7 @@ export function CardKeyPanel() {
                 </p>
                 {cardKey.isUsed && cardKey.usedBy && (
                   <p className="text-xs text-muted-foreground">
-                    使用者: {cardKey.usedBy.name || cardKey.usedBy.username}
+                    {t("usedBy", { name: cardKey.usedBy.name || cardKey.usedBy.username })}
                   </p>
                 )}
               </div>
@@ -281,7 +284,7 @@ export function CardKeyPanel() {
                   variant={cardKey.isUsed ? "secondary" : "default"}
                   className="text-xs"
                 >
-                  {cardKey.isUsed ? "已使用" : "未使用"}
+                  {cardKey.isUsed ? t("used") : t("unused")}
                 </Badge>
                 {!cardKey.isUsed && (
                   <Button

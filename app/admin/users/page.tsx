@@ -45,6 +45,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useTranslations } from "next-intl";
 
 interface User {
   id: string;
@@ -56,39 +57,6 @@ interface User {
   expiresAt?: string | null;
   roles?: { name: Role }[];
 }
-
-const roleConfigs = {
-  [ROLES.EMPEROR]: {
-    name: "皇帝",
-    icon: Crown,
-    bgColor: "bg-yellow-100",
-    textColor: "text-yellow-800",
-  },
-  [ROLES.DUKE]: {
-    name: "公爵",
-    icon: Gem,
-    bgColor: "bg-purple-100",
-    textColor: "text-purple-800",
-  },
-  [ROLES.KNIGHT]: {
-    name: "骑士",
-    icon: Sword,
-    bgColor: "bg-blue-100",
-    textColor: "text-blue-800",
-  },
-  [ROLES.CIVILIAN]: {
-    name: "平民",
-    icon: User2,
-    bgColor: "bg-gray-100",
-    textColor: "text-gray-800",
-  },
-  [ROLES.TEMP_USER]: {
-    name: "临时用户",
-    icon: Clock,
-    bgColor: "bg-orange-100",
-    textColor: "text-orange-800",
-  },
-} as const;
 
 type RoleWithoutEmperor = Exclude<Role, typeof ROLES.EMPEROR>;
 
@@ -112,6 +80,42 @@ export default function UsersPage() {
   const { checkPermission } = useRolePermission();
   const canPromote = checkPermission(PERMISSIONS.PROMOTE_USER);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const t = useTranslations("admin");
+  const tc = useTranslations("common");
+  const tr = useTranslations("roles");
+
+  const roleConfigs = useMemo(() => ({
+    [ROLES.EMPEROR]: {
+      name: tr("emperor"),
+      icon: Crown,
+      bgColor: "bg-yellow-100",
+      textColor: "text-yellow-800",
+    },
+    [ROLES.DUKE]: {
+      name: tr("duke"),
+      icon: Gem,
+      bgColor: "bg-purple-100",
+      textColor: "text-purple-800",
+    },
+    [ROLES.KNIGHT]: {
+      name: tr("knight"),
+      icon: Sword,
+      bgColor: "bg-blue-100",
+      textColor: "text-blue-800",
+    },
+    [ROLES.CIVILIAN]: {
+      name: tr("civilian"),
+      icon: User2,
+      bgColor: "bg-gray-100",
+      textColor: "text-gray-800",
+    },
+    [ROLES.TEMP_USER]: {
+      name: tr("tempUser"),
+      icon: Clock,
+      bgColor: "bg-orange-100",
+      textColor: "text-orange-800",
+    },
+  } as const), [tr]);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -127,22 +131,22 @@ export default function UsersPage() {
 
       const response = await fetch(`/api/admin/users?${params}`);
       if (!response.ok) {
-        throw new Error("获取用户列表失败");
+        throw new Error(t("fetchUsersFailed"));
       }
       const data = (await response.json()) as { users: User[]; total: number };
       setUsers(data.users);
       setTotal(data.total);
     } catch (error) {
       toast({
-        title: "错误",
+        title: tc("error"),
         description:
-          error instanceof Error ? error.message : "获取用户列表失败",
+          error instanceof Error ? error.message : t("fetchUsersFailed"),
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
-  }, [page, selectedRole, toast]);
+  }, [page, selectedRole, toast, t, tc]);
 
   // 自动聚焦到搜索框
   useEffect(() => {
@@ -158,14 +162,14 @@ export default function UsersPage() {
   // 使用 useMemo 缓存角色过滤器配置
   const roleFilters = useMemo(
     () => [
-      { value: "all", label: "全部", icon: Users },
-      { value: ROLES.EMPEROR, label: "皇帝", icon: Crown },
-      { value: ROLES.DUKE, label: "公爵", icon: Gem },
-      { value: ROLES.KNIGHT, label: "骑士", icon: Sword },
-      { value: ROLES.CIVILIAN, label: "平民", icon: User2 },
-      { value: ROLES.TEMP_USER, label: "临时用户", icon: Clock },
+      { value: "all", label: t("filterAll"), icon: Users },
+      { value: ROLES.EMPEROR, label: tr("emperor"), icon: Crown },
+      { value: ROLES.DUKE, label: tr("duke"), icon: Gem },
+      { value: ROLES.KNIGHT, label: tr("knight"), icon: Sword },
+      { value: ROLES.CIVILIAN, label: tr("civilian"), icon: User2 },
+      { value: ROLES.TEMP_USER, label: tr("tempUser"), icon: Clock },
     ],
-    []
+    [t, tr]
   );
 
   // 使用 useMemo 缓存过滤后的用户列表
@@ -193,19 +197,19 @@ export default function UsersPage() {
 
       if (!response.ok) {
         const error = (await response.json()) as { error: string };
-        throw new Error(error.error || "设置失败");
+        throw new Error(error.error || t("setFailed"));
       }
 
       toast({
-        title: "设置成功",
-        description: `用户角色已更新为${roleConfigs[roleName].name}`,
+        title: t("setSuccess"),
+        description: t("roleUpdated", { role: roleConfigs[roleName].name }),
       });
 
       fetchUsers();
     } catch (error) {
       toast({
-        title: "设置失败",
-        description: error instanceof Error ? error.message : "请稍后重试",
+        title: t("setFailed"),
+        description: error instanceof Error ? error.message : tc("pleaseRetryLater"),
         variant: "destructive",
       });
     }
@@ -252,8 +256,8 @@ export default function UsersPage() {
         await Promise.all(deletePromises);
 
         toast({
-          title: "删除成功",
-          description: `已删除 ${selectedUsers.length} 个用户`,
+          title: t("deleteSuccess"),
+          description: t("batchDeleteSuccess", { count: selectedUsers.length }),
         });
 
         setSelectedUsers([]);
@@ -267,20 +271,20 @@ export default function UsersPage() {
 
         if (!response.ok) {
           const error = (await response.json()) as { error: string };
-          throw new Error(error.error || "删除失败");
+          throw new Error(error.error || t("deleteFailed"));
         }
 
         toast({
-          title: "删除成功",
-          description: "用户已删除",
+          title: t("deleteSuccess"),
+          description: t("userDeleted"),
         });
       }
 
       fetchUsers();
     } catch (error) {
       toast({
-        title: "删除失败",
-        description: error instanceof Error ? error.message : "请稍后重试",
+        title: t("deleteFailed"),
+        description: error instanceof Error ? error.message : tc("pleaseRetryLater"),
         variant: "destructive",
       });
     } finally {
@@ -294,7 +298,7 @@ export default function UsersPage() {
       <div className="container mx-auto py-8">
         <div className="bg-background rounded-lg border p-6">
           <p className="text-center text-muted-foreground">
-            您没有权限访问此页面
+            {t("noPermission")}
           </p>
         </div>
       </div>
@@ -314,16 +318,16 @@ export default function UsersPage() {
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-3xl font-bold">用户管理</h1>
+        <h1 className="text-3xl font-bold">{t("userManagement")}</h1>
       </div>
 
       {/* 用户列表卡片 */}
       <div className="bg-background rounded-lg border">
         <div className="p-6 border-b">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold">用户列表</h2>
+            <h2 className="text-xl font-semibold">{t("userList")}</h2>
             <span className="text-sm text-muted-foreground">
-              共 {total} 个用户
+              {t("totalUsers", { count: total })}
             </span>
           </div>
 
@@ -374,7 +378,7 @@ export default function UsersPage() {
           <div className="flex items-center justify-between gap-4">
             <Input
               ref={searchInputRef}
-              placeholder="搜索卡密/邮箱/使用者"
+              placeholder={t("searchPlaceholder")}
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               className="max-w-md"
@@ -382,7 +386,7 @@ export default function UsersPage() {
             {selectedUsers.length > 0 && (
               <div className="flex items-center gap-4">
                 <span className="text-sm text-muted-foreground">
-                  已选择 {selectedUsers.length} 个用户
+                  {t("selectedCount", { count: selectedUsers.length })}
                 </span>
                 <Button
                   variant="destructive"
@@ -390,7 +394,7 @@ export default function UsersPage() {
                   onClick={() => openDeleteDialog("batch")}
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
-                  批量删除
+                  {t("batchDelete")}
                 </Button>
               </div>
             )}
@@ -405,7 +409,7 @@ export default function UsersPage() {
         ) : users.length === 0 ? (
           <div className="py-12">
             <p className="text-center text-muted-foreground">
-              {searchText ? "未找到匹配的用户" : "暂无用户"}
+              {searchText ? t("noUsersFound") : t("noUsers")}
             </p>
           </div>
         ) : (
@@ -424,11 +428,11 @@ export default function UsersPage() {
                       className="w-4 h-4 rounded border-gray-300 cursor-pointer"
                     />
                   </TableHead>
-                  <TableHead>用户</TableHead>
-                  <TableHead>邮箱</TableHead>
-                  <TableHead>当前角色</TableHead>
-                  <TableHead>到期时间</TableHead>
-                  <TableHead className="text-right">操作</TableHead>
+                  <TableHead>{t("userColumn")}</TableHead>
+                  <TableHead>{t("emailColumn")}</TableHead>
+                  <TableHead>{t("currentRoleColumn")}</TableHead>
+                  <TableHead>{t("expiryColumn")}</TableHead>
+                  <TableHead className="text-right">{t("actionColumn")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -453,7 +457,7 @@ export default function UsersPage() {
                           {user.image && (
                             <Image
                               src={user.image}
-                              alt={user.name || "用户头像"}
+                              alt={user.name || t("userAvatar")}
                               width={32}
                               height={32}
                               className="rounded-full"
@@ -461,7 +465,7 @@ export default function UsersPage() {
                           )}
                           <div>
                             <div className="font-medium">
-                              {user.name || user.username || "未知用户"}
+                              {user.name || user.username || t("unknownUser")}
                             </div>
                             <div className="text-xs text-muted-foreground">
                               @{user.username || user.id.slice(0, 8)}
@@ -505,19 +509,19 @@ export default function UsersPage() {
                                 <SelectItem value={ROLES.DUKE}>
                                   <div className="flex items-center gap-2">
                                     <Gem className="w-3 h-3" />
-                                    公爵
+                                    {tr("duke")}
                                   </div>
                                 </SelectItem>
                                 <SelectItem value={ROLES.KNIGHT}>
                                   <div className="flex items-center gap-2">
                                     <Sword className="w-3 h-3" />
-                                    骑士
+                                    {tr("knight")}
                                   </div>
                                 </SelectItem>
                                 <SelectItem value={ROLES.CIVILIAN}>
                                   <div className="flex items-center gap-2">
                                     <User2 className="w-3 h-3" />
-                                    平民
+                                    {tr("civilian")}
                                   </div>
                                 </SelectItem>
                               </SelectContent>
@@ -530,7 +534,7 @@ export default function UsersPage() {
                               openDeleteDialog(
                                 "single",
                                 user.id,
-                                user.name || user.username || "用户"
+                                user.name || user.username || t("user")
                               )
                             }
                             className="h-8 w-8 text-destructive hover:text-destructive"
@@ -548,8 +552,12 @@ export default function UsersPage() {
             {/* 分页 */}
             <div className="flex items-center justify-between p-4 border-t">
               <div className="text-sm text-muted-foreground">
-                显示 {(page - 1) * pageSize + 1}-
-                {Math.min(page * pageSize, total)} / {total} · 每页 {pageSize}
+                {t("paginationInfo", {
+                  start: (page - 1) * pageSize + 1,
+                  end: Math.min(page * pageSize, total),
+                  total,
+                  pageSize,
+                })}
               </div>
               <div className="flex gap-2">
                 <Button
@@ -558,10 +566,10 @@ export default function UsersPage() {
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
                 >
-                  上一页
+                  {t("prevPage")}
                 </Button>
                 <div className="flex items-center px-3 text-sm">
-                  第 {page} / {totalPages} 页
+                  {t("pageInfo", { page, totalPages })}
                 </div>
                 <Button
                   variant="outline"
@@ -569,7 +577,7 @@ export default function UsersPage() {
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page >= totalPages}
                 >
-                  下一页
+                  {t("nextPage")}
                 </Button>
               </div>
             </div>
@@ -582,41 +590,35 @@ export default function UsersPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {deleteMode === "batch" ? "确认批量删除" : "确认删除用户"}
+              {deleteMode === "batch" ? t("confirmBatchDeleteTitle") : t("confirmDeleteUserTitle")}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {deleteMode === "batch" ? (
                 <>
-                  确定要删除选中的{" "}
-                  <span className="font-semibold">{selectedUsers.length}</span>{" "}
-                  个用户吗？
+                  {t("confirmBatchDelete", { count: selectedUsers.length })}
                   <br />
                   <span className="text-destructive font-medium">
-                    此操作将同时删除这些用户关联的卡密和所有数据，且不可恢复。
+                    {t("confirmBatchDeleteWarning")}
                   </span>
                 </>
               ) : (
                 <>
-                  确定要删除用户{" "}
-                  <span className="font-semibold">
-                    &quot;{deleteTarget?.name}&quot;
-                  </span>{" "}
-                  吗？
+                  {t("confirmDeleteUser", { name: deleteTarget?.name ?? "" })}
                   <br />
                   <span className="text-destructive font-medium">
-                    此操作将同时删除该用户关联的卡密和所有数据，且不可恢复。
+                    {t("confirmDeleteWarning")}
                   </span>
                 </>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogCancel>{tc("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
               className="bg-destructive hover:bg-destructive/90"
             >
-              确认删除
+              {t("confirmDelete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

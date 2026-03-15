@@ -6,6 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useTheme } from "next-themes";
 import { useToast } from "@/components/ui/use-toast";
+import { useTranslations } from "next-intl";
 
 interface Message {
   id: string;
@@ -35,6 +36,9 @@ export function SharedMessageDetail({
   const [viewMode, setViewMode] = useState<ViewMode>("html");
   const { theme } = useTheme();
   const { toast } = useToast();
+  const t = useTranslations("shared");
+  const te = useTranslations("email");
+  const tc = useTranslations("common");
 
   useEffect(() => {
     const fetchMessage = async () => {
@@ -49,10 +53,10 @@ export function SharedMessageDetail({
         if (!response.ok) {
           const errorData = await response.json();
           const errorMessage =
-            (errorData as { error?: string }).error || "获取邮件详情失败";
+            (errorData as { error?: string }).error || t("fetchDetailFailed");
           setError(errorMessage);
           toast({
-            title: "错误",
+            title: tc("error"),
             description: errorMessage,
             variant: "destructive",
           });
@@ -65,10 +69,10 @@ export function SharedMessageDetail({
           setViewMode("text");
         }
       } catch {
-        const errorMessage = "网络错误，请稍后重试";
+        const errorMessage = tc("networkError");
         setError(errorMessage);
         toast({
-          title: "错误",
+          title: tc("error"),
           description: errorMessage,
           variant: "destructive",
         });
@@ -78,6 +82,7 @@ export function SharedMessageDetail({
     };
 
     fetchMessage();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, messageId, toast]);
 
   const iframeSrcDoc = useCallback(() => {
@@ -140,7 +145,7 @@ export function SharedMessageDetail({
     return (
       <div className="flex items-center justify-center h-32">
         <Loader2 className="w-5 h-5 animate-spin text-primary/60" />
-        <span className="ml-2 text-sm text-gray-500">加载邮件详情...</span>
+        <span className="ml-2 text-sm text-gray-500">{te("loadingDetail")}</span>
       </div>
     );
   }
@@ -160,13 +165,14 @@ export function SharedMessageDetail({
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm p-4 space-y-3 border-b border-primary/20 shadow-sm">
         <h3 className="text-base font-bold">{message.subject}</h3>
         <div className="text-xs text-gray-500 space-y-1">
-          {message.from_address && <p>发件人：{message.from_address}</p>}
-          {message.to_address && <p>收件人：{message.to_address}</p>}
+          {message.from_address && <p>{te("from", { address: message.from_address })}</p>}
+          {message.to_address && <p>{te("to", { address: message.to_address })}</p>}
           <p>
-            时间：
-            {new Date(
-              message.sent_at || message.received_at || 0
-            ).toLocaleString()}
+            {te("time", {
+              time: new Date(
+                message.sent_at || message.received_at || 0
+              ).toLocaleString(),
+            })}
           </p>
         </div>
       </div>
@@ -184,7 +190,7 @@ export function SharedMessageDetail({
                 htmlFor="html"
                 className="text-xs cursor-pointer font-medium"
               >
-                HTML 格式
+                {te("htmlView")}
               </Label>
             </div>
             <div className="flex items-center space-x-2">
@@ -193,7 +199,7 @@ export function SharedMessageDetail({
                 htmlFor="text"
                 className="text-xs cursor-pointer font-medium"
               >
-                纯文本
+                {te("textView")}
               </Label>
             </div>
           </RadioGroup>
@@ -206,12 +212,12 @@ export function SharedMessageDetail({
             className="w-full h-full border-0"
             sandbox="allow-popups"
             srcDoc={iframeSrcDoc()}
-            title="邮件内容"
+            title={te("messageContent")}
           />
         ) : (
           <div className="h-full overflow-y-auto p-4">
             <pre className="whitespace-pre-wrap break-words text-sm font-mono">
-              {message.content || "无内容"}
+              {message.content || t("noContent")}
             </pre>
           </div>
         )}

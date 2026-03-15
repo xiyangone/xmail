@@ -1,4 +1,7 @@
+"use client"
+
 import { Skeleton } from "./skeleton"
+import { useTranslations } from "next-intl"
 
 export function EmailListSkeleton() {
   return (
@@ -17,6 +20,7 @@ export function EmailListSkeleton() {
 }
 
 export function MessageListSkeleton() {
+  const t = useTranslations("common");
   return (
     <div className="relative">
       {/* 加载中提示 - 居中显示 */}
@@ -24,7 +28,7 @@ export function MessageListSkeleton() {
         <div className="bg-background/95 backdrop-blur-sm px-6 py-3 rounded-lg border border-primary/20 shadow-lg">
           <div className="flex items-center gap-3">
             <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-            <span className="text-sm font-medium text-foreground">加载中...</span>
+            <span className="text-sm font-medium text-foreground">{t("loading")}</span>
           </div>
         </div>
       </div>
