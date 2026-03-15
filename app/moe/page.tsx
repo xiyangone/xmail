@@ -6,7 +6,6 @@ import { redirect } from "next/navigation"
 import { checkPermission } from "@/lib/auth"
 import { PERMISSIONS } from "@/lib/permissions"
 
-export const runtime = "edge"
 
 export default async function MoePage() {
   const session = await auth()

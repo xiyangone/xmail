@@ -6,7 +6,6 @@ import { checkPermission } from "@/lib/auth"
 import { PERMISSIONS } from "@/lib/permissions"
 import { eq, and } from "drizzle-orm"
 
-export const runtime = "edge"
 
 export async function DELETE(
   _request: Request,
@@ -17,7 +16,7 @@ export async function DELETE(
     return NextResponse.json({ error: "权限不足" }, { status: 403 })
   }
   try {
-    const db = createDb()
+    const db = await createDb()
     const session = await auth()
     const { id } = await params
     
@@ -61,7 +60,7 @@ export async function PATCH(
     const { id } = await params
 
     const { enabled } = await request.json() as { enabled: boolean }
-    const db = createDb()
+    const db = await createDb()
     
     const result = await db.update(apiKeys)
       .set({ enabled })

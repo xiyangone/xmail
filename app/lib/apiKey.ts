@@ -9,7 +9,7 @@ import { sha256Hash } from "@/lib/utils"
 
 async function getUserByApiKey(key: string): Promise<User | null> {
   const keyHash = await sha256Hash(key)
-  const db = createDb()
+  const db = await createDb()
 
   // 先尝试用哈希匹配（新格式）
   let apiKey = await db.query.apiKeys.findFirst({

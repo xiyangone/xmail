@@ -58,3 +58,6 @@ wrangler.json
 wrangler.cleanup.json
 wrangler.email.json
 .ace-tool/
+
+# opennextjs-cloudflare build output
+.open-next

@@ -3,7 +3,6 @@ import { ProfileCard } from "@/components/profile/profile-card"
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 
-export const runtime = "edge"
 
 export default async function ProfilePage() {
   const session = await auth()

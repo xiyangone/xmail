@@ -6,16 +6,13 @@ import { resolve } from "node:path";
 import {
   createDatabase,
   createKVNamespace,
-  createPages,
   getDatabase,
   getKVNamespaceList,
-  getPages,
 } from "./cloudflare";
 
 const PROJECT_NAME = process.env.PROJECT_NAME || "moemail";
 const DATABASE_NAME = process.env.DATABASE_NAME || "moemail-db";
 const KV_NAMESPACE_NAME = process.env.KV_NAMESPACE_NAME || "moemail-kv";
-const CUSTOM_DOMAIN = process.env.CUSTOM_DOMAIN;
 const KV_NAMESPACE_ID = process.env.KV_NAMESPACE_ID;
 
 /**
@@ -58,6 +55,10 @@ const setupConfigFile = (examplePath: string, targetPath: string) => {
       switch (wranglerFileName) {
         case "wrangler.json":
           json.name = PROJECT_NAME;
+          // 同步更新 services 自引用绑定
+          if (json.services && json.services.length > 0) {
+            json.services[0].service = PROJECT_NAME;
+          }
           break;
         case "wrangler.email.json":
           json.name = `${PROJECT_NAME}-email-receiver-worker`;
@@ -262,39 +263,10 @@ const checkAndCreateKVNamespace = async () => {
 };
 
 /**
- * 检查并创建Pages项目
+ * 推送Worker密钥
  */
-const checkAndCreatePages = async () => {
-  console.log(`🔍 Checking if project "${PROJECT_NAME}" exists...`);
-
-  try {
-    await getPages();
-    console.log("✅ Project already exists, proceeding with update...");
-  } catch (error) {
-    if (error instanceof NotFoundError) {
-      console.log("⚠️ Project not found, creating new project...");
-      const pages = await createPages();
-
-      if (!CUSTOM_DOMAIN && pages.subdomain) {
-        console.log("⚠️ CUSTOM_DOMAIN is empty, using pages default domain...");
-        console.log("📝 Updating environment variables...");
-        
-        // 更新环境变量为默认的Pages域名
-        const appUrl = `https://${pages.subdomain}`;
-        updateEnvVar("CUSTOM_DOMAIN", appUrl);
-      }
-    } else {
-      console.error(`❌ An error occurred while checking the project:`, error);
-      throw error;
-    }
-  }
-};
-
-/**
- * 推送Pages密钥
- */
-const pushPagesSecret = () => {
-  console.log("🔐 Pushing environment secrets to Pages...");
+const pushWorkerSecrets = () => {
+  console.log("🔐 Pushing environment secrets to Worker...");
 
   // 定义运行时所需的环境变量列表
   const requiredEnvVars = ['AUTH_GITHUB_ID', 'AUTH_GITHUB_SECRET', 'AUTH_SECRET'];
@@ -304,21 +276,21 @@ const pushPagesSecret = () => {
   // 兼容老的部署方式，如果必须的环境变量不存在，则跳过推送
   for (const varName of requiredEnvVars) {
     if (!process.env[varName]) {
-      console.log(`🔐 Skipping pushing secrets to Pages...`);
+      console.log(`🔐 Skipping pushing secrets to Worker...`);
       return;
     }
   }
-  
+
   try {
     // 确保.env文件存在
     if (!existsSync(resolve('.env'))) {
       setupEnvFile();
     }
-    
+
     // 创建一个临时文件，只包含运行时所需的环境变量
     const envContent = readFileSync(resolve('.env'), 'utf-8');
     const runtimeEnvFile = resolve('.env.runtime');
-    
+
     // 从.env文件中提取运行时变量
     const runtimeEnvContent = envContent
       .split('\n')
@@ -326,7 +298,7 @@ const pushPagesSecret = () => {
         const trimmedLine = line.trim();
         // 跳过注释和空行
         if (!trimmedLine || trimmedLine.startsWith('#')) return false;
-        
+
         // 检查是否为运行时所需的环境变量
         for (const varName of runtimeEnvVars) {
           if (line.startsWith(`${varName} =`) || line.startsWith(`${varName}=`)) {
@@ -336,16 +308,16 @@ const pushPagesSecret = () => {
         return false;
       })
       .join('\n');
-    
+
     // 写入临时文件
     writeFileSync(runtimeEnvFile, runtimeEnvContent);
-    
-    // 使用临时文件推送secrets
-    execSync(`pnpm dlx wrangler pages secret bulk ${runtimeEnvFile}`, { stdio: "inherit" });
-    
+
+    // 使用临时文件推送secrets（Workers secret bulk，不需要 --project-name）
+    execSync(`pnpm dlx wrangler secret bulk ${runtimeEnvFile}`, { stdio: "inherit" });
+
     // 清理临时文件
     execSync(`rm ${runtimeEnvFile}`, { stdio: "inherit" });
-    
+
     console.log("✅ Secrets pushed successfully");
   } catch (error) {
     console.error("❌ Failed to push secrets:", error);
@@ -354,30 +326,30 @@ const pushPagesSecret = () => {
 };
 
 /**
- * 部署Pages应用
+ * 部署Worker应用
  */
-const deployPages = () => {
-  console.log("🚧 Deploying to Cloudflare Pages...");
+const deployWorker = () => {
+  console.log("🚧 Deploying to Cloudflare Workers...");
   try {
     console.log("📦 Building Next.js application...");
-    const buildOutput = execSync("pnpm run build:pages", { 
+    const buildOutput = execSync("pnpm run build:worker", {
       encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe'],
       maxBuffer: 10 * 1024 * 1024 // 10MB buffer
     });
     console.log(buildOutput);
     console.log("✅ Build completed successfully");
-    
-    console.log("🚀 Deploying to Cloudflare Pages...");
-    const deployOutput = execSync("pnpm dlx wrangler pages deploy .vercel/output/static --branch main --commit-message ci-deploy --commit-dirty=true", { 
+
+    console.log("🚀 Deploying to Cloudflare Workers...");
+    const deployOutput = execSync("pnpm dlx wrangler deploy", {
       encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe'],
       maxBuffer: 10 * 1024 * 1024
     });
     console.log(deployOutput);
-    console.log("✅ Pages deployment completed successfully");
+    console.log("✅ Worker deployment completed successfully");
   } catch (error: any) {
-    console.error("❌ Pages deployment failed:");
+    console.error("❌ Worker deployment failed:");
     if (error.stdout) console.error("STDOUT:", error.stdout);
     if (error.stderr) console.error("STDERR:", error.stderr);
     if (error.message) console.error("Message:", error.message);
@@ -521,9 +493,8 @@ const main = async () => {
     await checkAndCreateDatabase();
     migrateDatabase();
     await checkAndCreateKVNamespace();
-    await checkAndCreatePages();
-    pushPagesSecret();
-    deployPages();
+    pushWorkerSecrets();
+    deployWorker();
     deployEmailWorker();
     deployCleanupWorker();
     deployTempCleanupWorker();

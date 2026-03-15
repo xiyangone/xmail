@@ -26,7 +26,7 @@ export interface SharedMessage {
 export async function getSharedEmail(
   token: string
 ): Promise<SharedEmail | null> {
-  const db = createDb();
+  const db = await createDb();
 
   try {
     const share = await db.query.emailShares.findFirst({
@@ -72,7 +72,7 @@ export async function getSharedEmailMessages(
   token: string,
   limit = 20
 ): Promise<SharedMessagesResult> {
-  const db = createDb();
+  const db = await createDb();
 
   try {
     const share = await db.query.emailShares.findFirst({

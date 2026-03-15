@@ -5,7 +5,6 @@ import { NextResponse } from "next/server";
 import { getUserId } from "@/lib/apiKey";
 import { nanoid } from "nanoid";
 
-export const runtime = "edge";
 
 // 获取邮箱的所有分享链接
 export async function GET(
@@ -18,7 +17,7 @@ export async function GET(
   }
 
   const { id: emailId } = await params;
-  const db = createDb();
+  const db = await createDb();
 
   try {
     // 验证邮箱所有权
@@ -57,7 +56,7 @@ export async function POST(
   }
 
   const { id: emailId } = await params;
-  const db = createDb();
+  const db = await createDb();
 
   try {
     // 验证邮箱所有权

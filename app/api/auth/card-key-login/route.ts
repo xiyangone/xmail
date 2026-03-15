@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { activateCardKey, validateCardKey } from "@/lib/card-keys";
 import { z } from "zod";
 
-export const runtime = "edge";
 
 const cardKeyLoginSchema = z.object({
   cardKey: z.string().min(1, "请输入卡密"),

@@ -62,7 +62,7 @@ export async function callWebhook(
 
   // 所有重试都失败后，记录失败日志
   try {
-    const db = createDb()
+    const db = await createDb()
     await db.insert(webhookLogs).values({
       webhookId: webhookId || null,
       url,

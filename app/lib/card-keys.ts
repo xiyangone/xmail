@@ -17,7 +17,7 @@ export function generateCardKeyCode(): string {
  * 验证卡密是否有效
  */
 export async function validateCardKey(code: string) {
-  const db = createDb();
+  const db = await createDb();
 
   const cardKey = await db.query.cardKeys.findFirst({
     where: eq(cardKeys.code, code),
@@ -43,7 +43,7 @@ export async function validateCardKey(code: string) {
  * 所有写操作通过 db.batch() 原子执行，避免中途失败导致数据不一致
  */
 export async function activateCardKey(code: string) {
-  const db = createDb();
+  const db = await createDb();
 
   const validation = await validateCardKey(code);
   if (!validation.valid) {
@@ -207,7 +207,7 @@ export async function activateCardKey(code: string) {
  * 检查用户是否为临时用户
  */
 export async function isTempUser(userId: string): Promise<boolean> {
-  const db = createDb();
+  const db = await createDb();
 
   const tempAccount = await db.query.tempAccounts.findFirst({
     where: and(
@@ -230,7 +230,7 @@ export async function getTempUserInfo(userId: string): Promise<{
   emailLimit?: number;
   cardKeyId?: string;
 } | null> {
-  const db = createDb();
+  const db = await createDb();
 
   const tempAccount = await db.query.tempAccounts.findFirst({
     where: and(
@@ -262,7 +262,7 @@ export async function getTempUserInfo(userId: string): Promise<{
 export async function getTempUserEmailAddress(
   userId: string
 ): Promise<string | null> {
-  const db = createDb();
+  const db = await createDb();
 
   const tempAccount = await db.query.tempAccounts.findFirst({
     where: and(
@@ -279,7 +279,7 @@ export async function getTempUserEmailAddress(
  * 清理过期的临时账号
  */
 export async function cleanupExpiredTempAccounts() {
-  const db = createDb();
+  const db = await createDb();
   const now = new Date();
 
   // 查找过期的临时账号
@@ -311,7 +311,7 @@ export async function generateBatchCardKeys(
   emailAddresses: string[],
   expiryMinutes: number = 30 * 24 * 60 // 默认30天
 ): Promise<{ code: string; emailAddress: string }[]> {
-  const db = createDb();
+  const db = await createDb();
   const now = new Date();
   const expiresAt = new Date(now.getTime() + expiryMinutes * 60 * 1000); // 转换为毫秒
 
@@ -352,7 +352,7 @@ export async function generateMultiCardKey(
   emailAddresses: string[],
   expiryMinutes: number = 30 * 24 * 60
 ): Promise<{ code: string; emailAddresses: string[] }> {
-  const db = createDb();
+  const db = await createDb();
   const now = new Date();
   const expiresAt = new Date(now.getTime() + expiryMinutes * 60 * 1000);
 

@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { getUserId } from "@/lib/apiKey";
 import { getTempUserInfo } from "@/lib/card-keys";
 
-export const runtime = "edge";
 
 export async function GET() {
   try {

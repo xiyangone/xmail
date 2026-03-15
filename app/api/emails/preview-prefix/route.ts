@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
-import { getRequestContext } from "@cloudflare/next-on-pages";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { EMAIL_CONFIG } from "@/config";
 import { generateEmailPrefix } from "@/lib/email-generator";
 import type { EmailPrefixFormat } from "@/config/email";
 
-export const runtime = "edge";
 
 /**
  * 预览生成的邮箱前缀
@@ -12,7 +11,7 @@ export const runtime = "edge";
  */
 export async function GET() {
   try {
-    const env = getRequestContext().env;
+    const { env } = await getCloudflareContext();
 
     // 获取前缀配置
     const prefixLengthStr = await env.SITE_CONFIG.get("EMAIL_PREFIX_LENGTH");

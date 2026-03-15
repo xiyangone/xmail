@@ -5,7 +5,6 @@ import { ActionButton } from "@/components/home/action-button"
 import { FeatureCard } from "@/components/home/feature-card"
 import { getTranslations } from "next-intl/server"
 
-export const runtime = "edge"
 
 export default async function Home() {
   const session = await auth()

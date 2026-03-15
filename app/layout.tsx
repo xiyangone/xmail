@@ -60,8 +60,6 @@ export const metadata: Metadata = {
   icons: [{ rel: "apple-touch-icon", url: "/icons/icon-192x192.png" }],
 };
 
-export const runtime = "edge";
-
 export const viewport: Viewport = {
   themeColor: "#FF8A3D",
   width: "device-width",

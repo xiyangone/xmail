@@ -4,7 +4,7 @@ import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { createDb, Db } from "./db";
 import { accounts, users, roles, userRoles } from "./schema";
 import { eq } from "drizzle-orm";
-import { getRequestContext } from "@cloudflare/next-on-pages";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { Permission, hasPermission, ROLES, Role } from "./permissions";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { hashPassword, comparePassword, needsRehash } from "@/lib/utils";
@@ -25,7 +25,8 @@ const ROLE_DESCRIPTIONS: Record<Role, string> = {
 };
 
 const getDefaultRole = async (): Promise<Role> => {
-  const defaultRole = await getRequestContext().env.SITE_CONFIG.get(
+  const { env } = await getCloudflareContext();
+  const defaultRole = await env.SITE_CONFIG.get(
     "DEFAULT_ROLE"
   );
 
@@ -69,7 +70,7 @@ export async function assignRoleToUser(db: Db, userId: string, roleId: string) {
 }
 
 export async function getUserRole(userId: string) {
-  const db = createDb();
+  const db = await createDb();
   const userRoleRecords = await db.query.userRoles.findMany({
     where: eq(userRoles.userId, userId),
     with: { role: true },
@@ -82,7 +83,7 @@ export async function checkPermission(permission: Permission) {
 
   if (!userId) return false;
 
-  const db = createDb();
+  const db = await createDb();
   const userRoleRecords = await db.query.userRoles.findMany({
     where: eq(userRoles.userId, userId),
     with: { role: true },
@@ -92,9 +93,10 @@ export async function checkPermission(permission: Permission) {
   return hasPermission(userRoleNames as Role[], permission);
 }
 
-const nextAuth = NextAuth(() => ({
+const nextAuth = NextAuth(async () => ({
   secret: process.env.AUTH_SECRET,
-  adapter: DrizzleAdapter(createDb(), {
+  trustHost: true,
+  adapter: DrizzleAdapter(await createDb(), {
     usersTable: users,
     accountsTable: accounts,
   }),
@@ -144,7 +146,7 @@ const nextAuth = NextAuth(() => ({
           throw new Error("输入格式不正确");
         }
 
-        const db = createDb();
+        const db = await createDb();
 
         const user = await db.query.users.findFirst({
           where: eq(users.username, username as string),
@@ -209,7 +211,7 @@ const nextAuth = NextAuth(() => ({
           const result = await activateCardKey(cardKey as string);
 
           // 获取创建的用户信息
-          const db = createDb();
+          const db = await createDb();
           const user = await db.query.users.findFirst({
             where: eq(users.id, result.userId),
           });
@@ -235,7 +237,7 @@ const nextAuth = NextAuth(() => ({
       if (!user.id) return;
 
       try {
-        const db = createDb();
+        const db = await createDb();
         const existingRole = await db.query.userRoles.findFirst({
           where: eq(userRoles.userId, user.id),
         });
@@ -271,7 +273,7 @@ const nextAuth = NextAuth(() => ({
     async signIn({ user, account }) {
       // 对于OAuth登录（如GitHub），检查是否允许新用户注册
       if (account?.provider === "github") {
-        const db = createDb();
+        const db = await createDb();
 
         // 检查用户是否已存在（通过userRoles判断是否为已有用户）
         const existingRole = await db.query.userRoles.findFirst({
@@ -280,7 +282,8 @@ const nextAuth = NextAuth(() => ({
 
         // 如果是新用户，检查注册开关
         if (!existingRole) {
-          const allowRegister = await getRequestContext().env.SITE_CONFIG.get("ALLOW_REGISTER");
+          const { env } = await getCloudflareContext();
+          const allowRegister = await env.SITE_CONFIG.get("ALLOW_REGISTER");
           if (allowRegister === "false") {
             // 删除DrizzleAdapter自动创建的用户记录
             await db.delete(users).where(eq(users.id, user.id!));
@@ -307,7 +310,7 @@ const nextAuth = NextAuth(() => ({
         session.user.username = token.username as string;
         session.user.image = token.image as string;
 
-        const db = createDb();
+        const db = await createDb();
         let userRoleRecords = await db.query.userRoles.findMany({
           where: eq(userRoles.userId, session.user.id),
           with: { role: true },
@@ -366,7 +369,7 @@ export const {
 export const auth = nextAuth.auth;
 
 export async function register(username: string, password: string) {
-  const db = createDb();
+  const db = await createDb();
 
   const existing = await db.query.users.findFirst({
     where: eq(users.username, username),

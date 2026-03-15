@@ -6,7 +6,6 @@ import { encodeCursor, decodeCursor } from "@/lib/cursor";
 import { getUserId } from "@/lib/apiKey";
 import { isTempUser } from "@/lib/card-keys";
 
-export const runtime = "edge";
 
 const PAGE_SIZE = 20;
 
@@ -16,7 +15,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const cursor = searchParams.get("cursor");
 
-  const db = createDb();
+  const db = await createDb();
 
   try {
     // 检查是否为临时用户

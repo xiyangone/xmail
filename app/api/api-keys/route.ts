@@ -8,7 +8,6 @@ import { PERMISSIONS } from "@/lib/permissions"
 import { desc, eq } from "drizzle-orm"
 import { sha256Hash } from "@/lib/utils"
 
-export const runtime = "edge"
 
 export async function GET() {
   const hasPermission = await checkPermission(PERMISSIONS.MANAGE_API_KEY)
@@ -18,7 +17,7 @@ export async function GET() {
 
   const session = await auth()
   try {
-    const db = createDb()
+    const db = await createDb()
     const keys = await db.query.apiKeys.findMany({
       where: eq(apiKeys.userId, session!.user.id!),
       orderBy: desc(apiKeys.createdAt),
@@ -57,7 +56,7 @@ export async function POST(request: Request) {
 
     const key = `mk_${nanoid(32)}`
     const keyHash = await sha256Hash(key)
-    const db = createDb()
+    const db = await createDb()
 
     await db.insert(apiKeys).values({
       name,

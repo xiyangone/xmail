@@ -2,7 +2,6 @@ import { createDb } from "@/lib/db"
 import { users } from "@/lib/schema"
 import { eq } from "drizzle-orm"
 
-export const runtime = "edge"
 
 export async function POST(request: Request) {
   try {
@@ -13,7 +12,7 @@ export async function POST(request: Request) {
       return Response.json({ error: "请提供用户名或邮箱地址" }, { status: 400 })
     }
 
-    const db = createDb()
+    const db = await createDb()
 
     const user = await db.query.users.findFirst({
       where: searchText.includes('@') ? eq(users.email, searchText) : eq(users.username, searchText),

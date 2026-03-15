@@ -4,7 +4,7 @@ import { emails } from "@/lib/schema";
 import { eq, and, gt, sql } from "drizzle-orm";
 import { EXPIRY_OPTIONS } from "@/types/email";
 import { EMAIL_CONFIG } from "@/config";
-import { getRequestContext } from "@cloudflare/next-on-pages";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { getUserId } from "@/lib/apiKey";
 import { getUserRole } from "@/lib/auth";
 import { ROLES } from "@/lib/permissions";
@@ -12,11 +12,10 @@ import { getTempUserInfo } from "@/lib/card-keys";
 import { generateEmailPrefix } from "@/lib/email-generator";
 import type { EmailPrefixFormat } from "@/config/email";
 
-export const runtime = "edge";
 
 export async function POST(request: Request) {
-  const db = createDb();
-  const env = getRequestContext().env;
+  const db = await createDb();
+  const { env } = await getCloudflareContext();
 
   const userId = await getUserId();
   const userRole = await getUserRole(userId!);

@@ -4,7 +4,6 @@ import { roles, userRoles } from "@/lib/schema";
 import { ROLES } from "@/lib/permissions";
 import { eq } from "drizzle-orm";
 
-export const runtime = "edge";
 
 export async function GET() {
   const session = await auth();
@@ -12,7 +11,7 @@ export async function GET() {
     return Response.json({ error: "未授权" }, { status: 401 });
   }
 
-  const db = createDb();
+  const db = await createDb();
 
   const emperorRole = await db.query.roles.findFirst({
     where: eq(roles.name, ROLES.EMPEROR),

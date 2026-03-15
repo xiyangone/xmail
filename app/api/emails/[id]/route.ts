@@ -7,7 +7,6 @@ import { getUserId } from "@/lib/apiKey";
 import { checkBasicSendPermission } from "@/lib/send-permissions";
 import { isTempUser } from "@/lib/card-keys";
 
-export const runtime = "edge";
 
 export async function DELETE(
   request: Request,
@@ -25,7 +24,7 @@ export async function DELETE(
   }
 
   try {
-    const db = createDb();
+    const db = await createDb();
     const { id } = await params;
     const email = await db.query.emails.findFirst({
       where: and(eq(emails.id, id), eq(emails.userId, userId!)),
@@ -59,7 +58,7 @@ export async function GET(
   const messageType = searchParams.get("type");
 
   try {
-    const db = createDb();
+    const db = await createDb();
     const { id } = await params;
 
     const userId = await getUserId();

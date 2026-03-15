@@ -3,7 +3,6 @@ import { emailShares } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
-export const runtime = "edge";
 
 // 通过分享token获取邮箱信息
 export async function GET(
@@ -11,7 +10,7 @@ export async function GET(
   { params }: { params: Promise<{ token: string }> }
 ) {
   const { token } = await params;
-  const db = createDb();
+  const db = await createDb();
 
   try {
     // 查找分享记录

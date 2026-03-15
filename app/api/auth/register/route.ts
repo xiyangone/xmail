@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server"
 import { register } from "@/lib/auth"
 import { authSchema, AuthSchema } from "@/lib/validation"
-import { getRequestContext } from "@cloudflare/next-on-pages"
+import { getCloudflareContext } from "@opennextjs/cloudflare"
 import { verifyTurnstileToken } from "@/lib/turnstile"
 
-export const runtime = "edge"
 
 export async function POST(request: Request) {
   try {
     // 检查是否允许注册
-    const env = getRequestContext().env
+    const { env } = await getCloudflareContext()
     const allowRegister = await env.SITE_CONFIG.get("ALLOW_REGISTER")
 
     if (allowRegister === "false") {

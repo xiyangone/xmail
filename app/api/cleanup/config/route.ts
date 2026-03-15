@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server"
-import { getRequestContext } from "@cloudflare/next-on-pages"
+import { getCloudflareContext } from "@opennextjs/cloudflare"
 import { checkPermission } from "@/lib/auth"
 import { PERMISSIONS } from "@/lib/permissions"
 
-export const runtime = "edge"
 
 interface CleanupConfig {
   deleteExpiredUsedCardKeys: boolean
@@ -13,7 +12,7 @@ interface CleanupConfig {
 }
 
 export async function GET() {
-  const env = getRequestContext().env
+  const { env } = await getCloudflareContext()
   
   const [deleteExpiredUsedCardKeys, deleteExpiredUnusedCardKeys, deleteExpiredEmails, cardKeyDefaultDays] =
     await Promise.all([
@@ -51,7 +50,7 @@ export async function POST(request: Request) {
     )
   }
 
-  const env = getRequestContext().env
+  const { env } = await getCloudflareContext()
   await Promise.all([
     env.SITE_CONFIG.put("CLEANUP_DELETE_EXPIRED_USED_CARD_KEYS", String(config.deleteExpiredUsedCardKeys)),
     env.SITE_CONFIG.put("CLEANUP_DELETE_EXPIRED_UNUSED_CARD_KEYS", String(config.deleteExpiredUnusedCardKeys)),

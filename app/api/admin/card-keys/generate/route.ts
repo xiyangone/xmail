@@ -3,9 +3,8 @@ import { auth, checkPermission } from "@/lib/auth";
 import { PERMISSIONS } from "@/lib/permissions";
 import { generateBatchCardKeys, generateMultiCardKey } from "@/lib/card-keys";
 import { z } from "zod";
-import { getRequestContext } from "@cloudflare/next-on-pages";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 
-export const runtime = "edge";
 
 const generateSingleCardKeysSchema = z.object({
   mode: z.literal("single"),
@@ -49,7 +48,7 @@ export async function POST(request: Request) {
       mode?: string;
       [key: string]: unknown;
     };
-    const env = getRequestContext().env;
+    const { env } = await getCloudflareContext();
     const domainString = await env.SITE_CONFIG.get("EMAIL_DOMAINS");
     const allowedDomains = domainString
       ? domainString.split(",").map((d) => d.trim())

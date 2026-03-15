@@ -4,7 +4,6 @@ import { eq, and } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { getUserId } from "@/lib/apiKey";
 
-export const runtime = "edge";
 
 // 删除分享链接
 export async function DELETE(
@@ -17,7 +16,7 @@ export async function DELETE(
   }
 
   const { id: emailId, shareId } = await params;
-  const db = createDb();
+  const db = await createDb();
 
   try {
     // 验证邮箱所有权

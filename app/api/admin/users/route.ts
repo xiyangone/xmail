@@ -5,7 +5,6 @@ import { users, tempAccounts } from "@/lib/schema"
 import { PERMISSIONS, ROLES } from "@/lib/permissions"
 import { eq, count, inArray } from "drizzle-orm"
 
-export const runtime = "edge"
 
 export async function GET(request: NextRequest) {
   try {
@@ -26,7 +25,7 @@ export async function GET(request: NextRequest) {
     const roleFilter = searchParams.get("role")
     const offset = (page - 1) * pageSize
 
-    const db = createDb()
+    const db = await createDb()
 
     // 使用关联查询一次获取用户和角色信息，避免 N+1 查询
     const userList = await db.query.users.findMany({
@@ -125,7 +124,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "不能删除自己" }, { status: 400 })
     }
 
-    const db = createDb()
+    const db = await createDb()
 
     // 检查用户是否存在
     const user = await db.query.users.findFirst({

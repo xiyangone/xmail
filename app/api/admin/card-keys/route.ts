@@ -5,7 +5,6 @@ import { createDb } from "@/lib/db";
 import { cardKeys, tempAccounts, users } from "@/lib/schema";
 import { desc, eq } from "drizzle-orm";
 
-export const runtime = "edge";
 
 // 重置卡密为未使用状态
 export async function PATCH(request: Request) {
@@ -28,7 +27,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "缺少卡密ID" }, { status: 400 });
     }
 
-    const db = createDb();
+    const db = await createDb();
 
     // 检查卡密是否存在
     const cardKey = await db.query.cardKeys.findFirst({
@@ -84,7 +83,7 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get("limit") || "20");
     const offset = (page - 1) * limit;
 
-    const db = createDb();
+    const db = await createDb();
 
     // 获取卡密列表
     const cardKeysList = await db.query.cardKeys.findMany({
@@ -156,7 +155,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "缺少卡密ID" }, { status: 400 });
     }
 
-    const db = createDb();
+    const db = await createDb();
 
     // 检查卡密是否存在
     const cardKey = await db.query.cardKeys.findFirst({

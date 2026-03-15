@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server"
-import { getRequestContext } from "@cloudflare/next-on-pages"
+import { getCloudflareContext } from "@opennextjs/cloudflare"
 import { createDb } from "@/lib/db"
 import { cardKeys, tempAccounts, users, emails } from "@/lib/schema"
 import { eq, and, lt, inArray } from "drizzle-orm"
 import { checkPermission } from "@/lib/auth"
 import { PERMISSIONS } from "@/lib/permissions"
 
-export const runtime = "edge"
 
 export async function POST() {
   const canAccess = await checkPermission(PERMISSIONS.MANAGE_CONFIG)
@@ -18,7 +17,7 @@ export async function POST() {
   }
 
   try {
-    const env = getRequestContext().env
+    const { env } = await getCloudflareContext()
 
     // 读取清理配置
     const [deleteExpiredUsedCardKeys, deleteExpiredUnusedCardKeys, deleteExpiredEmails] =
@@ -28,7 +27,7 @@ export async function POST() {
         env.SITE_CONFIG.get("CLEANUP_DELETE_EXPIRED_EMAILS"),
       ])
 
-    const db = createDb()
+    const db = await createDb()
     const now = new Date()
     let cleanedUsedCardKeys = 0
     let cleanedUnusedCardKeys = 0

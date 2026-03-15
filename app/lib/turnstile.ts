@@ -1,4 +1,4 @@
-import { getRequestContext } from "@cloudflare/next-on-pages";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 const TURNSTILE_VERIFY_URL =
   "https://challenges.cloudflare.com/turnstile/v0/siteverify";
@@ -12,7 +12,7 @@ export async function verifyTurnstileToken(
   token: string | null | undefined,
   remoteip?: string | null
 ): Promise<{ success: boolean; error?: string }> {
-  const env = getRequestContext().env;
+  const { env } = await getCloudflareContext();
   const secretKey = env.TURNSTILE_SECRET_KEY;
 
   // 未配置 secret key 时跳过验证（开发环境）

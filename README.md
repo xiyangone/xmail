@@ -85,7 +85,7 @@
 ## 技术栈
 
 - **框架**: [Next.js](https://nextjs.org/) 15.5.9 (App Router)
-- **平台**: [Cloudflare Pages](https://pages.cloudflare.com/)
+- **平台**: [Cloudflare Workers](https://workers.cloudflare.com/)
 - **数据库**: [Cloudflare D1](https://developers.cloudflare.com/d1/) (SQLite)
 - **认证**: [NextAuth](https://authjs.dev/getting-started/installation?framework=Next.js) 配合 GitHub 登录
 - **样式**: [Tailwind CSS](https://tailwindcss.com/)
@@ -232,8 +232,8 @@ pnpm dlx tsx ./scripts/deploy/index.ts
    - `AUTH_GITHUB_ID`: GitHub OAuth App ID
    - `AUTH_GITHUB_SECRET`: GitHub OAuth App Secret
    - `AUTH_SECRET`: NextAuth Secret，用来加密 session，请设置一个随机字符串
-   - `CUSTOM_DOMAIN`: 网站自定义域名，用于访问 XiYang Mail (可选， 如果不填, 则会使用 Cloudflare Pages 默认域名)
-   - `PROJECT_NAME`: Pages 项目名 （可选，如果不填，则为 xmail）
+   - `CUSTOM_DOMAIN`: 网站自定义域名，用于访问 XiYang Mail (可选，如果不填，则使用 Workers 默认域名 *.workers.dev)
+   - `PROJECT_NAME`: Worker 名称（可选，如果不填，则为 xmail）
    - `DATABASE_NAME`: D1 数据库名称 (可选，如果不填，则为 xmail-db)
    - `KV_NAMESPACE_NAME`: Cloudflare KV namespace 名称，用于存储网站配置 （可选，如果不填，则为 xmail-kv）
    - `NEXT_PUBLIC_TURNSTILE_SITE_KEY`: Cloudflare Turnstile 站点密钥（可选，不配置则跳过人机验证）
@@ -1106,8 +1106,8 @@ console.log("注册成功！");
 - `DATABASE_ID`: D1 数据库 ID (可选, 如果不填, 则会自动通过 Cloudflare API 获取)
 - `KV_NAMESPACE_NAME`: Cloudflare KV namespace 名称，用于存储网站配置
 - `KV_NAMESPACE_ID`: Cloudflare KV namespace ID，用于存储网站配置 （可选， 如果不填, 则会自动通过 Cloudflare API 获取）
-- `CUSTOM_DOMAIN`: 网站自定义域名, 如：moemail.app (可选， 如果不填, 则会使用 Cloudflare Pages 默认域名)
-- `PROJECT_NAME`: Pages 项目名 （可选，如果不填，则为 xmail）
+- `CUSTOM_DOMAIN`: 网站自定义域名, 如：moemail.app (可选，如果不填，则使用 Workers 默认域名 *.workers.dev)
+- `PROJECT_NAME`: Worker 名称（可选，如果不填，则为 xmail）
 
 ### Turnstile 人机验证（可选）
 
@@ -1154,27 +1154,6 @@ console.log("注册成功！");
 </table>
 
 ## 常见问题
-
-### 浏览器控制台显示 ERR_BLOCKED_BY_CLIENT 错误
-
-如果在浏览器控制台看到类似以下错误：
-
-```
-GET https://static.cloudflareinsights.com/beacon.min.js net::ERR_BLOCKED_BY_CLIENT
-```
-
-**原因**：这是因为浏览器的广告拦截扩展（如 uBlock Origin、AdBlock Plus 等）阻止了 Cloudflare Pages 的 Web Analytics 分析脚本。
-
-**影响**：此错误不影响网站的任何功能，可以安全忽略。
-
-**解决方法**（可选）：
-
-1. 在浏览器中禁用广告拦截扩展（不推荐）
-2. 在 Cloudflare Pages 项目设置中禁用 Web Analytics：
-   - 登录 Cloudflare Dashboard
-   - 进入 Workers & Pages → 你的项目
-   - 点击 Settings → Analytics
-   - 禁用 Web Analytics
 
 ### 首次加载或长时间未访问时加载较慢
 

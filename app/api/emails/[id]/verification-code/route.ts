@@ -5,7 +5,6 @@ import { eq, and } from "drizzle-orm";
 import { getUserId } from "@/lib/apiKey";
 import { getVerificationCode } from "@/lib/verification-code-fetcher";
 
-export const runtime = "edge";
 
 /**
  * 智能获取验证码 API
@@ -31,7 +30,7 @@ export async function POST(
   try {
     const userId = await getUserId();
     const { id } = await params;
-    const db = createDb();
+    const db = await createDb();
     const requestOrigin = new URL(request.url).origin;
     const apiKey = request.headers.get("x-api-key") ?? undefined;
 

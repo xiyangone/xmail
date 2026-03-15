@@ -4,7 +4,6 @@ import { eq, and, lt, or, sql, ne, isNull } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { encodeCursor, decodeCursor } from "@/lib/cursor";
 
-export const runtime = "edge";
 
 const PAGE_SIZE = 20;
 
@@ -14,7 +13,7 @@ export async function GET(
   { params }: { params: Promise<{ token: string }> }
 ) {
   const { token } = await params;
-  const db = createDb();
+  const db = await createDb();
   const { searchParams } = new URL(request.url);
   const cursor = searchParams.get("cursor");
 

@@ -1,12 +1,11 @@
 import { PERMISSIONS, Role, ROLES } from "@/lib/permissions";
-import { getRequestContext } from "@cloudflare/next-on-pages";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { EMAIL_CONFIG } from "@/config";
 import { checkPermission } from "@/lib/auth";
 
-export const runtime = "edge";
 
 export async function GET() {
-  const env = getRequestContext().env;
+  const { env } = await getCloudflareContext();
   const [defaultRole, emailDomains, adminContact, maxEmails, allowRegister, prefixLength, prefixFormat, pollInterval] =
     await Promise.all([
       env.SITE_CONFIG.get("DEFAULT_ROLE"),
@@ -70,7 +69,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "无效的角色" }, { status: 400 });
   }
 
-  const env = getRequestContext().env;
+  const { env } = await getCloudflareContext();
   const promises = [
     env.SITE_CONFIG.put("DEFAULT_ROLE", defaultRole),
     env.SITE_CONFIG.put("EMAIL_DOMAINS", emailDomains),

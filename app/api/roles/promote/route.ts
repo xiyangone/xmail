@@ -4,7 +4,6 @@ import { eq } from "drizzle-orm";
 import { ROLES } from "@/lib/permissions";
 import { assignRoleToUser } from "@/lib/auth";
 
-export const runtime = "edge";
 
 export async function POST(request: Request) {
   try {
@@ -26,7 +25,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const db = createDb();
+    const db = await createDb();
 
     const currentUserRole = await db.query.userRoles.findFirst({
       where: eq(userRoles.userId, userId),
