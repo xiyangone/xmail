@@ -8,7 +8,14 @@ export function encodeCursor(timestamp: number, id: string): string {
   return Buffer.from(JSON.stringify(data)).toString('base64')
 }
 
-export function decodeCursor(cursor: string): CursorData {
-  const data = JSON.parse(Buffer.from(cursor, 'base64').toString())
-  return data as CursorData
+export function decodeCursor(cursor: string): CursorData | null {
+  try {
+    const data = JSON.parse(Buffer.from(cursor, 'base64').toString())
+    if (typeof data.timestamp !== 'number' || typeof data.id !== 'string') {
+      return null
+    }
+    return data as CursorData
+  } catch {
+    return null
+  }
 } 

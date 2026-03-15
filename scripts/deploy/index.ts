@@ -297,10 +297,12 @@ const pushPagesSecret = () => {
   console.log("🔐 Pushing environment secrets to Pages...");
 
   // 定义运行时所需的环境变量列表
-  const runtimeEnvVars = ['AUTH_GITHUB_ID', 'AUTH_GITHUB_SECRET', 'AUTH_SECRET'];
+  const requiredEnvVars = ['AUTH_GITHUB_ID', 'AUTH_GITHUB_SECRET', 'AUTH_SECRET'];
+  const optionalEnvVars = ['TURNSTILE_SECRET_KEY'];
+  const runtimeEnvVars = [...requiredEnvVars, ...optionalEnvVars];
 
-  // 兼容老的部署方式，如果这些环境变量不存在，则说明是老的部署方式，跳过推送
-  for (const varName of runtimeEnvVars) {
+  // 兼容老的部署方式，如果必须的环境变量不存在，则跳过推送
+  for (const varName of requiredEnvVars) {
     if (!process.env[varName]) {
       console.log(`🔐 Skipping pushing secrets to Pages...`);
       return;

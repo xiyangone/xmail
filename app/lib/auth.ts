@@ -7,11 +7,12 @@ import { eq } from "drizzle-orm";
 import { getRequestContext } from "@cloudflare/next-on-pages";
 import { Permission, hasPermission, ROLES, Role } from "./permissions";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { hashPassword, comparePassword } from "@/lib/utils";
+import { hashPassword, comparePassword, needsRehash } from "@/lib/utils";
 import { authSchema } from "@/lib/validation";
 import { generateAvatarUrl } from "./avatar";
 import { getUserId } from "./apiKey";
 import { activateCardKey } from "./card-keys";
+import { verifyTurnstileToken } from "./turnstile";
 import { tempAccounts } from "./schema";
 import { and, gt } from "drizzle-orm";
 
@@ -115,10 +116,23 @@ const nextAuth = NextAuth(() => ({
           type: "password",
           placeholder: "请输入密码",
         },
+        turnstileToken: {
+          label: "Turnstile Token",
+          type: "text",
+        },
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         if (!credentials) {
           throw new Error("请输入用户名和密码");
+        }
+
+        // 验证 Turnstile token
+        const turnstileResult = await verifyTurnstileToken(
+          credentials.turnstileToken as string,
+          request?.headers?.get?.("CF-Connecting-IP")
+        );
+        if (!turnstileResult.success) {
+          throw new Error(turnstileResult.error || "人机验证失败");
         }
 
         const { username, password } = credentials;
@@ -148,6 +162,12 @@ const nextAuth = NextAuth(() => ({
           throw new Error("用户名或密码错误");
         }
 
+        // 旧格式密码自动升级为 PBKDF2
+        if (needsRehash(user.password as string)) {
+          const newHash = await hashPassword(password as string);
+          await db.update(users).set({ password: newHash }).where(eq(users.id, user.id));
+        }
+
         return {
           ...user,
           password: undefined,
@@ -163,10 +183,23 @@ const nextAuth = NextAuth(() => ({
           type: "text",
           placeholder: "请输入卡密",
         },
+        turnstileToken: {
+          label: "Turnstile Token",
+          type: "text",
+        },
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         if (!credentials?.cardKey) {
           throw new Error("请输入卡密");
+        }
+
+        // 验证 Turnstile token
+        const turnstileResult = await verifyTurnstileToken(
+          credentials.turnstileToken as string,
+          request?.headers?.get?.("CF-Connecting-IP")
+        );
+        if (!turnstileResult.success) {
+          throw new Error(turnstileResult.error || "人机验证失败");
         }
 
         const { cardKey } = credentials;

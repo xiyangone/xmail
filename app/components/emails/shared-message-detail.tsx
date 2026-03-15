@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Loader2 } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -33,7 +33,6 @@ export function SharedMessageDetail({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("html");
-  const iframeRef = useRef<HTMLIFrameElement>(null);
   const { theme } = useTheme();
   const { toast } = useToast();
 
@@ -81,74 +80,61 @@ export function SharedMessageDetail({
     fetchMessage();
   }, [token, messageId, toast]);
 
-  const updateIframeContent = useCallback(() => {
-    if (viewMode === "html" && message?.html) {
-      const iframe = iframeRef.current;
-      if (!iframe) return;
-
-      const doc = iframe.contentDocument || iframe.contentWindow?.document;
-      if (!doc) return;
-
-      doc.open();
-      doc.write(`
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <style>
-              body {
-                margin: 0;
-                padding: 16px;
-                font-family: system-ui, -apple-system, sans-serif;
-                line-height: 1.6;
-                color: ${theme === "dark" ? "#e5e7eb" : "#1f2937"};
-                background: ${theme === "dark" ? "#1f2937" : "#ffffff"};
-                word-wrap: break-word;
-                overflow-wrap: break-word;
-              }
-              img {
-                max-width: 100%;
-                height: auto;
-              }
-              a {
-                color: ${theme === "dark" ? "#a78bfa" : "#7c3aed"};
-              }
-              /* Webkit 滚动条 */
-              ::-webkit-scrollbar {
-                width: 8px;
-                height: 8px;
-              }
-              ::-webkit-scrollbar-track {
-                background: transparent;
-              }
-              ::-webkit-scrollbar-thumb {
-                background: ${
-                  theme === "dark"
-                    ? "rgba(130, 109, 217, 0.3)"
-                    : "rgba(130, 109, 217, 0.2)"
-                };
-                border-radius: 4px;
-              }
-              ::-webkit-scrollbar-thumb:hover {
-                background: ${
-                  theme === "dark"
-                    ? "rgba(130, 109, 217, 0.5)"
-                    : "rgba(130, 109, 217, 0.4)"
-                };
-              }
-            </style>
-          </head>
-          <body>${message.html}</body>
-        </html>
-      `);
-      doc.close();
-    }
+  const iframeSrcDoc = useCallback(() => {
+    if (viewMode !== "html" || !message?.html) return undefined;
+    return `<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'none'; object-src 'none';">
+    <style>
+      body {
+        margin: 0;
+        padding: 16px;
+        font-family: system-ui, -apple-system, sans-serif;
+        line-height: 1.6;
+        color: ${theme === "dark" ? "#e5e7eb" : "#1f2937"};
+        background: ${theme === "dark" ? "#1f2937" : "#ffffff"};
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+      }
+      img {
+        max-width: 100%;
+        height: auto;
+      }
+      a {
+        color: ${theme === "dark" ? "#a78bfa" : "#7c3aed"};
+      }
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: ${
+          theme === "dark"
+            ? "rgba(130, 109, 217, 0.3)"
+            : "rgba(130, 109, 217, 0.2)"
+        };
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: ${
+          theme === "dark"
+            ? "rgba(130, 109, 217, 0.5)"
+            : "rgba(130, 109, 217, 0.4)"
+        };
+      }
+    </style>
+  </head>
+  <body>${message.html}</body>
+</html>`;
   }, [message, viewMode, theme]);
 
-  useEffect(() => {
-    updateIframeContent();
-  }, [updateIframeContent]);
+  // 使用 srcdoc + sandbox 防止 XSS，无需 useEffect 写入
 
   if (loading) {
     return (
@@ -217,9 +203,9 @@ export function SharedMessageDetail({
       <div className="flex-1 overflow-hidden">
         {viewMode === "html" && message.html ? (
           <iframe
-            ref={iframeRef}
             className="w-full h-full border-0"
-            sandbox="allow-same-origin"
+            sandbox="allow-popups"
+            srcDoc={iframeSrcDoc()}
             title="邮件内容"
           />
         ) : (

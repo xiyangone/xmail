@@ -91,7 +91,11 @@ export async function GET(
     const conditions = [baseConditions];
 
     if (cursorStr) {
-      const { timestamp, id } = decodeCursor(cursorStr);
+      const cursorData = decodeCursor(cursorStr);
+      if (!cursorData) {
+        return NextResponse.json({ error: "无效的分页参数" }, { status: 400 });
+      }
+      const { timestamp, id } = cursorData;
       const orderByTime =
         messageType === "sent" ? messages.sentAt : messages.receivedAt;
       conditions.push(

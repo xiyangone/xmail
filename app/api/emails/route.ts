@@ -40,7 +40,11 @@ export async function GET(request: Request) {
     const conditions = [baseConditions];
 
     if (cursor) {
-      const { timestamp, id } = decodeCursor(cursor);
+      const cursorData = decodeCursor(cursor);
+      if (!cursorData) {
+        return NextResponse.json({ error: "无效的分页参数" }, { status: 400 });
+      }
+      const { timestamp, id } = cursorData;
       conditions.push(
         or(
           lt(emails.createdAt, new Date(timestamp)),

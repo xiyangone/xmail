@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { signIn } from "next-auth/react";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -30,11 +30,77 @@ export function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [activeTab, setActiveTab] = useState("login");
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const { toast } = useToast();
 
   const loginUsernameRef = useRef<HTMLInputElement>(null);
   const registerUsernameRef = useRef<HTMLInputElement>(null);
   const cardKeyRef = useRef<HTMLInputElement>(null);
+  const turnstileRef = useRef<HTMLDivElement>(null);
+  const turnstileWidgetId = useRef<string | null>(null);
+
+  // 加载 Turnstile 脚本
+  useEffect(() => {
+    if (document.querySelector('script[src*="challenges.cloudflare.com/turnstile"]')) {
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+    script.async = true;
+    document.head.appendChild(script);
+  }, []);
+
+  // 渲染 Turnstile widget
+  const renderTurnstile = useCallback(() => {
+    const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+    if (!siteKey || !turnstileRef.current) return;
+    if (typeof window === "undefined" || !(window as any).turnstile) return;
+
+    // 先移除旧 widget
+    if (turnstileWidgetId.current) {
+      try {
+        (window as any).turnstile.remove(turnstileWidgetId.current);
+      } catch {
+        // ignore
+      }
+      turnstileWidgetId.current = null;
+    }
+
+    setTurnstileToken(null);
+
+    turnstileWidgetId.current = (window as any).turnstile.render(
+      turnstileRef.current,
+      {
+        sitekey: siteKey,
+        callback: (token: string) => setTurnstileToken(token),
+        "expired-callback": () => setTurnstileToken(null),
+        "error-callback": () => setTurnstileToken(null),
+        theme: "auto",
+        size: "flexible",
+      }
+    );
+  }, []);
+
+  // 切换 tab 或脚本加载完成时渲染 widget
+  useEffect(() => {
+    // 等待脚本加载
+    const timer = setInterval(() => {
+      if ((window as any).turnstile) {
+        clearInterval(timer);
+        renderTurnstile();
+      }
+    }, 200);
+
+    return () => clearInterval(timer);
+  }, [activeTab, renderTurnstile]);
+
+  // 重置 Turnstile（提交失败后刷新）
+  const resetTurnstile = useCallback(() => {
+    if (turnstileWidgetId.current && (window as any).turnstile) {
+      (window as any).turnstile.reset(turnstileWidgetId.current);
+    }
+    setTurnstileToken(null);
+  }, []);
 
   // 根据当前标签页自动聚焦到对应的输入框
   useEffect(() => {
@@ -83,6 +149,7 @@ export function LoginForm() {
       const result = await signIn("credentials", {
         username,
         password,
+        turnstileToken: turnstileToken || "",
         redirect: false,
       });
 
@@ -92,6 +159,7 @@ export function LoginForm() {
           description: "用户名或密码错误",
           variant: "destructive",
         });
+        resetTurnstile();
         setLoading(false);
         return;
       }
@@ -103,6 +171,7 @@ export function LoginForm() {
         description: error instanceof Error ? error.message : "请稍后重试",
         variant: "destructive",
       });
+      resetTurnstile();
       setLoading(false);
     }
   };
@@ -115,7 +184,7 @@ export function LoginForm() {
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, turnstileToken: turnstileToken || "" }),
       });
 
       const data = (await response.json()) as { error?: string };
@@ -126,6 +195,7 @@ export function LoginForm() {
           description: data.error || "请稍后重试",
           variant: "destructive",
         });
+        resetTurnstile();
         setLoading(false);
         return;
       }
@@ -134,6 +204,7 @@ export function LoginForm() {
       const result = await signIn("credentials", {
         username,
         password,
+        turnstileToken: turnstileToken || "",
         redirect: false,
       });
 
@@ -143,6 +214,7 @@ export function LoginForm() {
           description: "自动登录失败，请手动登录",
           variant: "destructive",
         });
+        resetTurnstile();
         setLoading(false);
         return;
       }
@@ -154,6 +226,7 @@ export function LoginForm() {
         description: error instanceof Error ? error.message : "请稍后重试",
         variant: "destructive",
       });
+      resetTurnstile();
       setLoading(false);
     }
   };
@@ -172,6 +245,7 @@ export function LoginForm() {
     try {
       const result = await signIn("card-key", {
         cardKey,
+        turnstileToken: turnstileToken || "",
         redirect: false,
       });
 
@@ -181,6 +255,7 @@ export function LoginForm() {
           description: result.error,
           variant: "destructive",
         });
+        resetTurnstile();
         setLoading(false);
         return;
       }
@@ -196,6 +271,7 @@ export function LoginForm() {
         description: error instanceof Error ? error.message : "请稍后重试",
         variant: "destructive",
       });
+      resetTurnstile();
       setLoading(false);
     }
   };
@@ -450,6 +526,7 @@ export function LoginForm() {
               </div>
             </TabsContent>
           </div>
+          <div ref={turnstileRef} className="flex justify-center my-3" />
         </Tabs>
       </CardContent>
     </Card>

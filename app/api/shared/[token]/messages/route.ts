@@ -68,7 +68,11 @@ export async function GET(
     const conditions = [baseConditions];
 
     if (cursor) {
-      const { timestamp, id } = decodeCursor(cursor);
+      const cursorData = decodeCursor(cursor);
+      if (!cursorData) {
+        return NextResponse.json({ error: "无效的分页参数" }, { status: 400 });
+      }
+      const { timestamp, id } = cursorData;
       const cursorCondition = or(
         lt(messages.receivedAt, new Date(timestamp)),
         and(

@@ -3,10 +3,20 @@ import { getRequestContext } from "@cloudflare/next-on-pages"
 import { createDb } from "@/lib/db"
 import { cardKeys, tempAccounts, users, emails } from "@/lib/schema"
 import { eq, and, lt, inArray } from "drizzle-orm"
+import { checkPermission } from "@/lib/auth"
+import { PERMISSIONS } from "@/lib/permissions"
 
 export const runtime = "edge"
 
 export async function POST() {
+  const canAccess = await checkPermission(PERMISSIONS.MANAGE_CONFIG)
+  if (!canAccess) {
+    return NextResponse.json(
+      { error: "权限不足" },
+      { status: 403 }
+    )
+  }
+
   try {
     const env = getRequestContext().env
 
@@ -122,7 +132,7 @@ export async function POST() {
   }
 }
 
-// 支持定时任务调用
+// 支持定时任务调用（同样需要权限检查）
 export async function GET() {
   return POST()
 }

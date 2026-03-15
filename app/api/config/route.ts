@@ -28,6 +28,10 @@ export async function GET() {
     emailPrefixLength: prefixLength || EMAIL_CONFIG.DEFAULT_PREFIX_LENGTH.toString(),
     emailPrefixFormat: prefixFormat || EMAIL_CONFIG.DEFAULT_PREFIX_FORMAT,
     messagePollInterval: pollInterval || EMAIL_CONFIG.POLL_INTERVAL.toString(),
+  }, {
+    headers: {
+      "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
+    },
   });
 }
 

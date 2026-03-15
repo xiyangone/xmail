@@ -6,6 +6,7 @@ import { NextResponse } from "next/server"
 import { checkPermission } from "@/lib/auth"
 import { PERMISSIONS } from "@/lib/permissions"
 import { desc, eq } from "drizzle-orm"
+import { sha256Hash } from "@/lib/utils"
 
 export const runtime = "edge"
 
@@ -55,15 +56,17 @@ export async function POST(request: Request) {
     }
 
     const key = `mk_${nanoid(32)}`
+    const keyHash = await sha256Hash(key)
     const db = createDb()
-    
+
     await db.insert(apiKeys).values({
       name,
-      key,
+      key: keyHash,
       userId: session!.user.id!,
       expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
     })
 
+    // 明文 key 仅在创建时返回一次
     return NextResponse.json({ key })
   } catch (error) {
     console.error("Failed to create API key:", error)

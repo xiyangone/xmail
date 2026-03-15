@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Loader2 } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -36,7 +36,6 @@ export function MessageView({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("html");
-  const iframeRef = useRef<HTMLIFrameElement>(null);
   const { theme } = useTheme();
   const { toast } = useToast();
 
@@ -87,109 +86,69 @@ export function MessageView({
     fetchMessage();
   }, [emailId, messageId, messageType, toast]);
 
-  const updateIframeContent = useCallback(() => {
-    if (viewMode === "html" && message?.html && iframeRef.current) {
-      const iframe = iframeRef.current;
-      const doc = iframe.contentDocument || iframe.contentWindow?.document;
-
-      if (doc) {
-        doc.open();
-        doc.write(`
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <base target="_blank">
-              <style>
-                html, body {
-                  margin: 0;
-                  padding: 0;
-                  min-height: 100%;
-                  font-family: system-ui, -apple-system, sans-serif;
-                  color: ${theme === "dark" ? "#fff" : "#000"};
-                  background: ${theme === "dark" ? "#1a1a1a" : "#fff"};
-                }
-                body {
-                  padding: 20px;
-                }
-                img {
-                  max-width: 100%;
-                  height: auto;
-                }
-                a {
-                  color: #2563eb;
-                }
-                /* 滚动条样式 */
-                ::-webkit-scrollbar {
-                  width: 6px;
-                  height: 6px;
-                }
-                ::-webkit-scrollbar-track {
-                  background: transparent;
-                }
-                ::-webkit-scrollbar-thumb {
-                  background: ${
-                    theme === "dark"
-                      ? "rgba(130, 109, 217, 0.3)"
-                      : "rgba(130, 109, 217, 0.2)"
-                  };
-                  border-radius: 9999px;
-                  transition: background-color 0.2s;
-                }
-                ::-webkit-scrollbar-thumb:hover {
-                  background: ${
-                    theme === "dark"
-                      ? "rgba(130, 109, 217, 0.5)"
-                      : "rgba(130, 109, 217, 0.4)"
-                  };
-                }
-                /* Firefox 滚动条 */
-                * {
-                  scrollbar-width: thin;
-                  scrollbar-color: ${
-                    theme === "dark"
-                      ? "rgba(130, 109, 217, 0.3) transparent"
-                      : "rgba(130, 109, 217, 0.2) transparent"
-                  };
-                }
-              </style>
-            </head>
-            <body>${message.html}</body>
-          </html>
-        `);
-        doc.close();
-
-        // 更新高度以填充容器
-        const updateHeight = () => {
-          const container = iframe.parentElement;
-          if (container) {
-            iframe.style.height = `${container.clientHeight}px`;
-          }
+  const iframeSrcDoc = useCallback(() => {
+    if (viewMode !== "html" || !message?.html) return undefined;
+    return `<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Security-Policy" content="script-src 'none'; object-src 'none';">
+    <base target="_blank">
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        min-height: 100%;
+        font-family: system-ui, -apple-system, sans-serif;
+        color: ${theme === "dark" ? "#fff" : "#000"};
+        background: ${theme === "dark" ? "#1a1a1a" : "#fff"};
+      }
+      body {
+        padding: 20px;
+      }
+      img {
+        max-width: 100%;
+        height: auto;
+      }
+      a {
+        color: #2563eb;
+      }
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: ${
+          theme === "dark"
+            ? "rgba(130, 109, 217, 0.3)"
+            : "rgba(130, 109, 217, 0.2)"
         };
-
-        updateHeight();
-        window.addEventListener("resize", updateHeight);
-
-        // 监听内容变化
-        const resizeObserver = new ResizeObserver(updateHeight);
-        resizeObserver.observe(doc.body);
-
-        // 监听图片加载
-        doc.querySelectorAll("img").forEach((img: HTMLImageElement) => {
-          img.onload = updateHeight;
-        });
-
-        return () => {
-          window.removeEventListener("resize", updateHeight);
-          resizeObserver.disconnect();
+        border-radius: 9999px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: ${
+          theme === "dark"
+            ? "rgba(130, 109, 217, 0.5)"
+            : "rgba(130, 109, 217, 0.4)"
         };
       }
-    }
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: ${
+          theme === "dark"
+            ? "rgba(130, 109, 217, 0.3) transparent"
+            : "rgba(130, 109, 217, 0.2) transparent"
+        };
+      }
+    </style>
+  </head>
+  <body>${message.html}</body>
+</html>`;
   }, [message, viewMode, theme]);
 
-  // 监听主题变化和内容变化
-  useEffect(() => {
-    updateIframeContent();
-  }, [updateIframeContent]);
+  // 移除了旧的 doc.write 方式，改用 srcdoc + sandbox 防止 XSS
 
   if (loading) {
     return (
@@ -264,9 +223,10 @@ export function MessageView({
       <div className="flex-1 overflow-auto relative">
         {viewMode === "html" && message.html ? (
           <iframe
-            ref={iframeRef}
             className="absolute inset-0 w-full h-full border-0 bg-transparent"
-            sandbox="allow-same-origin allow-popups"
+            sandbox="allow-popups"
+            srcDoc={iframeSrcDoc()}
+            title="邮件内容"
           />
         ) : (
           <div className="p-4 text-sm whitespace-pre-wrap">

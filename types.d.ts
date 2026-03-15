@@ -5,6 +5,7 @@ declare global {
   interface CloudflareEnv {
     DB: D1Database;
     SITE_CONFIG: KVNamespace;
+    TURNSTILE_SECRET_KEY?: string;
   }
 
   type Env = CloudflareEnv

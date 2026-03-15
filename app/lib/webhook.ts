@@ -53,7 +53,9 @@ export async function callWebhook(
       lastError = error as Error
 
       if (i < WEBHOOK_CONFIG.MAX_RETRIES - 1) {
-        await new Promise(resolve => setTimeout(resolve, WEBHOOK_CONFIG.RETRY_DELAY))
+        // 指数退避：1s, 2s, 4s...
+        const delay = WEBHOOK_CONFIG.RETRY_DELAY * Math.pow(2, i)
+        await new Promise(resolve => setTimeout(resolve, delay))
       }
     }
   }

@@ -77,6 +77,9 @@
 - 🌐 **域名验证增强**：支持带数字的顶级域名（如 `aaugment.de5.net`），更灵活的域名配置
 - 🔐 **OAuth注册控制**：关闭注册时同时阻止GitHub OAuth创建新用户，防止绕过注册限制
 - 🔤 **纯字母前缀格式**：新增纯随机字母（无数字）的邮箱前缀生成选项
+- 🛡️ **安全加固**：PBKDF2 密码哈希、API Key 哈希存储、iframe XSS 防护（srcdoc + sandbox + CSP）、安全响应头
+- 🤖 **Turnstile 人机验证**：集成 Cloudflare Turnstile，登录/注册/卡密登录全链路防机器人
+- ⚛️ **数据一致性**：卡密激活使用 D1 db.batch() 原子操作，杜绝中途失败导致的脏数据
 
 ## 技术栈
 
@@ -231,6 +234,8 @@ pnpm dlx tsx ./scripts/deploy/index.ts
    - `PROJECT_NAME`: Pages 项目名 （可选，如果不填，则为 xmail）
    - `DATABASE_NAME`: D1 数据库名称 (可选，如果不填，则为 xmail-db)
    - `KV_NAMESPACE_NAME`: Cloudflare KV namespace 名称，用于存储网站配置 （可选，如果不填，则为 xmail-kv）
+   - `NEXT_PUBLIC_TURNSTILE_SITE_KEY`: Cloudflare Turnstile 站点密钥（可选，不配置则跳过人机验证）
+   - `TURNSTILE_SECRET_KEY`: Cloudflare Turnstile 密钥（可选，与站点密钥配对使用）
 
 2. 选择触发方式：
 
@@ -1101,6 +1106,13 @@ console.log("注册成功！");
 - `KV_NAMESPACE_ID`: Cloudflare KV namespace ID，用于存储网站配置 （可选， 如果不填, 则会自动通过 Cloudflare API 获取）
 - `CUSTOM_DOMAIN`: 网站自定义域名, 如：moemail.app (可选， 如果不填, 则会使用 Cloudflare Pages 默认域名)
 - `PROJECT_NAME`: Pages 项目名 （可选，如果不填，则为 xmail）
+
+### Turnstile 人机验证（可选）
+
+- `NEXT_PUBLIC_TURNSTILE_SITE_KEY`: Cloudflare Turnstile 站点密钥（前端使用）
+- `TURNSTILE_SECRET_KEY`: Cloudflare Turnstile 密钥（后端验证使用）
+
+> 配置方法：在 [Cloudflare Dashboard](https://dash.cloudflare.com/) → 应用程序安全 → Turnstile 中创建站点，获取站点密钥和密钥。不配置时系统自动跳过人机验证。
 
 ## Github OAuth App 配置
 
