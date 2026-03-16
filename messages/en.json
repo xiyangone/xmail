@@ -78,6 +78,8 @@
     "subtitle": "XiYang Mail Service ✨",
     "description": "Secure, fast, disposable email addresses to protect your privacy from spam.",
     "enterMailbox": "Enter Mailbox",
+    "loginRequiredTitle": "Login required",
+    "loginRequiredDescription": "Please login or register to access the mailbox.",
     "features": {
       "privacy": {
         "title": "Privacy Protection",
@@ -319,6 +321,9 @@
     "saveFailed": "Save failed"
   },
   "apiKey": {
+    "usageToday": "Calls today: {count}",
+    "usageMonth": "Calls this month: {count}",
+    "usageTotal": "Total calls: {count}",
     "createApiKey": "Create API Key",
     "createNew": "Create New API Key",
     "createSuccess": "API Key Created",

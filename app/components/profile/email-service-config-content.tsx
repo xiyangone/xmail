@@ -50,7 +50,8 @@ export function EmailServiceConfigContent() {
     }
   }
 
-  const handleSave = async () => {
+  const handleSave = async (event?: React.FormEvent<HTMLFormElement>) => {
+    event?.preventDefault()
     setLoading(true)
     try {
       const saveData = {
@@ -86,7 +87,7 @@ export function EmailServiceConfigContent() {
   }
 
   return (
-    <div className="space-y-4">
+    <form className="space-y-4" onSubmit={handleSave}>
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
           <Label htmlFor="enabled" className="text-sm font-medium">
@@ -246,12 +247,12 @@ export function EmailServiceConfigContent() {
       )}
 
       <Button
-        onClick={handleSave}
+        type="submit"
         disabled={loading}
         className="w-full"
       >
         {loading ? t("saving") : t("saveConfig")}
       </Button>
-    </div>
+    </form>
   )
 }

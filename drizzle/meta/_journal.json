@@ -162,6 +162,13 @@
       "when": 1773557881734,
       "tag": "0022_tranquil_exiles",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1773659420254,
+      "tag": "0023_mute_oracle",
+      "breakpoints": true
     }
   ]
 }

@@ -78,6 +78,8 @@
     "subtitle": "夕阳邮箱服务 ✨",
     "description": "安全、快速、一次性的临时邮箱地址，保护您的隐私，远离垃圾邮件。",
     "enterMailbox": "进入邮箱",
+    "loginRequiredTitle": "需要登录",
+    "loginRequiredDescription": "请先登录/注册后再进入邮箱。",
     "features": {
       "privacy": {
         "title": "隐私保护",
@@ -319,6 +321,9 @@
     "saveFailed": "保存失败"
   },
   "apiKey": {
+    "usageToday": "今日调用：{count}",
+    "usageMonth": "本月调用：{count}",
+    "usageTotal": "总调用次数：{count}",
     "createApiKey": "创建 API Key",
     "createNew": "创建新的 API Key",
     "createSuccess": "API Key 创建成功",

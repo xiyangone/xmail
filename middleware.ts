@@ -20,10 +20,9 @@ export async function middleware(request: Request) {
   const method = request.method
 
   // API Key 认证
-  request.headers.delete("X-User-Id")
   const apiKey = request.headers.get("X-API-Key")
   if (apiKey) {
-    return handleApiKeyAuth(apiKey, pathname)
+    return handleApiKeyAuth(apiKey, pathname, request.headers)
   }
 
   // Session 认证

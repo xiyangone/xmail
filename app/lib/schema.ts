@@ -223,6 +223,12 @@ export const apiKeys = sqliteTable(
     ),
     expiresAt: integer("expires_at", { mode: "timestamp" }),
     enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
+    totalCalls: integer("total_calls").notNull().default(0),
+    dailyCalls: integer("daily_calls").notNull().default(0),
+    dailyDate: text("daily_date"),
+    monthlyCalls: integer("monthly_calls").notNull().default(0),
+    monthlyMonth: text("monthly_month"),
+    lastUsedAt: integer("last_used_at", { mode: "timestamp" }),
   },
   (table) => ({
     nameUserIdUnique: uniqueIndex("name_user_id_unique").on(

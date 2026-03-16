@@ -183,11 +183,11 @@ export function ApiKeyPanel() {
                 <DialogTitle>
                   {newKey ? "API Key 创建成功" : "创建新的 API Key"}
                 </DialogTitle>
-                {newKey && (
-                  <DialogDescription className="text-destructive">
-                    请立即保存此密钥，它只会显示一次且无法恢复
-                  </DialogDescription>
-                )}
+                <DialogDescription className={newKey ? "text-destructive" : "sr-only"}>
+                  {newKey
+                    ? "请立即保存此密钥，它只会显示一次且无法恢复"
+                    : "创建一个新的 API Key，用于访问邮箱、消息和验证码接口。"}
+                </DialogDescription>
               </DialogHeader>
 
               {!newKey ? (

@@ -86,11 +86,11 @@ export function ApiKeySection() {
           <DialogTitle>
             {newKey ? t("createSuccess") : t("createNew")}
           </DialogTitle>
-          {newKey && (
-            <DialogDescription className="text-destructive">
-              {t("saveWarning")}
-            </DialogDescription>
-          )}
+          <DialogDescription className={newKey ? "text-destructive" : "sr-only"}>
+            {newKey
+              ? t("saveWarning")
+              : "创建一个新的 API Key，用于调用邮箱、消息和验证码接口。"}
+          </DialogDescription>
         </DialogHeader>
 
         {!newKey ? (

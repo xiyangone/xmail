@@ -205,7 +205,7 @@ export function ShareDialog({ emailId }: ShareDialogProps) {
                         key={option.value}
                         value={option.value.toString()}
                       >
-                        {option.label}
+                        {t(option.label)}
                       </SelectItem>
                     ))}
                   </SelectContent>

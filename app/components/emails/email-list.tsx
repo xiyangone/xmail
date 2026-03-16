@@ -182,13 +182,24 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
   const canCreateEmail = !isTempUser;
 
   const fetchEmails = useCallback(
-    async (cursor?: string) => {
+    async (cursor?: string, isManualRefresh = false) => {
       try {
         const url = new URL("/api/emails", window.location.origin);
         if (cursor) {
           url.searchParams.set("cursor", cursor);
         }
         const response = await fetch(url);
+        if (!response.ok) {
+          const responseText = await response.text().catch(() => "");
+          console.error(
+            "Failed to fetch emails:",
+            response.status,
+            responseText.slice(0, 200)
+          );
+          throw new Error(
+            `Failed to fetch emails: ${response.status} ${response.statusText}`
+          );
+        }
         const data = (await response.json()) as EmailResponse;
 
         if (!cursor) {
@@ -225,18 +236,25 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
         setNextCursor(data.nextCursor);
       } catch (error) {
         console.error("Failed to fetch emails:", error);
+        if (isManualRefresh) {
+          toast({
+            title: tc("error"),
+            description: tc("networkError"),
+            variant: "destructive",
+          });
+        }
       } finally {
         setLoading(false);
         setRefreshing(false);
         setLoadingMore(false);
       }
     },
-    [emails]
+    [emails, toast, tc]
   );
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchEmails();
+    await fetchEmails(undefined, true);
   }, [fetchEmails]);
 
   const handleScroll = useThrottle((e: React.UIEvent<HTMLDivElement>) => {
@@ -254,7 +272,8 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
 
   useEffect(() => {
     if (session) fetchEmails();
-  }, [session, fetchEmails]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
 
   const handleDelete = async (email: Email) => {
     try {

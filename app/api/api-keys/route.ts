@@ -8,6 +8,17 @@ import { PERMISSIONS } from "@/lib/permissions"
 import { desc, eq } from "drizzle-orm"
 import { sha256Hash } from "@/lib/utils"
 
+const CHINA_TIMEZONE_OFFSET_MS = 8 * 60 * 60 * 1000
+
+function getChinaPeriodKeys(now: Date) {
+  const shifted = new Date(now.getTime() + CHINA_TIMEZONE_OFFSET_MS)
+  const iso = shifted.toISOString()
+  return {
+    day: iso.slice(0, 10),
+    month: iso.slice(0, 7),
+  }
+}
+
 
 export async function GET() {
   const hasPermission = await checkPermission(PERMISSIONS.MANAGE_API_KEY)
@@ -23,11 +34,23 @@ export async function GET() {
       orderBy: desc(apiKeys.createdAt),
     })
 
+    const { day, month } = getChinaPeriodKeys(new Date())
+
     return NextResponse.json({
-      apiKeys: keys.map(key => ({
-        ...key,
-        key: undefined
-      }))
+      apiKeys: keys.map((key) => ({
+        id: key.id,
+        userId: key.userId,
+        name: key.name,
+        createdAt: key.createdAt,
+        expiresAt: key.expiresAt,
+        enabled: key.enabled,
+        usage: {
+          total: key.totalCalls,
+          today: key.dailyDate === day ? key.dailyCalls : 0,
+          month: key.monthlyMonth === month ? key.monthlyCalls : 0,
+        },
+        lastUsedAt: key.lastUsedAt,
+      })),
     })
   } catch (error) {
     console.error("Failed to fetch API keys:", error)

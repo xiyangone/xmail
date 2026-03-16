@@ -13,7 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Github, Loader2, KeyRound, User2 } from "lucide-react";
+import { Github, Loader2, KeyRound, User2, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 
@@ -32,6 +32,9 @@ export function LoginForm() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [activeTab, setActiveTab] = useState("login");
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { toast } = useToast();
   const t = useTranslations("auth");
   const tc = useTranslations("common");
@@ -41,6 +44,7 @@ export function LoginForm() {
   const cardKeyRef = useRef<HTMLInputElement>(null);
   const turnstileRef = useRef<HTMLDivElement>(null);
   const turnstileWidgetId = useRef<string | null>(null);
+  const turnstileTokenRef = useRef<string | null>(null);
 
   // 加载 Turnstile 脚本
   useEffect(() => {
@@ -70,14 +74,24 @@ export function LoginForm() {
     }
 
     setTurnstileToken(null);
+    turnstileTokenRef.current = null;
 
     turnstileWidgetId.current = (window as any).turnstile.render(
       turnstileRef.current,
       {
         sitekey: siteKey,
-        callback: (token: string) => setTurnstileToken(token),
-        "expired-callback": () => setTurnstileToken(null),
-        "error-callback": () => setTurnstileToken(null),
+        callback: (token: string) => {
+          setTurnstileToken(token);
+          turnstileTokenRef.current = token;
+        },
+        "expired-callback": () => {
+          setTurnstileToken(null);
+          turnstileTokenRef.current = null;
+        },
+        "error-callback": () => {
+          setTurnstileToken(null);
+          turnstileTokenRef.current = null;
+        },
         theme: "auto",
         size: "flexible",
       }
@@ -103,7 +117,22 @@ export function LoginForm() {
       (window as any).turnstile.reset(turnstileWidgetId.current);
     }
     setTurnstileToken(null);
+    turnstileTokenRef.current = null;
   }, []);
+
+  // 等待 Turnstile 产生新 token（注册后自动登录用）
+  const waitForNewTurnstileToken = useCallback(async (timeoutMs = 5000): Promise<string | null> => {
+    turnstileTokenRef.current = null;
+    resetTurnstile();
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      if (turnstileTokenRef.current) {
+        return turnstileTokenRef.current;
+      }
+      await new Promise(r => setTimeout(r, 200));
+    }
+    return null;
+  }, [resetTurnstile]);
 
   // 根据当前标签页自动聚焦到对应的输入框
   useEffect(() => {
@@ -203,26 +232,36 @@ export function LoginForm() {
         return;
       }
 
-      // 注册成功后自动登录
-      const result = await signIn("credentials", {
-        username,
-        password,
-        turnstileToken: turnstileToken || "",
-        redirect: false,
-      });
-
-      if (result?.error) {
-        toast({
-          title: t("errors.loginFailed"),
-          description: t("autoLoginFailed"),
-          variant: "destructive",
+      // 注册成功后获取新 Turnstile token 再自动登录
+      const freshToken = await waitForNewTurnstileToken(5000);
+      if (freshToken) {
+        const result = await signIn("credentials", {
+          username,
+          password,
+          turnstileToken: freshToken,
+          redirect: false,
         });
-        resetTurnstile();
-        setLoading(false);
-        return;
-      }
 
-      window.location.href = "/";
+        if (result?.error) {
+          toast({
+            title: t("registerSuccess"),
+            description: t("autoLoginFailed"),
+          });
+          setActiveTab("login");
+          setLoading(false);
+          return;
+        }
+
+        window.location.href = "/";
+      } else {
+        // Turnstile 未能及时提供新 token，引导手动登录
+        toast({
+          title: t("registerSuccess"),
+          description: t("autoLoginFailed"),
+        });
+        setActiveTab("login");
+        setLoading(false);
+      }
     } catch (error) {
       toast({
         title: t("errors.registerFailed"),
@@ -290,6 +329,9 @@ export function LoginForm() {
     setConfirmPassword("");
     setCardKey("");
     setErrors({});
+    setShowLoginPassword(false);
+    setShowRegisterPassword(false);
+    setShowConfirmPassword(false);
   };
 
   return (
@@ -346,11 +388,11 @@ export function LoginForm() {
                     </div>
                     <Input
                       className={cn(
-                        "h-9 pl-9 pr-3",
+                        "h-9 pl-9 pr-10",
                         errors.password &&
                           "border-destructive focus-visible:ring-destructive"
                       )}
-                      type="password"
+                      type={showLoginPassword ? "text" : "password"}
                       placeholder={t("passwordPlaceholder")}
                       value={password}
                       onChange={(e) => {
@@ -359,6 +401,16 @@ export function LoginForm() {
                       }}
                       disabled={loading}
                     />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-2 py-2 hover:bg-transparent"
+                      onClick={() => setShowLoginPassword(!showLoginPassword)}
+                      tabIndex={-1}
+                    >
+                      {showLoginPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                    </Button>
                   </div>
                   {errors.password && (
                     <p className="text-xs text-destructive">
@@ -435,11 +487,11 @@ export function LoginForm() {
                     </div>
                     <Input
                       className={cn(
-                        "h-9 pl-9 pr-3",
+                        "h-9 pl-9 pr-10",
                         errors.password &&
                           "border-destructive focus-visible:ring-destructive"
                       )}
-                      type="password"
+                      type={showRegisterPassword ? "text" : "password"}
                       placeholder={t("passwordPlaceholder")}
                       value={password}
                       onChange={(e) => {
@@ -448,6 +500,16 @@ export function LoginForm() {
                       }}
                       disabled={loading}
                     />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-2 py-2 hover:bg-transparent"
+                      onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                      tabIndex={-1}
+                    >
+                      {showRegisterPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                    </Button>
                   </div>
                   {errors.password && (
                     <p className="text-xs text-destructive">
@@ -462,11 +524,11 @@ export function LoginForm() {
                     </div>
                     <Input
                       className={cn(
-                        "h-9 pl-9 pr-3",
+                        "h-9 pl-9 pr-10",
                         errors.confirmPassword &&
                           "border-destructive focus-visible:ring-destructive"
                       )}
-                      type="password"
+                      type={showConfirmPassword ? "text" : "password"}
                       placeholder={t("confirmPasswordPlaceholder")}
                       value={confirmPassword}
                       onChange={(e) => {
@@ -475,6 +537,16 @@ export function LoginForm() {
                       }}
                       disabled={loading}
                     />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-2 py-2 hover:bg-transparent"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      tabIndex={-1}
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                    </Button>
                   </div>
                   {errors.confirmPassword && (
                     <p className="text-xs text-destructive">

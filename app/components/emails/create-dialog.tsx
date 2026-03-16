@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -155,6 +156,9 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("create.title")}</DialogTitle>
+          <DialogDescription className="sr-only">
+            设置邮箱前缀、域名和过期时间，创建一个新的临时邮箱。
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="flex gap-2">
@@ -196,15 +200,20 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
             </Button>
           </div>
 
-          <div className="flex items-center gap-4">
-            <Label className="shrink-0 text-muted-foreground">{t("create.expiry")}</Label>
+          <div className="flex items-center gap-3 overflow-x-auto pb-1">
+            <Label className="shrink-0 whitespace-nowrap text-muted-foreground">
+              {t("create.expiry")}
+            </Label>
             <RadioGroup
               value={expiryTime}
               onValueChange={setExpiryTime}
-              className="flex gap-6"
+              className="flex min-w-max flex-nowrap items-center gap-4"
             >
               {EXPIRY_OPTIONS.map((option) => (
-                <div key={option.value} className="flex items-center gap-2">
+                <div
+                  key={option.value}
+                  className="flex shrink-0 items-center gap-2 whitespace-nowrap"
+                >
                   <RadioGroupItem
                     value={option.value.toString()}
                     id={option.value.toString()}
@@ -213,7 +222,7 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
                     htmlFor={option.value.toString()}
                     className="cursor-pointer text-sm"
                   >
-                    {option.label}
+                    {t(option.label)}
                   </Label>
                 </div>
               ))}

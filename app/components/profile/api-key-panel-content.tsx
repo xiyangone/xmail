@@ -20,11 +20,17 @@ import { useTranslations } from "next-intl";
 
 type ApiKey = {
   id: string;
+  userId: string;
   name: string;
-  key: string;
   createdAt: string;
   expiresAt: string | null;
   enabled: boolean;
+  usage: {
+    total: number;
+    month: number;
+    today: number;
+  };
+  lastUsedAt: string | null;
 };
 
 export function ApiKeyPanelContent() {
@@ -153,6 +159,11 @@ export function ApiKeyPanelContent() {
                 <div className="font-medium">{key.name}</div>
                 <div className="text-sm text-muted-foreground">
                   {t("createdAtLabel", { time: new Date(key.createdAt).toLocaleString() })}
+                </div>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                  <span>{t("usageToday", { count: key.usage.today })}</span>
+                  <span>{t("usageMonth", { count: key.usage.month })}</span>
+                  <span>{t("usageTotal", { count: key.usage.total })}</span>
                 </div>
               </div>
               <div className="flex items-center gap-2">

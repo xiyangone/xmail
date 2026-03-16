@@ -31,7 +31,7 @@
 
 ## 在线演示
 
-[https://xymailyx.dpdns.org/](https://xymailyx.dpdns.org/)
+[https://mail.xiyangone.cn/](https://mail.xiyangone.cn/)
 
 > 本项目基于 [MoeMail](https://github.com/beilunyang/moemail) 进行二次开发和优化
 >

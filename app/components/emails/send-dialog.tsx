@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -125,6 +126,9 @@ export function SendDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("send.title")}</DialogTitle>
+          <DialogDescription className="sr-only">
+            填写收件人、主题和内容，从当前临时邮箱发送一封邮件。
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="text-sm text-muted-foreground">
