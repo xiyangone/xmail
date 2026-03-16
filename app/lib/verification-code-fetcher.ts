@@ -1,7 +1,7 @@
 /**
- * 智能验证码获取工具
- * - 轮询邮件列表
- * - 提取验证码（正文/HTML/标题）
+ * Verification code polling helper.
+ * - Polls the mailbox message list
+ * - Extracts the code from text / HTML / subject
  */
 
 import { extractVerificationCodeFromMessage } from "./verification-code";
@@ -9,10 +9,11 @@ import { extractVerificationCodeFromMessage } from "./verification-code";
 export interface VerificationCodeConfig {
   emailId: string;
   fromAddress?: string;
-  verificationCodeInterval?: number; // 轮询间隔(毫秒)
-  verificationCodeTimeout?: number; // 超时时间(毫秒)
-  baseUrl?: string; // 服务端调用时必须传入站点 baseUrl
-  apiKey?: string; // 透传 API Key，用于服务端拉取邮件列表
+  verificationCodeInterval?: number;
+  verificationCodeTimeout?: number;
+  baseUrl?: string;
+  apiKey?: string;
+  requestHeaders?: HeadersInit;
 }
 
 export interface Message {
@@ -34,16 +35,22 @@ export async function getVerificationCode(
     verificationCodeTimeout = 60000,
     baseUrl,
     apiKey,
+    requestHeaders,
   } = config;
 
   const startTime = Date.now();
 
   try {
     while (true) {
-      const emailList = await getEmailList({ emailId, baseUrl, apiKey });
+      const emailList = await getEmailList({
+        emailId,
+        baseUrl,
+        apiKey,
+        requestHeaders,
+      });
 
       const targetEmails = fromAddress
-        ? emailList.filter((e) => e.from_address?.includes(fromAddress))
+        ? emailList.filter((email) => email.from_address?.includes(fromAddress))
         : emailList;
 
       for (const email of targetEmails) {
@@ -74,6 +81,7 @@ async function getEmailList(params: {
   emailId: string;
   baseUrl?: string;
   apiKey?: string;
+  requestHeaders?: HeadersInit;
 }): Promise<Message[]> {
   const resolvedBaseUrl =
     params.baseUrl ??
@@ -84,9 +92,15 @@ async function getEmailList(params: {
   }
 
   const url = new URL(`/api/emails/${params.emailId}`, resolvedBaseUrl);
-  const headers = params.apiKey ? { "X-API-Key": params.apiKey } : undefined;
+  const headers = new Headers(params.requestHeaders);
+  if (params.apiKey && !headers.has("X-API-Key")) {
+    headers.set("X-API-Key", params.apiKey);
+  }
 
-  const response = await fetch(url.toString(), { headers });
+  const response = await fetch(url.toString(), {
+    headers,
+    cache: "no-store",
+  });
   if (!response.ok) {
     throw new Error(
       `Failed to fetch emails: ${response.status} ${response.statusText}`

@@ -22,6 +22,7 @@ export async function POST(
     const db = await createDb();
     const origin = new URL(request.url).origin;
     const apiKey = request.headers.get("x-api-key") ?? undefined;
+    const cookie = request.headers.get("cookie");
 
     const email = await db.query.emails.findFirst({
       where: and(eq(emails.id, id), eq(emails.userId, userId)),
@@ -29,12 +30,11 @@ export async function POST(
 
     if (!email) {
       return NextResponse.json(
-        { error: "无权限查看", success: false },
+        { error: "无权访问此邮箱", success: false },
         { status: 403 }
       );
     }
 
-    // 解析请求体（允许为空/不传 body）
     let body: { fromAddress?: string; interval?: number; timeout?: number };
     try {
       body = (await request.json()) as typeof body;
@@ -51,6 +51,14 @@ export async function POST(
         ? Math.max(1000, Math.floor(body.timeout))
         : 60000;
 
+    const requestHeaders = new Headers();
+    if (cookie) {
+      requestHeaders.set("cookie", cookie);
+    }
+    if (apiKey) {
+      requestHeaders.set("x-api-key", apiKey);
+    }
+
     const code = await getVerificationCode({
       emailId: id,
       fromAddress: body.fromAddress,
@@ -58,6 +66,7 @@ export async function POST(
       verificationCodeTimeout: timeout,
       baseUrl: origin,
       apiKey,
+      requestHeaders,
     });
 
     if (!code) {
@@ -71,7 +80,10 @@ export async function POST(
   } catch (error) {
     console.error("获取验证码失败:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "获取验证码失败", success: false },
+      {
+        error: error instanceof Error ? error.message : "获取验证码失败",
+        success: false,
+      },
       { status: 500 }
     );
   }

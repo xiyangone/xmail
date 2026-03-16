@@ -84,7 +84,8 @@
 
 ## 技术栈
 
-- **框架**: [Next.js](https://nextjs.org/) 15.5.9 (App Router)
+- **框架**: [Next.js](https://nextjs.org/) 15.5.10 (App Router)
+- **部署**: [@opennextjs/cloudflare](https://opennext.js.org/cloudflare)
 - **平台**: [Cloudflare Workers](https://workers.cloudflare.com/)
 - **数据库**: [Cloudflare D1](https://developers.cloudflare.com/d1/) (SQLite)
 - **认证**: [NextAuth](https://authjs.dev/getting-started/installation?framework=Next.js) 配合 GitHub 登录
@@ -188,10 +189,10 @@ pnpm lint
 pnpm build
 ```
 
-3. **类型检查**：
+3. **OpenNext Worker 构建检查**：
 
 ```bash
-pnpm type-check
+pnpm build:worker
 ```
 
 ## 部署
@@ -210,10 +211,10 @@ cp .env.example .env
 
 2. 在 .env 文件中设置[环境变量](#环境变量)
 
-3. 运行部署脚本
+3. 构建并部署 OpenNext Worker
 
 ```bash
-pnpm dlx tsx ./scripts/deploy/index.ts
+pnpm deploy:worker
 ```
 
 ### Github Actions 部署

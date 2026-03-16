@@ -116,6 +116,7 @@ export function EmailServiceConfigContent() {
               <Input
                 id="apiKey"
                 type={showToken ? "text" : "password"}
+                autoComplete="new-password"
                 value={config.apiKey}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfig((prev: EmailServiceConfig) => ({ ...prev, apiKey: e.target.value }))}
                 placeholder={t("apiKeyPlaceholder")}
