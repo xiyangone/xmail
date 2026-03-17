@@ -29,6 +29,7 @@ import { useCopy } from "@/hooks/use-copy";
 import { useRolePermission } from "@/hooks/use-role-permission";
 import { PERMISSIONS } from "@/lib/permissions";
 import { useConfig } from "@/hooks/use-config";
+import { EMAIL_CONFIG } from "@/config";
 
 type ApiKey = {
   id: string;
@@ -77,6 +78,8 @@ export function ApiKeyPanel() {
   }, [canManageApiKey, fetchApiKeys]);
 
   const { config } = useConfig();
+  const exampleDomain =
+    config?.emailDomainsArray[0] || EMAIL_CONFIG.DEFAULT_EMAIL_DOMAIN;
 
   const createApiKey = async () => {
     if (!newKeyName.trim()) return;
@@ -366,7 +369,7 @@ export function ApiKeyPanel() {
   -d '{
     "name": "test",
     "expiryTime": 3600000,
-    "domain": "moemail.app"
+    "domain": "${exampleDomain}"
   }'`
                             )
                           }
@@ -381,7 +384,7 @@ export function ApiKeyPanel() {
   -d '{
     "name": "test",
     "expiryTime": 3600000,
-    "domain": "moemail.app"
+    "domain": "${exampleDomain}"
   }'`}
                       </pre>
                     </div>

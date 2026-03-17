@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth, checkPermission } from "@/lib/auth";
 import { PERMISSIONS } from "@/lib/permissions";
 import { generateBatchCardKeys, generateMultiCardKey } from "@/lib/card-keys";
+import { EMAIL_CONFIG } from "@/config";
 import { z } from "zod";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 
@@ -52,7 +53,7 @@ export async function POST(request: Request) {
     const domainString = await env.SITE_CONFIG.get("EMAIL_DOMAINS");
     const allowedDomains = domainString
       ? domainString.split(",").map((d) => d.trim())
-      : ["moemail.app"];
+      : [EMAIL_CONFIG.DEFAULT_EMAIL_DOMAIN];
 
     // 根据模式验证不同的schema
     if (body.mode === "single") {

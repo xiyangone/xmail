@@ -271,7 +271,7 @@
     "allowRegisterDesc": "When disabled, /api/auth/register will reject new registrations",
     "defaultRole": "Default role for new users:",
     "emailDomains": "Email domains:",
-    "domainPlaceholder": "Enter domain, e.g.: moemail.app",
+    "domainPlaceholder": "Enter domain, e.g.: mail.xiyangone.cn",
     "adminContact": "Admin contact:",
     "adminContactPlaceholder": "e.g.: WeChat, email, etc.",
     "maxEmails": "Max mailboxes:",

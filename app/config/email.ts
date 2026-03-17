@@ -11,6 +11,7 @@ export const EMAIL_PREFIX_FORMATS = {
 export type EmailPrefixFormat = typeof EMAIL_PREFIX_FORMATS[keyof typeof EMAIL_PREFIX_FORMATS]
 
 export const EMAIL_CONFIG = {
+  DEFAULT_EMAIL_DOMAIN: "mail.xiyangone.cn",
   MAX_ACTIVE_EMAILS: 30, // Maximum number of active emails
   POLL_INTERVAL: 15_000, // Polling interval in milliseconds (15 seconds)
   DEFAULT_DAILY_SEND_LIMITS: {

@@ -51,7 +51,7 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       type: "website",
       locale: locale === "en" ? "en_US" : "zh_CN",
-      url: "https://moemail.app",
+      url: "https://mail.xiyangone.cn",
       title,
       description,
       siteName: "XiYang Mail",

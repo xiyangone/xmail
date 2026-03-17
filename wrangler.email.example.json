@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "email-receiver-worker",
+  "name": "xmail-email-receiver-worker",
   "compatibility_date": "2026-03-01",
   "compatibility_flags": ["nodejs_compat"],
   "main": "workers/email-receiver.ts",
@@ -8,7 +8,7 @@
     {
       "binding": "DB",
       "migrations_dir": "drizzle",
-      "database_name": "moemail",
+      "database_name": "xmail-db",
       "database_id": "${DATABASE_ID}"
     }
   ]

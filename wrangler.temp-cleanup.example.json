@@ -8,7 +8,7 @@
     "crons": ["*/30 * * * *"]
   },
   "vars": {
-    "SITE_URL": "https://xymailyx.dpdns.org"
+    "SITE_URL": "https://mail.xiyangone.cn"
   },
   "kv_namespaces": [
     {

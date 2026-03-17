@@ -80,7 +80,7 @@ export async function POST(request: Request) {
       const domainString = await env.SITE_CONFIG.get("EMAIL_DOMAINS");
       domains = domainString
         ? domainString.split(",").map(d => d.trim()).filter(d => d.length > 0)
-        : ["moemail.app"];
+        : [EMAIL_CONFIG.DEFAULT_EMAIL_DOMAIN];
     }
 
     console.log("Available domains:", domains);

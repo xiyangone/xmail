@@ -10,9 +10,9 @@ import {
   getKVNamespaceList,
 } from "./cloudflare";
 
-const PROJECT_NAME = process.env.PROJECT_NAME || "moemail";
-const DATABASE_NAME = process.env.DATABASE_NAME || "moemail-db";
-const KV_NAMESPACE_NAME = process.env.KV_NAMESPACE_NAME || "moemail-kv";
+const PROJECT_NAME = process.env.PROJECT_NAME || "xmail";
+const DATABASE_NAME = process.env.DATABASE_NAME || "xmail-db";
+const KV_NAMESPACE_NAME = process.env.KV_NAMESPACE_NAME || "xmail-kv";
 const KV_NAMESPACE_ID = process.env.KV_NAMESPACE_ID;
 
 /**
@@ -49,7 +49,7 @@ const setupConfigFile = (examplePath: string, targetPath: string) => {
     const json = JSON.parse(configContent);
 
     // 处理自定义项目名称
-    if (PROJECT_NAME !== "moemail") {
+    if (PROJECT_NAME !== "xmail") {
       const wranglerFileName = targetPath.split("/").at(-1);
 
       switch (wranglerFileName) {

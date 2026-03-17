@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "moemail",
+  "name": "xmail",
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-03-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
@@ -11,13 +11,13 @@
   "services": [
     {
       "binding": "WORKER_SELF_REFERENCE",
-      "service": "moemail"
+      "service": "xmail"
     }
   ],
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "moemail",
+      "database_name": "xmail-db",
       "database_id": "${DATABASE_ID}",
       "migrations_dir": "drizzle"
     }

@@ -271,7 +271,7 @@
     "allowRegisterDesc": "关闭后，/api/auth/register 将拒绝新注册",
     "defaultRole": "新用户默认角色:",
     "emailDomains": "邮箱域名:",
-    "domainPlaceholder": "输入域名，如: moemail.app",
+    "domainPlaceholder": "输入域名，如: mail.xiyangone.cn",
     "adminContact": "管理员联系方式:",
     "adminContactPlaceholder": "如: 微信号、邮箱等",
     "maxEmails": "最大邮箱数量:",

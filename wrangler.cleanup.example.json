@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "cleanup-worker",
+  "name": "xmail-cleanup-worker",
   "main": "workers/cleanup.ts",
   "compatibility_date": "2026-03-01",
   "compatibility_flags": ["nodejs_compat"],
@@ -11,7 +11,7 @@
     {
       "binding": "DB",
       "migrations_dir": "drizzle",
-      "database_name": "moemail",
+      "database_name": "xmail-db",
       "database_id": "${DATABASE_ID}"
     }
   ],

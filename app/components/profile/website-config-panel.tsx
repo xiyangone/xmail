@@ -103,7 +103,7 @@ export function WebsiteConfigPanel() {
           <DomainEditor 
             value={emailDomains}
             onChange={setEmailDomains}
-            placeholder="输入域名，如: moemail.app"
+            placeholder={`输入域名，如: ${EMAIL_CONFIG.DEFAULT_EMAIL_DOMAIN}`}
           />
         </div>
 

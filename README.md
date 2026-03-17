@@ -39,9 +39,15 @@
 
 ## 文档
 
-**完整文档**: [https://docs.moemail.app](https://docs.moemail.app)
+**当前文档入口**: 本仓库 README（即当前文件）
 
-文档站点包含详细的使用指南、API 文档、部署教程等完整信息。
+当前版本暂未单独维护外部文档站点，部署、API、配置与示例请以本仓库内容为准。
+
+### 命名约定
+
+- 产品名：`XiYang Mail`
+- GitHub 仓库 / Worker 前缀：`xmail`
+- 默认示例域名：`mail.xiyangone.cn`
 
 ## 特性
 
@@ -129,6 +135,9 @@ cp wrangler.email.example.json wrangler.email.json
 cp wrangler.cleanup.example.json wrangler.cleanup.json
 ```
 
+> 以上方式适合手动维护 `wrangler*.json`。
+> 如果你希望通过环境变量自定义 Worker / D1 / KV 名称，建议优先使用下方“本地 Wrangler 部署”流程，并在首次执行 `pnpm deploy:worker` 前先设置 `.env` 中的 `PROJECT_NAME` / `DATABASE_NAME` / `KV_NAMESPACE_NAME`。
+
 设置 Cloudflare D1 数据库名以及数据库 ID
 
 4. 设置环境变量：
@@ -210,6 +219,10 @@ cp .env.example .env
 ```
 
 2. 在 .env 文件中设置[环境变量](#环境变量)
+
+> `pnpm deploy:worker` 会读取 `.env` 中的 `PROJECT_NAME` / `DATABASE_NAME` / `KV_NAMESPACE_NAME`，并在 `wrangler*.json` 不存在时按这些值生成默认配置。
+> 如果相关 `wrangler*.json` 已存在，脚本会保留现有文件，不会自动覆盖；此时如需改名，请手动修改对应配置，或删除后重新生成。
+> 如果你要复用已存在的 D1 / KV 资源，建议同时设置 `DATABASE_ID` / `KV_NAMESPACE_ID`，避免脚本按名称重新查找或创建资源。
 
 3. 构建并部署 OpenNext Worker
 
@@ -299,7 +312,7 @@ pnpm deploy:worker
    - Catch-all 地址: 启用 "Catch-all"
    - 编辑 Catch-all 地址
    - 操作: 选择 "发送到 Worker"
-   - 目标位置: 选择刚刚部署的 "email-receiver-worker"
+   - 目标位置: 选择刚刚部署的 "xmail-email-receiver-worker"
    - 保存
      ![配置路由规则](https://pic.otaku.ren/20241223/AQADNsQxG_K0SVd-.jpg "配置路由规则")
 
@@ -666,7 +679,7 @@ X-Webhook-Event: new_message
   "content": "邮件文本内容",
   "html": "邮件HTML内容",
   "receivedAt": "2024-01-01T12:00:00.000Z",
-  "toAddress": "your-email@moemail.app"
+  "toAddress": "your-email@mail.xiyangone.cn"
 }
 ```
 
@@ -776,7 +789,7 @@ GET /api/config
 ```json
 {
   "defaultRole": "CIVILIAN",
-  "emailDomains": "moemail.app,example.com",
+  "emailDomains": "mail.xiyangone.cn,example.com",
   "adminContact": "admin@example.com",
   "maxEmails": "10"
 }
@@ -798,7 +811,7 @@ Content-Type: application/json
 {
   "name": "test",
   "expiryTime": 3600000,
-  "domain": "moemail.app"
+  "domain": "mail.xiyangone.cn"
 }
 ```
 
@@ -813,7 +826,7 @@ Content-Type: application/json
 ```json
 {
   "id": "email-uuid-123",
-  "email": "test@moemail.app"
+  "email": "test@mail.xiyangone.cn"
 }
 ```
 
@@ -839,7 +852,7 @@ GET /api/emails?cursor=xxx
   "emails": [
     {
       "id": "email-uuid-123",
-      "address": "test@moemail.app",
+      "address": "test@mail.xiyangone.cn",
       "createdAt": "2024-01-01T12:00:00.000Z",
       "expiresAt": "2024-01-02T12:00:00.000Z",
       "userId": "user-uuid-456"
@@ -1049,7 +1062,7 @@ curl -X POST https://your-domain.com/api/emails/generate \
   -d '{
     "name": "test",
     "expiryTime": 3600000,
-    "domain": "moemail.app"
+    "domain": "mail.xiyangone.cn"
   }'
 ```
 
@@ -1079,7 +1092,7 @@ const createEmailRes = await fetch(
     body: JSON.stringify({
       name: "test",
       expiryTime: 3600000,
-      domain: "moemail.app",
+      domain: "mail.xiyangone.cn",
     }),
   }
 );
@@ -1146,7 +1159,7 @@ console.log("注册成功！");
 - `DATABASE_ID`: D1 数据库 ID (可选, 如果不填, 则会自动通过 Cloudflare API 获取)
 - `KV_NAMESPACE_NAME`: Cloudflare KV namespace 名称，用于存储网站配置
 - `KV_NAMESPACE_ID`: Cloudflare KV namespace ID，用于存储网站配置 （可选， 如果不填, 则会自动通过 Cloudflare API 获取）
-- `CUSTOM_DOMAIN`: 网站自定义域名, 如：moemail.app (可选，如果不填，则使用 Workers 默认域名 *.workers.dev)
+- `CUSTOM_DOMAIN`: 网站自定义域名, 如：mail.xiyangone.cn (可选，如果不填，则使用 Workers 默认域名 *.workers.dev)
 - `PROJECT_NAME`: Worker 名称（可选，如果不填，则为 xmail）
 
 ### Turnstile 人机验证（可选）
