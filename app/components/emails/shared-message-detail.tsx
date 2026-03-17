@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Loader2 } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { formatContactDisplay } from "@/lib/contact-address";
 import { useTheme } from "next-themes";
 import { useToast } from "@/components/ui/use-toast";
 import { useTranslations } from "next-intl";
@@ -160,13 +161,16 @@ export function SharedMessageDetail({
 
   if (!message) return null;
 
+  const fromLabel = formatContactDisplay(message.from_address);
+  const toLabel = formatContactDisplay(message.to_address);
+
   return (
     <div className="h-full flex flex-col animate-fade-in">
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm p-4 space-y-3 border-b border-primary/20 shadow-sm">
         <h3 className="text-base font-bold">{message.subject}</h3>
         <div className="text-xs text-gray-500 space-y-1">
-          {message.from_address && <p>{te("from", { address: message.from_address })}</p>}
-          {message.to_address && <p>{te("to", { address: message.to_address })}</p>}
+          {fromLabel && <p>{te("from", { address: fromLabel })}</p>}
+          {toLabel && <p>{te("to", { address: toLabel })}</p>}
           <p>
             {te("time", {
               time: new Date(

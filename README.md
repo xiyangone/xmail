@@ -968,6 +968,8 @@ Content-Type: application/json
 - `interval`: 轮询间隔（毫秒），可选，默认 3000ms
 - `timeout`: 超时时间（毫秒），可选，默认 60000ms
 
+`fromAddress` 会优先按邮件的可见发件人（`From` 头）匹配；如果某些旧邮件仍显示中继投递地址，可先查看返回的 `stats.sampleSenders`，或者先用域名过滤再确认。
+
 返回响应：
 
 ```json
@@ -995,7 +997,11 @@ Content-Type: application/json
     "messagesSeen": 3,
     "senderMatchedMessages": 1,
     "lastMessageAt": 1737012345678,
-    "fromAddress": "verify.windsurf.ai"
+    "fromAddress": "verify.windsurf.ai",
+    "sampleSenders": [
+      "Windsurf <verify.windsurf.ai>",
+      "support@example.com"
+    ]
   },
   "success": false
 }
@@ -1007,6 +1013,7 @@ Content-Type: application/json
 - `hint`: 建议的下一步操作
 - `reason`: 给程序判断的失败类型
 - `stats`: 最小诊断信息，方便排查为什么没拿到验证码
+- `stats.sampleSenders`: 最近轮询到的部分发件人样本，可用于核对 `fromAddress`
 
 `reason` 可能的取值：
 

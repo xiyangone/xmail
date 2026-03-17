@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Mail, RefreshCw, Loader2, Info } from "lucide-react";
+import { formatContactDisplay } from "@/lib/contact-address";
 import { cn } from "@/lib/utils";
 import { useThrottle } from "@/hooks/use-throttle";
 import { useToast } from "@/components/ui/use-toast";
@@ -176,7 +177,8 @@ export function SharedMessageList({
                   {message.subject || te("noSubject")}
                 </div>
                 <div className="text-xs text-muted-foreground truncate">
-                  {message.from_address || t("unknownSender")}
+                  {formatContactDisplay(message.from_address) ||
+                    t("unknownSender")}
                 </div>
                 <div className="text-xs text-muted-foreground">
                   {new Date(

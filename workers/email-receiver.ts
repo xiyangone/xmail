@@ -3,8 +3,28 @@ import { drizzle } from 'drizzle-orm/d1'
 import { messages, emails, webhooks } from '../app/lib/schema'
 import { eq, sql } from 'drizzle-orm'
 import PostalMime from 'postal-mime'
+import type { Address, Mailbox } from 'postal-mime'
 import { WEBHOOK_CONFIG } from '../app/config/webhook'
 import { EmailMessage } from '../app/lib/webhook'
+import { formatMailboxDisplay } from '../app/lib/contact-address'
+
+function isMailbox(address: Address): address is Mailbox {
+  return !('group' in address) || !address.group
+}
+
+function getVisibleSender(
+  parsedAddress: Address | undefined,
+  fallback: string
+): string {
+  if (parsedAddress && isMailbox(parsedAddress)) {
+    const formatted = formatMailboxDisplay(parsedAddress, fallback)
+    if (formatted) {
+      return formatted
+    }
+  }
+
+  return fallback
+}
 
 const handleEmail = async (message: ForwardableEmailMessage, env: Env) => {
   const db = drizzle(env.DB, { schema: { messages, emails, webhooks } })
@@ -23,9 +43,10 @@ const handleEmail = async (message: ForwardableEmailMessage, env: Env) => {
       return
     }
 
+    const sender = getVisibleSender(parsedMessage.from ?? parsedMessage.sender, message.from)
     const savedMessage = await db.insert(messages).values({
       emailId: targetEmail.id,
-      fromAddress: message.from,
+      fromAddress: sender,
       subject: parsedMessage.subject || '(无主题)',
       content: parsedMessage.text || '',
       html: parsedMessage.html || '',

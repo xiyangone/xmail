@@ -4,6 +4,7 @@
  * - Extracts the code from text / HTML / subject
  */
 
+import { formatContactDisplay, matchesContactFilter } from "./contact-address";
 import { extractVerificationCodeFromMessage } from "./verification-code";
 
 export interface VerificationCodeConfig {
@@ -38,6 +39,7 @@ export interface VerificationCodeStats {
   senderMatchedMessages: number;
   lastMessageAt: number | null;
   fromAddress: string | null;
+  sampleSenders: string[];
 }
 
 export type VerificationCodeResult =
@@ -78,6 +80,7 @@ export async function getVerificationCode(
     senderMatchedMessages: 0,
     lastMessageAt: null,
     fromAddress: fromAddress ?? null,
+    sampleSenders: [],
   };
 
   try {
@@ -103,6 +106,10 @@ export async function getVerificationCode(
 
       for (const email of emailList) {
         seenMessageIds.add(email.id);
+        const sender = formatContactDisplay(email.from_address);
+        if (sender && !stats.sampleSenders.includes(sender)) {
+          stats.sampleSenders = [...stats.sampleSenders, sender].slice(0, 5);
+        }
         if (
           typeof email.received_at === "number" &&
           (lastMessageAt === null || email.received_at > lastMessageAt)
@@ -112,7 +119,9 @@ export async function getVerificationCode(
       }
 
       const targetEmails = fromAddress
-        ? emailList.filter((email) => email.from_address?.includes(fromAddress))
+        ? emailList.filter((email) =>
+            matchesContactFilter(email.from_address, fromAddress)
+          )
         : emailList;
 
       for (const email of targetEmails) {

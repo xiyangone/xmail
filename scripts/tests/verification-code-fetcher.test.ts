@@ -1,5 +1,10 @@
 import assert from "node:assert/strict";
 
+import {
+  formatContactDisplay,
+  formatMailboxDisplay,
+  matchesContactFilter,
+} from "../../app/lib/contact-address";
 import { getVerificationCode } from "../../app/lib/verification-code-fetcher";
 import { extractVerificationCodeFromMessage } from "../../app/lib/verification-code";
 
@@ -133,6 +138,7 @@ async function testTimeoutNoSenderMatch() {
       assert.equal(result.reason, "timeout_no_sender_match");
       assert.equal(result.stats.messagesSeen, 1);
       assert.equal(result.stats.senderMatchedMessages, 0);
+      assert.deepEqual(result.stats.sampleSenders, ["no-reply@example.com"]);
     }
   });
 }
@@ -208,6 +214,70 @@ async function testHtmlTextExtractionFallback() {
   assert.equal(code, "123456");
 }
 
+async function testSenderFilterMatchesFormattedAddress() {
+  await withMockedFetch(async () => {
+    return new Response(
+      JSON.stringify({
+        messages: [
+          {
+            id: "m4",
+            from_address: "XiYang <verify@example.com>",
+            subject: "Your verification code is: 123456",
+            content: "",
+            html: "",
+            received_at: Date.now(),
+          },
+        ],
+        nextCursor: null,
+        total: 1,
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+  }, async () => {
+    const result = await getVerificationCode({
+      emailId: "abc",
+      baseUrl: "https://example.com",
+      fromAddress: "verify@example.com",
+      verificationCodeInterval: 1,
+      verificationCodeTimeout: 10,
+    });
+
+    assert.equal(result.success, true);
+    if (result.success) {
+      assert.equal(result.code, "123456");
+    }
+  });
+}
+
+async function testContactAddressHelpers() {
+  assert.equal(
+    formatMailboxDisplay({ name: "XiYang", address: "1@xiyangone.online" }),
+    "XiYang <1@xiyangone.online>"
+  );
+  assert.equal(
+    formatContactDisplay('"XiYang" <1@xiyangone.online>'),
+    "XiYang <1@xiyangone.online>"
+  );
+  assert.equal(
+    matchesContactFilter("XiYang <1@xiyangone.online>", "1@xiyangone.online"),
+    true
+  );
+  assert.equal(
+    matchesContactFilter(
+      "0106019cf9dc633e-078a3684-e8b3-4f15-9b76-3f2edaf669c1-000000@send.xiyangone.online",
+      "xiyangone.online"
+    ),
+    true
+  );
+  assert.equal(
+    matchesContactFilter(
+      "0106019cf9dc633e-078a3684-e8b3-4f15-9b76-3f2edaf669c1-000000@send.xiyangone.online",
+      "1@xiyangone.online"
+    ),
+    false
+  );
+}
+
 async function run() {
   await testBaseUrlRequiredOnServer();
   await testFetchUsesBaseUrlAndApiKey();
@@ -217,6 +287,8 @@ async function run() {
   await testMailboxFetchFailure();
   await testHtmlNormalizationFallback();
   await testHtmlTextExtractionFallback();
+  await testSenderFilterMatchesFormattedAddress();
+  await testContactAddressHelpers();
   console.log("verification-code-fetcher tests: OK");
 }
 

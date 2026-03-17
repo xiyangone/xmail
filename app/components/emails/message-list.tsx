@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { MessageListSkeleton } from "@/components/ui/loading-skeletons";
 import { EmptyState } from "@/components/ui/empty-state";
+import { formatContactDisplay } from "@/lib/contact-address";
 import { extractVerificationCodeFromMessage } from "@/lib/verification-code";
 import { useTranslations } from "next-intl";
 
@@ -421,6 +422,9 @@ export function MessageList({
               {messages.map((message) => {
                 const verificationCode =
                   extractVerificationCodeFromMessage(message);
+                const contactLabel = formatContactDisplay(
+                  message.from_address || message.to_address
+                );
                 return (
                   <div
                     key={message.id}
@@ -466,7 +470,7 @@ export function MessageList({
                             </div>
                           ) : (
                             <span className="truncate text-xs text-gray-500">
-                              {message.from_address || message.to_address || ""}
+                              {contactLabel || ""}
                             </span>
                           )}
                           <span className="flex items-center gap-1 text-xs text-gray-500 flex-shrink-0">
