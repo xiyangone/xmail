@@ -491,6 +491,7 @@
     "cardKeyManagementDesc": "Generate, filter, and paginate card keys without turning the admin page into a long scrolling list.",
     "cleanupSettings": "Cleanup Settings",
     "cleanupSettingsDesc": "Control expiry cleanup rules for card keys and mailboxes from the same admin workspace.",
+    "globalBackgroundSettings": "Global Background Settings",
     "userManagement": "User Management",
     "userManagementDesc": "Search accounts, review roles, and handle batch user operations from one focused table.",
     "userList": "User List",
@@ -538,7 +539,7 @@
   },
   "backgroundSettings": {
     "enableBg": "Enable Custom Background",
-    "enableBgDesc": "Disable to use default solid background",
+    "enableBgDesc": "Disable to use the default gradient background",
     "lightBg": "Light",
     "darkBg": "Dark",
     "sakuraBg": "Sakura",

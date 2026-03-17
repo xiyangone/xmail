@@ -491,6 +491,7 @@
     "cardKeyManagementDesc": "集中生成、筛选和分页管理卡密，避免大量数据把页面拖成长列表。",
     "cleanupSettings": "清理设置",
     "cleanupSettingsDesc": "统一配置卡密与邮箱的过期清理策略，避免后台任务失控。",
+    "globalBackgroundSettings": "全局背景图片设置",
     "userManagement": "用户管理",
     "userManagementDesc": "集中查看角色、搜索账号并处理批量管理操作。",
     "userList": "用户列表",
@@ -538,7 +539,7 @@
   },
   "backgroundSettings": {
     "enableBg": "启用自定义背景",
-    "enableBgDesc": "关闭后将使用默认纯色背景",
+    "enableBgDesc": "关闭后将使用默认渐变背景",
     "lightBg": "日间",
     "darkBg": "夜间",
     "sakuraBg": "樱花",

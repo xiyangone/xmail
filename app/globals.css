@@ -33,8 +33,8 @@
     --gradient-end: 270 65% 65%;
     --page-bg-from: 210 20% 97%;
     --page-bg-to: 210 20% 94%;
-    --background-overlay-opacity: 0.34;
-    --background-overlay-blur: 6px;
+    --background-overlay-opacity: 0.2;
+    --background-overlay-blur: 2px;
   }
 
   .dark {
@@ -66,8 +66,8 @@
     --gradient-end: 220 70% 55%;
     --page-bg-from: 260 30% 16%;
     --page-bg-to: 260 25% 22%;
-    --background-overlay-opacity: 0.42;
-    --background-overlay-blur: 10px;
+    --background-overlay-opacity: 0.28;
+    --background-overlay-blur: 4px;
   }
 
   .sakura {
@@ -99,8 +99,8 @@
     --gradient-end: 290 50% 65%;
     --page-bg-from: 340 60% 97%;
     --page-bg-to: 330 40% 94%;
-    --background-overlay-opacity: 0.3;
-    --background-overlay-blur: 7px;
+    --background-overlay-opacity: 0.18;
+    --background-overlay-blur: 2px;
   }
 }
 
@@ -154,6 +154,13 @@
       hsl(var(--accent-purple)) 100%
     );
     background-size: 200% 200%;
+  }
+
+  .page-gradient-background {
+    background:
+      radial-gradient(circle at top left, hsl(var(--primary) / 0.18), transparent 32%),
+      radial-gradient(circle at top right, hsl(var(--accent-orange) / 0.16), transparent 26%),
+      linear-gradient(160deg, hsl(var(--page-bg-from)) 0%, hsl(var(--page-bg-to)) 100%);
   }
 
   /* 整体滚动条 */

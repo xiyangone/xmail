@@ -1,128 +1,114 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { useToast } from "@/components/ui/use-toast"
-import { useState, useEffect } from "react"
-import { Role, ROLES } from "@/lib/permissions"
-import { Input } from "@/components/ui/input"
+import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { EMAIL_CONFIG, EMAIL_PREFIX_FORMATS } from "@/config"
-import { DomainEditor } from "./domain-editor"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
-import { useTranslations } from "next-intl"
-import { Sun, Moon, Cherry } from "lucide-react"
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/components/ui/use-toast";
+import { EMAIL_CONFIG, EMAIL_PREFIX_FORMATS } from "@/config";
+import { Role, ROLES } from "@/lib/permissions";
+import { DomainEditor } from "./domain-editor";
 
 export function WebsiteConfigContent() {
-  const [defaultRole, setDefaultRole] = useState<string>("")
-  const [emailDomains, setEmailDomains] = useState<string>("")
-  const [adminContact, setAdminContact] = useState<string>("")
-  const [maxEmails, setMaxEmails] = useState<string>(EMAIL_CONFIG.MAX_ACTIVE_EMAILS.toString())
-  const [allowRegister, setAllowRegister] = useState<boolean>(true)
-  const [emailPrefixLength, setEmailPrefixLength] = useState<string>(EMAIL_CONFIG.DEFAULT_PREFIX_LENGTH.toString())
-  const [emailPrefixFormat, setEmailPrefixFormat] = useState<string>(EMAIL_CONFIG.DEFAULT_PREFIX_FORMAT)
-  const [messagePollInterval, setMessagePollInterval] = useState<string>(EMAIL_CONFIG.POLL_INTERVAL.toString())
-  const [bgLight, setBgLight] = useState("")
-  const [bgDark, setBgDark] = useState("")
-  const [bgSakura, setBgSakura] = useState("")
-  const [loading, setLoading] = useState(false)
-  const { toast } = useToast()
-  const t = useTranslations("websiteConfig")
-  const tb = useTranslations("backgroundSettings")
-  const tr = useTranslations("roles")
-  const tc = useTranslations("common")
+  const [defaultRole, setDefaultRole] = useState<string>("");
+  const [emailDomains, setEmailDomains] = useState<string>("");
+  const [adminContact, setAdminContact] = useState<string>("");
+  const [maxEmails, setMaxEmails] = useState<string>(EMAIL_CONFIG.MAX_ACTIVE_EMAILS.toString());
+  const [allowRegister, setAllowRegister] = useState<boolean>(true);
+  const [emailPrefixLength, setEmailPrefixLength] = useState<string>(
+    EMAIL_CONFIG.DEFAULT_PREFIX_LENGTH.toString()
+  );
+  const [emailPrefixFormat, setEmailPrefixFormat] = useState<string>(EMAIL_CONFIG.DEFAULT_PREFIX_FORMAT);
+  const [messagePollInterval, setMessagePollInterval] = useState<string>(EMAIL_CONFIG.POLL_INTERVAL.toString());
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+  const t = useTranslations("websiteConfig");
+  const tr = useTranslations("roles");
+  const tc = useTranslations("common");
 
   useEffect(() => {
-    fetchConfig()
-  }, [])
+    void fetchConfig();
+  }, []);
 
   const fetchConfig = async () => {
-    const [configRes, bgRes] = await Promise.all([
-      fetch("/api/config"),
-      fetch("/api/config/background"),
-    ])
-    if (configRes.ok) {
-      const data = await configRes.json() as {
-        defaultRole: Exclude<Role, typeof ROLES.EMPEROR>,
-        emailDomains: string,
-        adminContact: string,
-        maxEmails: string,
-        allowRegister: boolean,
-        emailPrefixLength: string,
-        emailPrefixFormat: string,
-        messagePollInterval: string
-      }
-      setDefaultRole(data.defaultRole)
-      setEmailDomains(data.emailDomains)
-      setAdminContact(data.adminContact)
-      setMaxEmails(data.maxEmails || EMAIL_CONFIG.MAX_ACTIVE_EMAILS.toString())
-      setAllowRegister(data.allowRegister ?? true)
-      setEmailPrefixLength(data.emailPrefixLength || EMAIL_CONFIG.DEFAULT_PREFIX_LENGTH.toString())
-      setEmailPrefixFormat(data.emailPrefixFormat || EMAIL_CONFIG.DEFAULT_PREFIX_FORMAT)
-      setMessagePollInterval(data.messagePollInterval || EMAIL_CONFIG.POLL_INTERVAL.toString())
+    const response = await fetch("/api/config");
+
+    if (!response.ok) {
+      return;
     }
-    if (bgRes.ok) {
-      const bgData = await bgRes.json() as { bgLight: string; bgDark: string; bgSakura: string }
-      setBgLight(bgData.bgLight || "")
-      setBgDark(bgData.bgDark || "")
-      setBgSakura(bgData.bgSakura || "")
-    }
-  }
+
+    const data = (await response.json()) as {
+      defaultRole: Exclude<Role, typeof ROLES.EMPEROR>;
+      emailDomains: string;
+      adminContact: string;
+      maxEmails: string;
+      allowRegister: boolean;
+      emailPrefixLength: string;
+      emailPrefixFormat: string;
+      messagePollInterval: string;
+    };
+
+    setDefaultRole(data.defaultRole);
+    setEmailDomains(data.emailDomains);
+    setAdminContact(data.adminContact);
+    setMaxEmails(data.maxEmails || EMAIL_CONFIG.MAX_ACTIVE_EMAILS.toString());
+    setAllowRegister(data.allowRegister ?? true);
+    setEmailPrefixLength(data.emailPrefixLength || EMAIL_CONFIG.DEFAULT_PREFIX_LENGTH.toString());
+    setEmailPrefixFormat(data.emailPrefixFormat || EMAIL_CONFIG.DEFAULT_PREFIX_FORMAT);
+    setMessagePollInterval(data.messagePollInterval || EMAIL_CONFIG.POLL_INTERVAL.toString());
+  };
 
   const handleSave = async () => {
-    setLoading(true)
-    try {
-      const [configRes, bgRes] = await Promise.all([
-        fetch("/api/config", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            defaultRole,
-            emailDomains,
-            adminContact,
-            maxEmails: maxEmails || EMAIL_CONFIG.MAX_ACTIVE_EMAILS.toString(),
-            allowRegister,
-            emailPrefixLength,
-            emailPrefixFormat,
-            messagePollInterval
-          }),
-        }),
-        fetch("/api/config/background", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ bgLight, bgDark, bgSakura }),
-        }),
-      ])
+    setLoading(true);
 
-      if (!configRes.ok) {
-        const errorData = await configRes.json() as { error?: string }
-        throw new Error(errorData.error || t("saveFailed"))
-      }
-      if (!bgRes.ok) {
-        const errorData = await bgRes.json() as { error?: string }
-        throw new Error(errorData.error || t("saveFailed"))
+    try {
+      const response = await fetch("/api/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          defaultRole,
+          emailDomains,
+          adminContact,
+          maxEmails: maxEmails || EMAIL_CONFIG.MAX_ACTIVE_EMAILS.toString(),
+          allowRegister,
+          emailPrefixLength,
+          emailPrefixFormat,
+          messagePollInterval,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = (await response.json()) as { error?: string };
+        throw new Error(errorData.error || t("saveFailed"));
       }
 
       toast({
         title: t("saveSuccess"),
         description: t("websiteUpdated"),
-      })
+      });
     } catch (error) {
       toast({
         title: t("saveFailed"),
         description: error instanceof Error ? error.message : tc("pleaseRetryLater"),
         variant: "destructive",
-      })
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
+
+  const pollIntervalSeconds = (
+    Math.max(Number.parseInt(messagePollInterval || "0", 10), 0) / 1000
+  ).toFixed(0);
 
   return (
     <div className="space-y-4">
@@ -131,15 +117,9 @@ export function WebsiteConfigContent() {
           <Label htmlFor="allow-register" className="text-sm font-medium">
             {t("allowRegister")}
           </Label>
-          <p className="text-xs text-muted-foreground">
-            {t("allowRegisterDesc")}
-          </p>
+          <p className="text-xs text-muted-foreground">{t("allowRegisterDesc")}</p>
         </div>
-        <Switch
-          id="allow-register"
-          checked={allowRegister}
-          onCheckedChange={setAllowRegister}
-        />
+        <Switch id="allow-register" checked={allowRegister} onCheckedChange={setAllowRegister} />
       </div>
 
       <div className="flex items-center gap-4">
@@ -170,7 +150,7 @@ export function WebsiteConfigContent() {
         <div className="flex-1">
           <Input
             value={adminContact}
-            onChange={(e) => setAdminContact(e.target.value)}
+            onChange={(event) => setAdminContact(event.target.value)}
             placeholder={t("adminContactPlaceholder")}
           />
         </div>
@@ -184,45 +164,41 @@ export function WebsiteConfigContent() {
             min="1"
             max="100"
             value={maxEmails}
-            onChange={(e) => setMaxEmails(e.target.value)}
-            placeholder={`默认为 ${EMAIL_CONFIG.MAX_ACTIVE_EMAILS}`}
+            onChange={(event) => setMaxEmails(event.target.value)}
+            placeholder={EMAIL_CONFIG.MAX_ACTIVE_EMAILS.toString()}
           />
         </div>
       </div>
 
-      <div className="space-y-4 pt-4 border-t">
+      <div className="space-y-4 border-t pt-4">
         <div className="space-y-2">
           <Label className="text-sm font-medium">{t("pollConfig")}</Label>
-          <p className="text-xs text-muted-foreground">
-            {t("pollConfigDesc")}
-          </p>
+          <p className="text-xs text-muted-foreground">{t("pollConfigDesc")}</p>
         </div>
 
         <div className="flex items-center gap-4">
           <span className="text-sm">{t("pollInterval")}</span>
-          <div className="flex-1 flex items-center gap-2">
+          <div className="flex flex-1 items-center gap-2">
             <Input
               type="number"
               min="3000"
               max="60000"
               step="1000"
               value={messagePollInterval}
-              onChange={(e) => setMessagePollInterval(e.target.value)}
-              placeholder={`默认为 ${EMAIL_CONFIG.POLL_INTERVAL} 毫秒`}
+              onChange={(event) => setMessagePollInterval(event.target.value)}
+              placeholder={EMAIL_CONFIG.POLL_INTERVAL.toString()}
             />
-            <span className="text-xs text-muted-foreground whitespace-nowrap">
-              {t("pollIntervalSeconds", { seconds: (parseInt(messagePollInterval) / 1000).toFixed(0) })}
+            <span className="whitespace-nowrap text-xs text-muted-foreground">
+              {t("pollIntervalSeconds", { seconds: pollIntervalSeconds })}
             </span>
           </div>
         </div>
       </div>
 
-      <div className="space-y-4 pt-4 border-t">
+      <div className="space-y-4 border-t pt-4">
         <div className="space-y-2">
           <Label className="text-sm font-medium">{t("prefixConfig")}</Label>
-          <p className="text-xs text-muted-foreground">
-            {t("prefixConfigDesc")}
-          </p>
+          <p className="text-xs text-muted-foreground">{t("prefixConfigDesc")}</p>
         </div>
 
         <div className="flex items-center gap-4">
@@ -233,8 +209,8 @@ export function WebsiteConfigContent() {
               min="4"
               max="20"
               value={emailPrefixLength}
-              onChange={(e) => setEmailPrefixLength(e.target.value)}
-              placeholder={`默认为 ${EMAIL_CONFIG.DEFAULT_PREFIX_LENGTH} 位`}
+              onChange={(event) => setEmailPrefixLength(event.target.value)}
+              placeholder={EMAIL_CONFIG.DEFAULT_PREFIX_LENGTH.toString()}
             />
           </div>
         </div>
@@ -247,79 +223,22 @@ export function WebsiteConfigContent() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={EMAIL_PREFIX_FORMATS.RANDOM}>
-                  {t("formatRandom")}
-                </SelectItem>
-                <SelectItem value={EMAIL_PREFIX_FORMATS.RANDOM_ALPHA}>
-                  {t("formatRandomAlpha")}
-                </SelectItem>
-                <SelectItem value={EMAIL_PREFIX_FORMATS.NAME_NUMBER}>
-                  {t("formatNameNumber")}
-                </SelectItem>
-                <SelectItem value={EMAIL_PREFIX_FORMATS.NAME_DATE}>
-                  {t("formatNameDate")}
-                </SelectItem>
-                <SelectItem value={EMAIL_PREFIX_FORMATS.NAME_YEAR}>
-                  {t("formatNameYear")}
-                </SelectItem>
-                <SelectItem value={EMAIL_PREFIX_FORMATS.RANDOM_DATE}>
-                  {t("formatRandomDate")}
-                </SelectItem>
-                <SelectItem value={EMAIL_PREFIX_FORMATS.RANDOM_YEAR}>
-                  {t("formatRandomYear")}
-                </SelectItem>
+                <SelectItem value={EMAIL_PREFIX_FORMATS.RANDOM}>{t("formatRandom")}</SelectItem>
+                <SelectItem value={EMAIL_PREFIX_FORMATS.RANDOM_ALPHA}>{t("formatRandomAlpha")}</SelectItem>
+                <SelectItem value={EMAIL_PREFIX_FORMATS.NAME_NUMBER}>{t("formatNameNumber")}</SelectItem>
+                <SelectItem value={EMAIL_PREFIX_FORMATS.NAME_DATE}>{t("formatNameDate")}</SelectItem>
+                <SelectItem value={EMAIL_PREFIX_FORMATS.NAME_YEAR}>{t("formatNameYear")}</SelectItem>
+                <SelectItem value={EMAIL_PREFIX_FORMATS.RANDOM_DATE}>{t("formatRandomDate")}</SelectItem>
+                <SelectItem value={EMAIL_PREFIX_FORMATS.RANDOM_YEAR}>{t("formatRandomYear")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
       </div>
 
-      <div className="space-y-4 pt-4 border-t">
-        <div className="space-y-2">
-          <Label className="text-sm font-medium">{tb("globalBg")}</Label>
-          <p className="text-xs text-muted-foreground">{tb("globalBgDesc")}</p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Sun className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-          <span className="text-sm min-w-[60px]">{tb("lightBg")}</span>
-          <Input
-            value={bgLight}
-            onChange={(e) => setBgLight(e.target.value)}
-            placeholder={tb("bgUrlPlaceholder")}
-            className="flex-1"
-          />
-        </div>
-        <div className="flex items-center gap-3">
-          <Moon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-          <span className="text-sm min-w-[60px]">{tb("darkBg")}</span>
-          <Input
-            value={bgDark}
-            onChange={(e) => setBgDark(e.target.value)}
-            placeholder={tb("bgUrlPlaceholder")}
-            className="flex-1"
-          />
-        </div>
-        <div className="flex items-center gap-3">
-          <Cherry className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-          <span className="text-sm min-w-[60px]">{tb("sakuraBg")}</span>
-          <Input
-            value={bgSakura}
-            onChange={(e) => setBgSakura(e.target.value)}
-            placeholder={tb("bgUrlPlaceholder")}
-            className="flex-1"
-          />
-        </div>
-        <p className="text-xs text-muted-foreground">{tb("bgUrlHint")}</p>
-      </div>
-
-      <Button
-        onClick={handleSave}
-        disabled={loading}
-        className="w-full"
-      >
+      <Button onClick={handleSave} disabled={loading} className="w-full">
         {tc("save")}
       </Button>
     </div>
-  )
+  );
 }
