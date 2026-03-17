@@ -1,10 +1,22 @@
+import { auth, checkPermission } from "@/lib/auth"
 import { createDb } from "@/lib/db"
+import { PERMISSIONS } from "@/lib/permissions"
 import { users } from "@/lib/schema"
 import { eq } from "drizzle-orm"
 
 
 export async function POST(request: Request) {
   try {
+    const session = await auth()
+    if (!session?.user?.id) {
+      return Response.json({ error: "未授权" }, { status: 401 })
+    }
+
+    const hasPermission = await checkPermission(PERMISSIONS.PROMOTE_USER)
+    if (!hasPermission) {
+      return Response.json({ error: "权限不足" }, { status: 403 })
+    }
+
     const json = await request.json()
     const { searchText } = json as { searchText: string }
 

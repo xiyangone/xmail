@@ -25,9 +25,38 @@ export interface Message {
   received_at?: number;
 }
 
+export type VerificationCodeFailureReason =
+  | "timeout_no_messages"
+  | "timeout_no_sender_match"
+  | "timeout_no_code_match"
+  | "mailbox_fetch_failed";
+
+export interface VerificationCodeStats {
+  timeoutMs: number;
+  intervalMs: number;
+  messagesSeen: number;
+  senderMatchedMessages: number;
+  lastMessageAt: number | null;
+  fromAddress: string | null;
+}
+
+export type VerificationCodeResult =
+  | {
+      success: true;
+      code: string;
+      stats: VerificationCodeStats;
+    }
+  | {
+      success: false;
+      reason: VerificationCodeFailureReason;
+      error: string;
+      hint: string;
+      stats: VerificationCodeStats;
+    };
+
 export async function getVerificationCode(
   config: VerificationCodeConfig
-): Promise<string | null> {
+): Promise<VerificationCodeResult> {
   const {
     emailId,
     fromAddress,
@@ -39,19 +68,60 @@ export async function getVerificationCode(
   } = config;
 
   const startTime = Date.now();
+  const seenMessageIds = new Set<string>();
+  const senderMatchedMessageIds = new Set<string>();
+  let lastMessageAt: number | null = null;
+  const stats: VerificationCodeStats = {
+    timeoutMs: verificationCodeTimeout,
+    intervalMs: verificationCodeInterval,
+    messagesSeen: 0,
+    senderMatchedMessages: 0,
+    lastMessageAt: null,
+    fromAddress: fromAddress ?? null,
+  };
 
   try {
     while (true) {
-      const emailList = await getEmailList({
-        emailId,
-        baseUrl,
-        apiKey,
-        requestHeaders,
-      });
+      let emailList: Message[];
+      try {
+        emailList = await getEmailList({
+          emailId,
+          baseUrl,
+          apiKey,
+          requestHeaders,
+        });
+      } catch (error: unknown) {
+        if (
+          error instanceof Error &&
+          /baseUrl is required/i.test(error.message)
+        ) {
+          throw error;
+        }
+        console.error("[REGISTER] 获取验证码失败:", error);
+        return createFailureResult("mailbox_fetch_failed", stats);
+      }
+
+      for (const email of emailList) {
+        seenMessageIds.add(email.id);
+        if (
+          typeof email.received_at === "number" &&
+          (lastMessageAt === null || email.received_at > lastMessageAt)
+        ) {
+          lastMessageAt = email.received_at;
+        }
+      }
 
       const targetEmails = fromAddress
         ? emailList.filter((email) => email.from_address?.includes(fromAddress))
         : emailList;
+
+      for (const email of targetEmails) {
+        senderMatchedMessageIds.add(email.id);
+      }
+
+      stats.messagesSeen = seenMessageIds.size;
+      stats.senderMatchedMessages = senderMatchedMessageIds.size;
+      stats.lastMessageAt = lastMessageAt;
 
       for (const email of targetEmails) {
         const code = extractVerificationCodeFromMessage(email);
@@ -59,14 +129,25 @@ export async function getVerificationCode(
           console.log(
             `[REGISTER] 获取到验证码: ${code} (来自: ${email.from_address || "未知"})`
           );
-          return code;
+          return {
+            success: true,
+            code,
+            stats,
+          };
         }
       }
 
       const elapsed = Date.now() - startTime;
       if (elapsed > verificationCodeTimeout) {
         console.log(`[REGISTER] 获取验证码超时 (${verificationCodeTimeout}ms)`);
-        return null;
+        return createFailureResult(
+          resolveTimeoutReason(
+            seenMessageIds.size,
+            senderMatchedMessageIds.size,
+            fromAddress
+          ),
+          stats
+        );
       }
 
       await delay(verificationCodeInterval);
@@ -74,6 +155,62 @@ export async function getVerificationCode(
   } catch (error: unknown) {
     console.error("[REGISTER] 获取验证码失败:", error);
     throw error;
+  }
+}
+
+function resolveTimeoutReason(
+  messagesSeen: number,
+  senderMatchedMessages: number,
+  fromAddress?: string
+): VerificationCodeFailureReason {
+  if (messagesSeen === 0) {
+    return "timeout_no_messages";
+  }
+
+  if (fromAddress && senderMatchedMessages === 0) {
+    return "timeout_no_sender_match";
+  }
+
+  return "timeout_no_code_match";
+}
+
+function createFailureResult(
+  reason: VerificationCodeFailureReason,
+  stats: VerificationCodeStats
+): Extract<VerificationCodeResult, { success: false }> {
+  switch (reason) {
+    case "timeout_no_messages":
+      return {
+        success: false,
+        reason,
+        error: "在等待时间内未收到新邮件",
+        hint: "请确认目标服务已经发信，或适当延长 timeout 后重试",
+        stats,
+      };
+    case "timeout_no_sender_match":
+      return {
+        success: false,
+        reason,
+        error: "已收到邮件，但没有匹配指定发件人的邮件",
+        hint: "请检查 fromAddress 是否正确，或去掉发件人过滤后重试",
+        stats,
+      };
+    case "timeout_no_code_match":
+      return {
+        success: false,
+        reason,
+        error: "已收到邮件，但未能识别出验证码",
+        hint: "请直接查看邮件正文确认验证码格式，或适当延长 timeout 后重试",
+        stats,
+      };
+    case "mailbox_fetch_failed":
+      return {
+        success: false,
+        reason,
+        error: "读取邮箱消息失败",
+        hint: "请稍后重试；如果持续失败，请检查邮箱接口或鉴权状态",
+        stats,
+      };
   }
 }
 

@@ -986,10 +986,34 @@ Content-Type: application/json
 
 ```json
 {
-  "error": "未找到验证码",
+  "error": "已收到邮件，但未能识别出验证码",
+  "hint": "请直接查看邮件正文确认验证码格式，或适当延长 timeout 后重试",
+  "reason": "timeout_no_code_match",
+  "stats": {
+    "timeoutMs": 60000,
+    "intervalMs": 3000,
+    "messagesSeen": 3,
+    "senderMatchedMessages": 1,
+    "lastMessageAt": 1737012345678,
+    "fromAddress": "verify.windsurf.ai"
+  },
   "success": false
 }
 ```
+
+错误字段说明：
+
+- `error`: 给人看的失败原因
+- `hint`: 建议的下一步操作
+- `reason`: 给程序判断的失败类型
+- `stats`: 最小诊断信息，方便排查为什么没拿到验证码
+
+`reason` 可能的取值：
+
+- `timeout_no_messages`: 在等待时间内未收到新邮件
+- `timeout_no_sender_match`: 收到邮件了，但没有匹配 `fromAddress` 的邮件
+- `timeout_no_code_match`: 收到匹配邮件了，但没能识别出验证码
+- `mailbox_fetch_failed`: 拉取邮箱消息失败
 
 **使用场景**：
 
@@ -1005,7 +1029,7 @@ Content-Type: application/json
 2. 如果指定了 `fromAddress`，则只查找来自该发件人的邮件
 3. 从邮件的 HTML 或文本内容中提取验证码
 4. 支持多种验证码格式：`<h1 class="code">123456</h1>`、"Your verification code is: 123456"、"验证码: 123456" 等
-5. 如果在超时时间内未找到验证码，返回错误
+5. 如果失败，会返回结构化的 `reason`、`hint` 和 `stats` 方便排查
 
 ### 使用示例
 
@@ -1077,7 +1101,15 @@ const codeRes = await fetch(
     }),
   }
 );
-const { code } = await codeRes.json();
+const codeData = await codeRes.json();
+
+if (!codeRes.ok || !codeData.success) {
+  console.error("获取验证码失败:", codeData.reason, codeData.error, codeData.hint);
+  console.error("诊断信息:", codeData.stats);
+  throw new Error(codeData.error);
+}
+
+const { code } = codeData;
 
 // 4. 使用验证码完成注册
 await fetch("https://example.com/verify", {

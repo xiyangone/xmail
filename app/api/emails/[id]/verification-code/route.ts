@@ -59,7 +59,7 @@ export async function POST(
       requestHeaders.set("x-api-key", apiKey);
     }
 
-    const code = await getVerificationCode({
+    const result = await getVerificationCode({
       emailId: id,
       fromAddress: body.fromAddress,
       verificationCodeInterval: interval,
@@ -69,19 +69,30 @@ export async function POST(
       requestHeaders,
     });
 
-    if (!code) {
+    if (!result.success) {
+      const status =
+        result.reason === "mailbox_fetch_failed" ? 500 : 404;
+
       return NextResponse.json(
-        { error: "未找到验证码", success: false },
-        { status: 404 }
+        {
+          error: result.error,
+          hint: result.hint,
+          reason: result.reason,
+          stats: result.stats,
+          success: false,
+        },
+        { status }
       );
     }
 
-    return NextResponse.json({ code, success: true });
+    return NextResponse.json({ code: result.code, success: true });
   } catch (error) {
     console.error("获取验证码失败:", error);
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "获取验证码失败",
+        error: "读取邮箱消息失败",
+        hint: "请稍后重试；如果持续失败，请检查邮箱接口或鉴权状态",
+        reason: "mailbox_fetch_failed",
         success: false,
       },
       { status: 500 }

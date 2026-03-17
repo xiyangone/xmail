@@ -61,3 +61,4 @@ wrangler.email.json
 
 # opennextjs-cloudflare build output
 .open-next
+scripts/api_smoke_test.py

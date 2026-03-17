@@ -43,6 +43,17 @@ const VERIFICATION_CODE_PATTERNS = [
   /\b([0-9]{4,5})\b/,
 ];
 
+const HTML_ENTITY_MAP: Record<string, string> = {
+  "&nbsp;": " ",
+  "&#160;": " ",
+  "&#xA0;": " ",
+  "&amp;": "&",
+  "&lt;": "<",
+  "&gt;": ">",
+  "&quot;": "\"",
+  "&#39;": "'",
+};
+
 /**
  * 从文本中提取验证码
  */
@@ -77,6 +88,24 @@ export function extractVerificationCode(text: string): string | null {
   }
 
   return null;
+}
+
+function decodeHtmlEntities(text: string): string {
+  return text.replace(
+    /&nbsp;|&#160;|&#xA0;|&amp;|&lt;|&gt;|&quot;|&#39;/g,
+    (entity) => HTML_ENTITY_MAP[entity] ?? entity
+  );
+}
+
+function extractTextFromHtml(html: string): string {
+  return decodeHtmlEntities(html)
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, " ")
+    .replace(/<!--[\s\S]*?-->/g, " ")
+    .replace(/<(?:br|\/p|\/div|\/li|\/tr|\/td|\/th|\/h[1-6])\s*\/?>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 /**
@@ -127,6 +156,12 @@ export function extractVerificationCodeFromMessage(message: {
   if (message.html) {
     const code = extractVerificationCode(message.html);
     if (code) return code;
+
+    const htmlText = extractTextFromHtml(message.html);
+    if (htmlText) {
+      const normalizedCode = extractVerificationCode(htmlText);
+      if (normalizedCode) return normalizedCode;
+    }
   }
 
   // 2. 其次从纯文本内容中提取
