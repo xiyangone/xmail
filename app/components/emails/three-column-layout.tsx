@@ -132,6 +132,7 @@ export function ThreeColumnLayout() {
               <div className="flex-1 overflow-auto">
                 <MessageListContainer
                   email={selectedEmail}
+                  canSendEmails={canSendEmails}
                   onMessageSelect={handleMessageSelect}
                   selectedMessageId={selectedMessageId}
                   refreshTrigger={refreshTrigger}
@@ -215,6 +216,7 @@ export function ThreeColumnLayout() {
               <div className="flex-1 overflow-auto">
                 <MessageListContainer
                   email={selectedEmail}
+                  canSendEmails={canSendEmails}
                   onMessageSelect={handleMessageSelect}
                   selectedMessageId={selectedMessageId}
                   refreshTrigger={refreshTrigger}

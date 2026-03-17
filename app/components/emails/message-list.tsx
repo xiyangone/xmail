@@ -403,7 +403,7 @@ export function MessageList({
       stopPolling();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [email.id, messageType, config?.messagePollInterval]);
+  }, [email.id, messageType]);
 
   useEffect(() => {
     if (refreshTrigger && refreshTrigger > 0) {

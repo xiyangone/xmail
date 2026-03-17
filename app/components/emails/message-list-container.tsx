@@ -9,7 +9,6 @@ import {
   TabsContent,
 } from "@/components/ui/tabs";
 import { MessageList } from "./message-list";
-import { useSendPermission } from "@/hooks/use-send-permission";
 import { useTranslations } from "next-intl";
 
 interface MessageListContainerProps {
@@ -17,6 +16,7 @@ interface MessageListContainerProps {
     id: string;
     address: string;
   };
+  canSendEmails: boolean;
   onMessageSelect: (
     messageId: string | null,
     messageType?: "received" | "sent"
@@ -27,12 +27,12 @@ interface MessageListContainerProps {
 
 export function MessageListContainer({
   email,
+  canSendEmails,
   onMessageSelect,
   selectedMessageId,
   refreshTrigger,
 }: MessageListContainerProps) {
   const [activeTab, setActiveTab] = useState<"received" | "sent">("received");
-  const { canSend: canSendEmails } = useSendPermission();
   const t = useTranslations("email");
 
   // 当邮箱切换时,重置 tab 到收件箱
