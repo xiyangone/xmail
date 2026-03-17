@@ -113,8 +113,19 @@ export function EmailServiceConfigContent() {
               Resend API Key
             </Label>
             <div className="relative">
+              <input
+                type="text"
+                name="resendConfigUsername"
+                autoComplete="username"
+                value="resend-config"
+                readOnly
+                tabIndex={-1}
+                aria-hidden="true"
+                className="sr-only"
+              />
               <Input
                 id="apiKey"
+                name="resendApiKey"
                 type={showToken ? "text" : "password"}
                 autoComplete="new-password"
                 value={config.apiKey}
