@@ -9,6 +9,7 @@ import "./globals.css";
 import { Providers } from "./providers";
 import { FloatMenu } from "@/components/float-menu";
 import { BackgroundProvider } from "@/components/background/background-provider";
+import { APP_THEMES } from "@/lib/background-config";
 
 export const dynamic = "force-dynamic";
 
@@ -120,7 +121,7 @@ export default async function RootLayout({
           attribute="class"
           defaultTheme="system"
           enableSystem
-          themes={["light", "dark", "sakura"]}
+          themes={[...APP_THEMES]}
           disableTransitionOnChange={false}
           storageKey="temp-mail-theme"
         >

@@ -23,6 +23,21 @@ const serwist = new Serwist({
 });
 
 serwist.setCatchHandler(async ({ event, request }) => {
+  const requestUrl = new URL(request.url);
+
+  if (
+    request.destination === "script" &&
+    requestUrl.hostname === "static.cloudflareinsights.com"
+  ) {
+    return new Response("", {
+      status: 200,
+      headers: {
+        "Cache-Control": "no-store",
+        "Content-Type": "application/javascript; charset=utf-8",
+      },
+    });
+  }
+
   if (request.mode === "navigate") {
     const fetchEvent = event as NavigationPreloadFetchEvent;
     const preloadResponse = await fetchEvent.preloadResponse;

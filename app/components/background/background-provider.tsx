@@ -3,26 +3,22 @@
 import { useSession } from "next-auth/react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
-
-interface BackgroundConfig {
-  bgLight: string;
-  bgDark: string;
-  bgSakura: string;
-}
-
-interface UserBackgroundConfig extends BackgroundConfig {
-  bgEnabled: boolean;
-}
+import {
+  backgroundThemeKeys,
+  defaultBackgroundSettings,
+  type BackgroundSettingsConfig,
+  resolveAppTheme,
+} from "@/lib/background-config";
 
 export function BackgroundProvider() {
   const { resolvedTheme } = useTheme();
   const { data: session } = useSession();
-  const [globalBg, setGlobalBg] = useState<BackgroundConfig | null>(null);
-  const [userBg, setUserBg] = useState<UserBackgroundConfig | null>(null);
+  const [globalBg, setGlobalBg] = useState<BackgroundSettingsConfig>(defaultBackgroundSettings);
+  const [userBg, setUserBg] = useState<BackgroundSettingsConfig | null>(null);
 
   useEffect(() => {
     fetch("/api/config/background")
-      .then((res) => (res.ok ? (res.json() as Promise<BackgroundConfig>) : null))
+      .then((res) => (res.ok ? (res.json() as Promise<BackgroundSettingsConfig>) : null))
       .then((data) => data && setGlobalBg(data))
       .catch(() => {});
   }, []);
@@ -31,14 +27,18 @@ export function BackgroundProvider() {
     if (!session?.user) return;
 
     fetch("/api/user/settings")
-      .then((res) => (res.ok ? (res.json() as Promise<UserBackgroundConfig>) : null))
+      .then((res) => (res.ok ? (res.json() as Promise<BackgroundSettingsConfig>) : null))
       .then((data) => data && setUserBg(data))
       .catch(() => {});
   }, [session?.user]);
 
-  const themeKey = resolvedTheme === "dark" ? "bgDark" : resolvedTheme === "sakura" ? "bgSakura" : "bgLight";
-  const backgroundUrl =
-    userBg && !userBg.bgEnabled ? "" : userBg?.[themeKey] || globalBg?.[themeKey] || "";
+  const activeTheme = resolveAppTheme(resolvedTheme);
+  const { urlKey, enabledKey } = backgroundThemeKeys[activeTheme];
+  const globalEnabled = globalBg.bgEnabled && globalBg[enabledKey];
+  const userEnabled = !!userBg && userBg.bgEnabled && userBg[enabledKey];
+  const backgroundUrl = globalEnabled
+    ? (userEnabled ? userBg?.[urlKey] : "") || globalBg[urlKey]
+    : "";
 
   if (!backgroundUrl) {
     return <div className="page-gradient-background fixed inset-0 -z-10" />;
@@ -50,9 +50,8 @@ export function BackgroundProvider() {
       style={{ backgroundImage: `url(${backgroundUrl})` }}
     >
       <div
-        className="absolute inset-0"
+        className="absolute inset-0 bg-[radial-gradient(circle_at_top,hsla(var(--primary)/0.14),transparent_34%),linear-gradient(180deg,hsla(var(--background)/0.3),hsla(var(--background)/0.58))]"
         style={{
-          backgroundColor: "hsl(var(--background) / var(--background-overlay-opacity))",
           backdropFilter: "blur(var(--background-overlay-blur))",
         }}
       />

@@ -176,6 +176,13 @@
       "when": 1773740111931,
       "tag": "0024_grey_hiroim",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "6",
+      "when": 1773763758967,
+      "tag": "0025_groovy_princess_powerful",
+      "breakpoints": true
     }
   ]
 }

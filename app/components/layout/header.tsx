@@ -5,11 +5,11 @@ import { Logo } from "@/components/ui/logo"
 
 export function Header() {
   return (
-    <header className="surface-toolbar fixed left-0 right-0 top-0 z-[100] h-16 border-b border-border/60">
-      <div className="container mx-auto h-full px-4">
-        <div className="h-full flex items-center justify-between">
+    <header className="fixed left-0 right-0 top-0 z-[100]">
+      <div className="container mx-auto max-w-[1600px] px-4 pt-3 lg:px-8">
+        <div className="surface-toolbar flex h-14 items-center justify-between rounded-2xl border border-white/15 px-4 shadow-xl shadow-black/5">
           <Logo />
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-3">
             <LanguageSwitcher />
             <ThemeToggle />
             <SignButton />

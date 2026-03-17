@@ -27,7 +27,7 @@ export function AppShell({
         <Header />
         <main
           className={cn(
-            "relative pt-20 pb-5",
+            "relative pb-5 pt-[4.75rem]",
             fullHeight && "h-[calc(100vh-5rem)]",
             mainClassName
           )}

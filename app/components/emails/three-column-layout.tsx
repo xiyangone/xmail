@@ -31,10 +31,10 @@ export function ThreeColumnLayout() {
   const t = useTranslations("email");
 
   const columnClass =
-    "border-2 border-primary/20 bg-background rounded-lg overflow-hidden flex flex-col";
+    "surface-panel rounded-3xl overflow-hidden flex flex-col min-h-0";
   const headerClass =
-    "p-2 border-b-2 border-primary/20 flex items-center justify-between shrink-0";
-  const titleClass = "text-sm font-bold px-2 w-full overflow-hidden";
+    "surface-toolbar px-3 py-3 flex items-center justify-between gap-2 shrink-0";
+  const titleClass = "text-sm font-semibold px-2 w-full overflow-hidden";
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 1024px)");
@@ -60,7 +60,7 @@ export function ThreeColumnLayout() {
   const mobileView = getMobileView();
 
   if (isDesktop === null) {
-    return <div className="pb-5 pt-20 h-full flex flex-col" />;
+    return <div className="h-full flex flex-col" />;
   }
 
   const copyEmailAddress = () => {
@@ -80,7 +80,7 @@ export function ThreeColumnLayout() {
   };
 
   return (
-    <div className="pb-5 pt-20 h-full flex flex-col">
+    <div className="h-full flex flex-col">
       {isDesktop ? (
         <div className="grid grid-cols-12 gap-4 h-full min-h-0">
           <div className={cn("col-span-3", columnClass)}>

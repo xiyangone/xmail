@@ -8,6 +8,7 @@ import { formatContactDisplay } from "@/lib/contact-address";
 import { useTheme } from "next-themes";
 import { useToast } from "@/components/ui/use-toast";
 import { useTranslations } from "next-intl";
+import { resolveAppTheme } from "@/lib/background-config";
 
 interface Message {
   id: string;
@@ -92,13 +93,21 @@ export function MessageView({
 
   const iframeSrcDoc = useCallback(() => {
     if (viewMode !== "html" || !message?.html) return undefined;
-    const isDark = resolvedTheme === "dark";
-    const isSakura = resolvedTheme === "sakura";
+    const activeTheme = resolveAppTheme(resolvedTheme);
+    const isDark = activeTheme === "dark";
+    const isSakura = activeTheme === "sakura";
+    const isAmber = activeTheme === "amber";
     const colors = {
-      text: isDark ? "#fff" : isSakura ? "#4a1942" : "#000",
-      bg: isDark ? "#1a1a1a" : isSakura ? "#fff5f7" : "#fff",
-      link: isDark ? "#a78bfa" : isSakura ? "#db2777" : "#2563eb",
-      scrollbar: isDark ? "130, 109, 217" : isSakura ? "219, 39, 119" : "130, 109, 217",
+      text: isDark ? "#f5f3ff" : isSakura ? "#4a1942" : isAmber ? "#4a2c15" : "#111827",
+      bg: isDark ? "#1a1a1a" : isSakura ? "#fff5f7" : isAmber ? "#fff7ed" : "#ffffff",
+      link: isDark ? "#a78bfa" : isSakura ? "#db2777" : isAmber ? "#c2410c" : "#2563eb",
+      scrollbar: isDark
+        ? "130, 109, 217"
+        : isSakura
+          ? "219, 39, 119"
+          : isAmber
+            ? "234, 88, 12"
+            : "37, 99, 235",
     };
     return `<!DOCTYPE html>
 <html>

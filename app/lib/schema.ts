@@ -272,7 +272,12 @@ export const userSettings = sqliteTable("user_settings", {
   bgLight: text("bg_light"),       // 日间主题背景 URL
   bgDark: text("bg_dark"),         // 夜间主题背景 URL
   bgSakura: text("bg_sakura"),     // 樱花主题背景 URL
+  bgAmber: text("bg_amber"),       // 琥珀主题背景 URL
   bgEnabled: integer("bg_enabled", { mode: "boolean" }).notNull().default(true),
+  bgLightEnabled: integer("bg_light_enabled", { mode: "boolean" }).notNull().default(true),
+  bgDarkEnabled: integer("bg_dark_enabled", { mode: "boolean" }).notNull().default(true),
+  bgSakuraEnabled: integer("bg_sakura_enabled", { mode: "boolean" }).notNull().default(true),
+  bgAmberEnabled: integer("bg_amber_enabled", { mode: "boolean" }).notNull().default(true),
   updatedAt: integer("updated_at", { mode: "timestamp_ms" })
     .notNull()
     .$defaultFn(() => new Date()),

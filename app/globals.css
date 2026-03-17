@@ -102,6 +102,39 @@
     --background-overlay-opacity: 0.18;
     --background-overlay-blur: 2px;
   }
+
+  .amber {
+    --background: 34 100% 97%;
+    --foreground: 24 36% 16%;
+    --card: 34 100% 98%;
+    --card-foreground: 24 36% 16%;
+    --popover: 34 100% 98%;
+    --popover-foreground: 24 36% 16%;
+    --primary: 28 95% 56%;
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 30 96% 68%;
+    --primary-dark: 24 90% 48%;
+    --secondary: 38 45% 92%;
+    --secondary-foreground: 24 36% 18%;
+    --muted: 38 40% 93%;
+    --muted-foreground: 24 18% 42%;
+    --accent: 32 55% 92%;
+    --accent-foreground: 24 36% 18%;
+    --accent-orange: 18 88% 60%;
+    --accent-purple: 42 85% 62%;
+    --destructive: 0 78% 56%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 30 36% 84%;
+    --input: 30 36% 84%;
+    --ring: 28 95% 56%;
+    --gradient-start: 28 95% 56%;
+    --gradient-mid: 18 88% 60%;
+    --gradient-end: 42 85% 62%;
+    --page-bg-from: 38 90% 97%;
+    --page-bg-to: 30 72% 92%;
+    --background-overlay-opacity: 0.2;
+    --background-overlay-blur: 3px;
+  }
 }
 
 @layer base {
@@ -136,7 +169,7 @@
 
   .surface-toolbar {
     @apply border border-border/70 backdrop-blur-xl shadow-sm;
-    background-color: hsl(var(--background) / 0.7);
+    background-color: hsl(var(--background) / 0.78);
   }
 
   .bg-grid-primary {
@@ -158,9 +191,9 @@
 
   .page-gradient-background {
     background:
-      radial-gradient(circle at top left, hsl(var(--primary) / 0.18), transparent 32%),
-      radial-gradient(circle at top right, hsl(var(--accent-orange) / 0.16), transparent 26%),
-      linear-gradient(160deg, hsl(var(--page-bg-from)) 0%, hsl(var(--page-bg-to)) 100%);
+      radial-gradient(circle at 14% 18%, hsl(var(--primary) / 0.14), transparent 32%),
+      radial-gradient(circle at 86% 8%, hsl(var(--accent-orange) / 0.12), transparent 28%),
+      linear-gradient(145deg, hsl(var(--page-bg-from)) 0%, hsl(var(--page-bg-to)) 100%);
   }
 
   /* 整体滚动条 */
