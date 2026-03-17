@@ -64,9 +64,15 @@ interface MessageResponse {
   total: number;
 }
 
-// 指数退避常量
+interface FetchMessagesOptions {
+  cursor?: string;
+  forceRefresh?: boolean;
+  scheduleNext?: boolean;
+  silentOnError?: boolean;
+}
+
 const MAX_ERROR_COUNT = 5;
-const MAX_BACKOFF_INTERVAL = 5 * 60 * 1000; // 最大 5 分钟
+const MAX_BACKOFF_INTERVAL = 5 * 60 * 1000;
 
 export function MessageList({
   email,
@@ -80,155 +86,58 @@ export function MessageList({
   const [refreshing, setRefreshing] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
-  const pollTimeoutRef = useRef<Timer>(null);
-  const messagesRef = useRef<Message[]>([]); // 添加 ref 来追踪最新的消息列表
   const [total, setTotal] = useState(0);
   const [messageToDelete, setMessageToDelete] = useState<Message | null>(null);
-  const [countdown, setCountdown] = useState(0); // 倒计时秒数
-  const countdownIntervalRef = useRef<Timer>(null);
+  const [countdown, setCountdown] = useState(0);
+  const [countdownTotal, setCountdownTotal] = useState(0);
+  const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null);
+  const [errorCount, setErrorCount] = useState(0);
+
+  const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
+    null
+  );
+  const messagesRef = useRef<Message[]>([]);
+  const errorCountRef = useRef(0);
+  const isDocumentVisibleRef = useRef(true);
+  const fetchMessagesRef = useRef<
+    (options?: FetchMessagesOptions) => Promise<void>
+  >(async () => {});
+
   const { toast } = useToast();
   const { config } = useConfig();
-  const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null);
-  const [errorCount, setErrorCount] = useState(0); // 错误计数用于指数退避
   const t = useTranslations("email");
   const tc = useTranslations("common");
 
-  // 当 messages 改变时更新 ref
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
 
-  // 计算当前轮询间隔（考虑指数退避）
-  const getBackoffInterval = useCallback(() => {
-    const baseInterval = config?.messagePollInterval
-      ? parseInt(config.messagePollInterval)
-      : EMAIL_CONFIG.POLL_INTERVAL;
+  useEffect(() => {
+    errorCountRef.current = errorCount;
+  }, [errorCount]);
 
-    if (errorCount === 0) return baseInterval;
+  const getBackoffInterval = useCallback(
+    (currentErrorCount: number) => {
+      const baseInterval = config?.messagePollInterval
+        ? parseInt(config.messagePollInterval)
+        : EMAIL_CONFIG.POLL_INTERVAL;
 
-    // 指数退避：基础间隔 * 2^errorCount，最大不超过 MAX_BACKOFF_INTERVAL
-    const backoff = Math.min(
-      baseInterval * Math.pow(2, errorCount),
-      MAX_BACKOFF_INTERVAL
-    );
-    return backoff;
-  }, [errorCount, config?.messagePollInterval]);
-
-  const fetchMessages = async (cursor?: string, forceRefresh = false) => {
-    try {
-      const url = new URL(`/api/emails/${email.id}`, window.location.origin);
-      if (messageType === "sent") {
-        url.searchParams.set("type", "sent");
-      }
-      if (cursor) {
-        url.searchParams.set("cursor", cursor);
-      }
-      const response = await fetch(url);
-
-      // 检查响应状态
-      if (!response.ok) {
-        throw new Error(`HTTP error: ${response.status}`);
+      if (currentErrorCount === 0) {
+        return baseInterval;
       }
 
-      const data = (await response.json()) as MessageResponse;
+      return Math.min(
+        baseInterval * Math.pow(2, currentErrorCount),
+        MAX_BACKOFF_INTERVAL
+      );
+    },
+    [config?.messagePollInterval]
+  );
 
-      // 请求成功，重置错误计数
-      setErrorCount(0);
-
-      if (!cursor) {
-        // 如果是强制刷新,直接替换所有数据
-        if (forceRefresh) {
-          setMessages(data.messages);
-          setNextCursor(data.nextCursor);
-          setTotal(data.messages.length);
-          // 重置倒计时
-          resetCountdown();
-          return;
-        }
-
-        const newMessages = data.messages;
-        const oldMessages = messagesRef.current;
-
-        // 创建新消息的 ID 集合,用于快速查找
-        const newMessageIds = new Set(newMessages.map((m) => m.id));
-
-        // 过滤掉已被删除的旧消息(服务器返回的新数据中不存在的)
-        const validOldMessages = oldMessages.filter((m) =>
-          newMessageIds.has(m.id)
-        );
-
-        const lastDuplicateIndex = newMessages.findIndex((newMsg) =>
-          validOldMessages.some((oldMsg) => oldMsg.id === newMsg.id)
-        );
-
-        if (lastDuplicateIndex === -1) {
-          setMessages(newMessages);
-          setNextCursor(data.nextCursor);
-          setTotal(newMessages.length);
-          // 重置倒计时
-          resetCountdown();
-          return;
-        }
-        const uniqueNewMessages = newMessages.slice(0, lastDuplicateIndex);
-        const updatedMessages = [...uniqueNewMessages, ...validOldMessages];
-        setMessages(updatedMessages);
-        setTotal(updatedMessages.length);
-        // 重置倒计时
-        resetCountdown();
-        return;
-      }
-      setMessages((prev) => {
-        const updated = [...prev, ...data.messages];
-        setTotal(updated.length);
-        return updated;
-      });
-      setNextCursor(data.nextCursor);
-    } catch (error) {
-      console.error("Failed to fetch messages:", error);
-      // 增加错误计数，用于指数退避
-      setErrorCount(prev => Math.min(prev + 1, MAX_ERROR_COUNT));
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-      setLoadingMore(false);
-    }
-  };
-
-  const resetCountdown = () => {
-    // 使用指数退避后的间隔
-    const pollInterval = getBackoffInterval();
-    const countdownSeconds = Math.floor(pollInterval / 1000);
-    setCountdown(countdownSeconds);
-  };
-
-  const startPolling = () => {
-    stopPolling();
-    // 使用指数退避后的间隔
-    const pollInterval = getBackoffInterval();
-
-    // 设置初始倒计时（转换为秒）
-    const countdownSeconds = Math.floor(pollInterval / 1000);
-    setCountdown(countdownSeconds);
-
-    // 启动倒计时 - 每秒递减
-    countdownIntervalRef.current = setInterval(() => {
-      setCountdown((prev) => {
-        // 当倒计时为1时,下一秒归零并触发刷新
-        if (prev <= 1) {
-          if (!refreshing && !loadingMore) {
-            fetchMessages();
-          }
-          // 不在这里重置倒计时,而是在 fetchMessages 完成后重置
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
-
-  const stopPolling = () => {
+  const stopPolling = useCallback(() => {
     if (pollTimeoutRef.current) {
-      clearInterval(pollTimeoutRef.current);
+      clearTimeout(pollTimeoutRef.current);
       pollTimeoutRef.current = null;
     }
     if (countdownIntervalRef.current) {
@@ -236,20 +145,167 @@ export function MessageList({
       countdownIntervalRef.current = null;
     }
     setCountdown(0);
-  };
+    setCountdownTotal(0);
+  }, []);
 
-  // 手动刷新时重置错误计数
+  const scheduleNextPoll = useCallback(
+    (intervalMs: number) => {
+      stopPolling();
+
+      if (!isDocumentVisibleRef.current) {
+        return;
+      }
+
+      const countdownSeconds = Math.max(1, Math.ceil(intervalMs / 1000));
+      setCountdown(countdownSeconds);
+      setCountdownTotal(countdownSeconds);
+
+      countdownIntervalRef.current = setInterval(() => {
+        setCountdown((prev) => (prev <= 1 ? 1 : prev - 1));
+      }, 1000);
+
+      pollTimeoutRef.current = setTimeout(() => {
+        void fetchMessagesRef.current({ silentOnError: true });
+      }, intervalMs);
+    },
+    [stopPolling]
+  );
+
+  const fetchMessages = useCallback(
+    async (options: FetchMessagesOptions = {}) => {
+      const {
+        cursor,
+        forceRefresh = false,
+        scheduleNext = !cursor,
+        silentOnError = true,
+      } = options;
+
+      try {
+        const url = new URL(`/api/emails/${email.id}`, window.location.origin);
+        if (messageType === "sent") {
+          url.searchParams.set("type", "sent");
+        }
+        if (cursor) {
+          url.searchParams.set("cursor", cursor);
+        }
+
+        const response = await fetch(url);
+        if (!response.ok) {
+          let errorMessage = `HTTP error: ${response.status}`;
+          if (response.headers.get("content-type")?.includes("application/json")) {
+            try {
+              const errorData = (await response.json()) as { error?: string };
+              errorMessage = errorData.error || errorMessage;
+            } catch {
+              // ignore json parse failure and keep the status-based message
+            }
+          }
+          throw new Error(errorMessage);
+        }
+
+        const data = (await response.json()) as MessageResponse;
+
+        if (errorCountRef.current !== 0) {
+          errorCountRef.current = 0;
+          setErrorCount(0);
+        }
+
+        if (!cursor) {
+          if (forceRefresh) {
+            setMessages(data.messages);
+            setNextCursor(data.nextCursor);
+            setTotal(data.messages.length);
+            if (scheduleNext) {
+              scheduleNextPoll(getBackoffInterval(0));
+            }
+            return;
+          }
+
+          const newMessages = data.messages;
+          const oldMessages = messagesRef.current;
+          const newMessageIds = new Set(newMessages.map((message) => message.id));
+          const validOldMessages = oldMessages.filter((message) =>
+            newMessageIds.has(message.id)
+          );
+
+          const lastDuplicateIndex = newMessages.findIndex((newMessage) =>
+            validOldMessages.some((oldMessage) => oldMessage.id === newMessage.id)
+          );
+
+          if (lastDuplicateIndex === -1) {
+            setMessages(newMessages);
+            setNextCursor(data.nextCursor);
+            setTotal(newMessages.length);
+            if (scheduleNext) {
+              scheduleNextPoll(getBackoffInterval(0));
+            }
+            return;
+          }
+
+          const uniqueNewMessages = newMessages.slice(0, lastDuplicateIndex);
+          const updatedMessages = [...uniqueNewMessages, ...validOldMessages];
+          setMessages(updatedMessages);
+          setNextCursor(data.nextCursor);
+          setTotal(updatedMessages.length);
+
+          if (scheduleNext) {
+            scheduleNextPoll(getBackoffInterval(0));
+          }
+          return;
+        }
+
+        setMessages((prev) => {
+          const updated = [...prev, ...data.messages];
+          setTotal(updated.length);
+          return updated;
+        });
+        setNextCursor(data.nextCursor);
+
+        if (scheduleNext) {
+          scheduleNextPoll(getBackoffInterval(0));
+        }
+      } catch (error) {
+        const nextErrorCount = Math.min(errorCountRef.current + 1, MAX_ERROR_COUNT);
+        errorCountRef.current = nextErrorCount;
+        setErrorCount(nextErrorCount);
+
+        if (scheduleNext) {
+          scheduleNextPoll(getBackoffInterval(nextErrorCount));
+        }
+
+        if (!silentOnError) {
+          toast({
+            title: tc("error"),
+            description:
+              error instanceof Error ? error.message : tc("networkError"),
+            variant: "destructive",
+          });
+        }
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+        setLoadingMore(false);
+      }
+    },
+    [email.id, getBackoffInterval, messageType, scheduleNextPoll, tc, toast]
+  );
+
+  useEffect(() => {
+    fetchMessagesRef.current = fetchMessages;
+  }, [fetchMessages]);
+
   const handleRefresh = async () => {
+    stopPolling();
     setRefreshing(true);
-    setErrorCount(0); // 手动刷新时重置错误计数
-    await fetchMessages();
-    // 手动刷新后重置倒计时
-    const pollInterval = getBackoffInterval();
-    setCountdown(Math.floor(pollInterval / 1000));
+    errorCountRef.current = 0;
+    setErrorCount(0);
+    await fetchMessages({ forceRefresh: true, silentOnError: false });
   };
 
   const handleScroll = useThrottle((e: React.UIEvent<HTMLDivElement>) => {
-    if (loadingMore) return;
+    if (loadingMore) {
+      return;
+    }
 
     const { scrollHeight, scrollTop, clientHeight } = e.currentTarget;
     const threshold = clientHeight * 1.5;
@@ -257,7 +313,12 @@ export function MessageList({
 
     if (remainingScroll <= threshold && nextCursor) {
       setLoadingMore(true);
-      fetchMessages(nextCursor);
+      stopPolling();
+      void fetchMessages({ cursor: nextCursor, silentOnError: false }).finally(
+        () => {
+          scheduleNextPoll(getBackoffInterval(errorCountRef.current));
+        }
+      );
     }
   }, 200);
 
@@ -291,9 +352,9 @@ export function MessageList({
         description: t("delete.messageDeletd"),
       });
 
-      // 强制刷新列表,清除缓存
+      stopPolling();
       setLoading(true);
-      await fetchMessages(undefined, true);
+      await fetchMessages({ forceRefresh: true, silentOnError: false });
     } catch {
       toast({
         title: tc("error"),
@@ -327,29 +388,58 @@ export function MessageList({
     if (!email.id) {
       return;
     }
-    // 切换邮箱时立即清空消息列表,避免显示上一个邮箱的消息
+
+    stopPolling();
     setMessages([]);
     setLoading(true);
     setNextCursor(null);
     setTotal(0);
-    // 清空选中的消息
+    errorCountRef.current = 0;
+    setErrorCount(0);
     onMessageSelect(null);
-    fetchMessages();
-    startPolling();
+    void fetchMessages({ forceRefresh: true, silentOnError: true });
 
     return () => {
       stopPolling();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [email.id, config?.messagePollInterval]);
+  }, [email.id, messageType, config?.messagePollInterval]);
 
   useEffect(() => {
     if (refreshTrigger && refreshTrigger > 0) {
+      stopPolling();
       setRefreshing(true);
-      fetchMessages();
+      void fetchMessages({ forceRefresh: true, silentOnError: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshTrigger]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      isDocumentVisibleRef.current = !document.hidden;
+
+      if (document.hidden) {
+        stopPolling();
+        return;
+      }
+
+      if (!email.id) {
+        return;
+      }
+
+      void fetchMessagesRef.current({
+        forceRefresh: true,
+        silentOnError: true,
+      });
+    };
+
+    isDocumentVisibleRef.current = !document.hidden;
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [email.id, stopPolling]);
 
   return (
     <>
@@ -391,13 +481,7 @@ export function MessageList({
                         2 *
                         Math.PI *
                         10 *
-                        (1 -
-                          countdown /
-                            Math.floor(
-                              (config?.messagePollInterval
-                                ? parseInt(config.messagePollInterval)
-                                : EMAIL_CONFIG.POLL_INTERVAL) / 1000
-                            ))
+                        (1 - countdown / Math.max(countdownTotal, 1))
                       }`}
                       strokeLinecap="round"
                     />
@@ -506,12 +590,12 @@ export function MessageList({
             <EmptyState
               icon={messageType === "sent" ? SendIcon : Inbox}
               title={
-                messageType === "sent" ? t("noSentMessages") : t("noReceivedMessages")
+                messageType === "sent"
+                  ? t("noSentMessages")
+                  : t("noReceivedMessages")
               }
               description={
-                messageType === "sent"
-                  ? t("sentHint")
-                  : t("receivedHint")
+                messageType === "sent" ? t("sentHint") : t("receivedHint")
               }
             />
           )}
@@ -525,7 +609,9 @@ export function MessageList({
           <AlertDialogHeader>
             <AlertDialogTitle>{t("delete.confirmTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t("delete.confirmMessage", { subject: messageToDelete?.subject ?? "" })}
+              {t("delete.confirmMessage", {
+                subject: messageToDelete?.subject ?? "",
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
