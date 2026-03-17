@@ -119,6 +119,7 @@ export default async function RootLayout({
           attribute="class"
           defaultTheme="system"
           enableSystem
+          themes={["light", "dark", "sakura"]}
           disableTransitionOnChange={false}
           storageKey="temp-mail-theme"
         >

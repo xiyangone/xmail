@@ -140,7 +140,7 @@ export function ProfileCard({ user }: ProfileCardProps) {
             </div>
             <Button
               onClick={() => router.push("/admin/card-keys")}
-              className="gap-2 flex-shrink-0 bg-orange-500 hover:bg-orange-600 dark:bg-purple-600 dark:hover:bg-purple-700"
+              className="gap-2 flex-shrink-0 bg-primary hover:bg-primary/90"
             >
               <CreditCard className="w-4 h-4" />
               {t("manageCardKeys")}
@@ -163,7 +163,7 @@ export function ProfileCard({ user }: ProfileCardProps) {
             </div>
             <Button
               onClick={() => router.push("/admin/users")}
-              className="gap-2 flex-shrink-0 bg-orange-500 hover:bg-orange-600 dark:bg-purple-600 dark:hover:bg-purple-700"
+              className="gap-2 flex-shrink-0 bg-primary hover:bg-primary/90"
             >
               <Users className="w-4 h-4" />
               {t("manageUsers")}

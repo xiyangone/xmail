@@ -35,7 +35,7 @@ export function SharedMessageDetail({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("html");
-  const { theme } = useTheme();
+  const { resolvedTheme } = useTheme();
   const { toast } = useToast();
   const t = useTranslations("shared");
   const te = useTranslations("email");
@@ -88,6 +88,14 @@ export function SharedMessageDetail({
 
   const iframeSrcDoc = useCallback(() => {
     if (viewMode !== "html" || !message?.html) return undefined;
+    const isDark = resolvedTheme === "dark";
+    const isSakura = resolvedTheme === "sakura";
+    const colors = {
+      text: isDark ? "#e5e7eb" : isSakura ? "#4a1942" : "#1f2937",
+      bg: isDark ? "#1f2937" : isSakura ? "#fff5f7" : "#ffffff",
+      link: isDark ? "#a78bfa" : isSakura ? "#db2777" : "#7c3aed",
+      scrollbar: isDark ? "130, 109, 217" : isSakura ? "219, 39, 119" : "130, 109, 217",
+    };
     return `<!DOCTYPE html>
 <html>
   <head>
@@ -100,8 +108,8 @@ export function SharedMessageDetail({
         padding: 16px;
         font-family: system-ui, -apple-system, sans-serif;
         line-height: 1.6;
-        color: ${theme === "dark" ? "#e5e7eb" : "#1f2937"};
-        background: ${theme === "dark" ? "#1f2937" : "#ffffff"};
+        color: ${colors.text};
+        background: ${colors.bg};
         word-wrap: break-word;
         overflow-wrap: break-word;
       }
@@ -110,7 +118,7 @@ export function SharedMessageDetail({
         height: auto;
       }
       a {
-        color: ${theme === "dark" ? "#a78bfa" : "#7c3aed"};
+        color: ${colors.link};
       }
       ::-webkit-scrollbar {
         width: 8px;
@@ -120,25 +128,17 @@ export function SharedMessageDetail({
         background: transparent;
       }
       ::-webkit-scrollbar-thumb {
-        background: ${
-          theme === "dark"
-            ? "rgba(130, 109, 217, 0.3)"
-            : "rgba(130, 109, 217, 0.2)"
-        };
+        background: rgba(${colors.scrollbar}, ${isDark ? 0.3 : 0.2});
         border-radius: 4px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: ${
-          theme === "dark"
-            ? "rgba(130, 109, 217, 0.5)"
-            : "rgba(130, 109, 217, 0.4)"
-        };
+        background: rgba(${colors.scrollbar}, ${isDark ? 0.5 : 0.4});
       }
     </style>
   </head>
   <body>${message.html}</body>
 </html>`;
-  }, [message, viewMode, theme]);
+  }, [message, viewMode, resolvedTheme]);
 
   // 使用 srcdoc + sandbox 防止 XSS，无需 useEffect 写入
 

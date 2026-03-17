@@ -11,7 +11,7 @@ export default async function Home() {
   const t = await getTranslations("home")
 
   return (
-    <div className="bg-gradient-to-b from-gray-50 to-gray-100 dark:from-[#2a2140] dark:to-[#3d2e5a] h-screen">
+    <div className="bg-gradient-to-b from-[hsl(var(--page-bg-from))] to-[hsl(var(--page-bg-to))] h-screen">
       <div className="container mx-auto h-full px-4 lg:px-8 max-w-[1600px]">
         <Header />
         <main className="h-full">
@@ -21,11 +21,11 @@ export default async function Home() {
             <div className="w-full max-w-3xl mx-auto space-y-12 py-8 animate-fade-in-up">
               <div className="space-y-6">
                 <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-wider">
-                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#FF8A3D] via-[#FF5E62] to-[#a855f7] bg-gradient-size animate-gradient">
+                  <span className="bg-clip-text text-transparent bg-gradient-to-r from-[hsl(var(--gradient-start))] via-[hsl(var(--gradient-mid))] to-[hsl(var(--gradient-end))] bg-gradient-size animate-gradient">
                     XiYang Mail
                   </span>
                 </h1>
-                <p className="text-lg sm:text-xl md:text-2xl text-gray-600 dark:text-gray-300 tracking-wide">
+                <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground tracking-wide">
                   {t("subtitle")}
                 </p>
               </div>

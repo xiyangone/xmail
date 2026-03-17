@@ -38,7 +38,7 @@ export function MessageView({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("html");
-  const { theme } = useTheme();
+  const { resolvedTheme } = useTheme();
   const { toast } = useToast();
   const t = useTranslations("email");
   const tc = useTranslations("common");
@@ -92,6 +92,14 @@ export function MessageView({
 
   const iframeSrcDoc = useCallback(() => {
     if (viewMode !== "html" || !message?.html) return undefined;
+    const isDark = resolvedTheme === "dark";
+    const isSakura = resolvedTheme === "sakura";
+    const colors = {
+      text: isDark ? "#fff" : isSakura ? "#4a1942" : "#000",
+      bg: isDark ? "#1a1a1a" : isSakura ? "#fff5f7" : "#fff",
+      link: isDark ? "#a78bfa" : isSakura ? "#db2777" : "#2563eb",
+      scrollbar: isDark ? "130, 109, 217" : isSakura ? "219, 39, 119" : "130, 109, 217",
+    };
     return `<!DOCTYPE html>
 <html>
   <head>
@@ -103,8 +111,8 @@ export function MessageView({
         padding: 0;
         min-height: 100%;
         font-family: system-ui, -apple-system, sans-serif;
-        color: ${theme === "dark" ? "#fff" : "#000"};
-        background: ${theme === "dark" ? "#1a1a1a" : "#fff"};
+        color: ${colors.text};
+        background: ${colors.bg};
       }
       body {
         padding: 20px;
@@ -114,7 +122,7 @@ export function MessageView({
         height: auto;
       }
       a {
-        color: #2563eb;
+        color: ${colors.link};
       }
       ::-webkit-scrollbar {
         width: 6px;
@@ -124,33 +132,21 @@ export function MessageView({
         background: transparent;
       }
       ::-webkit-scrollbar-thumb {
-        background: ${
-          theme === "dark"
-            ? "rgba(130, 109, 217, 0.3)"
-            : "rgba(130, 109, 217, 0.2)"
-        };
+        background: rgba(${colors.scrollbar}, ${isDark ? 0.3 : 0.2});
         border-radius: 9999px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: ${
-          theme === "dark"
-            ? "rgba(130, 109, 217, 0.5)"
-            : "rgba(130, 109, 217, 0.4)"
-        };
+        background: rgba(${colors.scrollbar}, ${isDark ? 0.5 : 0.4});
       }
       * {
         scrollbar-width: thin;
-        scrollbar-color: ${
-          theme === "dark"
-            ? "rgba(130, 109, 217, 0.3) transparent"
-            : "rgba(130, 109, 217, 0.2) transparent"
-        };
+        scrollbar-color: rgba(${colors.scrollbar}, ${isDark ? 0.3 : 0.2}) transparent;
       }
     </style>
   </head>
   <body>${message.html}</body>
 </html>`;
-  }, [message, viewMode, theme]);
+  }, [message, viewMode, resolvedTheme]);
 
   // 移除了旧的 doc.write 方式，改用 srcdoc + sandbox 防止 XSS
 

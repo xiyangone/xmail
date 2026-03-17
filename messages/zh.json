@@ -470,6 +470,10 @@
     "unknownError": "发生了一个未知错误",
     "refreshPage": "刷新页面",
     "toggleTheme": "切换主题",
+    "themeLight": "日间",
+    "themeDark": "夜间",
+    "themeSakura": "樱花",
+    "themeSystem": "跟随系统",
     "brandSubtitle": "临时邮箱服务",
     "createMyMailbox": "创建我的临时邮箱"
   },

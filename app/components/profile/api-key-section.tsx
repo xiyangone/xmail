@@ -74,7 +74,7 @@ export function ApiKeySection() {
     <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
       <DialogTrigger asChild>
         <Button
-          className="gap-2 bg-orange-500 hover:bg-orange-600 dark:bg-purple-600 dark:hover:bg-purple-700"
+          className="gap-2 bg-primary hover:bg-primary/90"
           onClick={() => setCreateDialogOpen(true)}
         >
           <Plus className="w-4 h-4" />

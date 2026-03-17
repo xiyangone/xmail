@@ -16,7 +16,7 @@ export function Logo() {
         height={32}
         className="w-8 h-8"
       />
-      <span className="font-bold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-[#FF8A3D] via-[#FF5E62] to-[#a855f7]">
+      <span className="font-bold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-[hsl(var(--gradient-start))] via-[hsl(var(--gradient-mid))] to-[hsl(var(--gradient-end))]">
         XiYang
       </span>
     </Link>

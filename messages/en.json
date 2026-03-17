@@ -470,6 +470,10 @@
     "unknownError": "An unknown error occurred",
     "refreshPage": "Refresh Page",
     "toggleTheme": "Toggle theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSakura": "Sakura",
+    "themeSystem": "System",
     "brandSubtitle": "Disposable Email Service",
     "createMyMailbox": "Create My Mailbox"
   },

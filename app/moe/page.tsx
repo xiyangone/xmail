@@ -20,7 +20,7 @@ export default async function MoePage() {
   const hasPermission = hasManagePermission || hasViewPermission
 
   return (
-    <div className="bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 h-screen">
+    <div className="bg-gradient-to-b from-[hsl(var(--page-bg-from))] to-[hsl(var(--page-bg-to))] h-screen">
       <div className="container mx-auto h-full px-4 lg:px-8 max-w-[1600px]">
         <Header />
         <main className="h-full">

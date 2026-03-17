@@ -28,6 +28,11 @@
     --input: 240 5.9% 90%;
     --ring: 24 96% 60%; /* #FF8A3D */
     --radius: 0.75rem;
+    --gradient-start: 24 96% 60%;
+    --gradient-mid: 0 80% 62%;
+    --gradient-end: 270 65% 65%;
+    --page-bg-from: 210 20% 97%;
+    --page-bg-to: 210 20% 94%;
   }
 
   .dark {
@@ -54,6 +59,42 @@
     --border: 260 20% 32%;
     --input: 260 20% 32%;
     --ring: 270 65% 65%; /* 紫色边框 */
+    --gradient-start: 270 65% 65%;
+    --gradient-mid: 300 60% 55%;
+    --gradient-end: 220 70% 55%;
+    --page-bg-from: 260 30% 16%;
+    --page-bg-to: 260 25% 22%;
+  }
+
+  .sakura {
+    --background: 340 100% 98%;
+    --foreground: 340 10% 10%;
+    --card: 340 50% 99%;
+    --card-foreground: 340 10% 10%;
+    --popover: 340 50% 99%;
+    --popover-foreground: 340 10% 10%;
+    --primary: 330 80% 60%; /* 玫瑰粉 */
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 330 80% 70%;
+    --primary-dark: 330 80% 50%;
+    --secondary: 330 30% 95%;
+    --secondary-foreground: 330 10% 15%;
+    --muted: 330 25% 94%;
+    --muted-foreground: 330 10% 45%;
+    --accent: 330 30% 94%;
+    --accent-foreground: 330 10% 15%;
+    --accent-orange: 350 80% 65%;
+    --accent-purple: 290 50% 65%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 330 25% 88%;
+    --input: 330 25% 88%;
+    --ring: 330 80% 60%;
+    --gradient-start: 330 80% 60%;
+    --gradient-mid: 350 75% 62%;
+    --gradient-end: 290 50% 65%;
+    --page-bg-from: 340 60% 97%;
+    --page-bg-to: 330 40% 94%;
   }
 }
 
