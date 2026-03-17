@@ -1,9 +1,8 @@
 "use client";
 
+import { Loader2, Plus } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +11,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -19,8 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Plus } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { Textarea } from "@/components/ui/textarea";
 
 interface CardKeyGenerateDialogProps {
   dialogOpen: boolean;
@@ -28,44 +28,56 @@ interface CardKeyGenerateDialogProps {
   cardKeyMode: "single" | "multi";
   setCardKeyMode: (mode: "single" | "multi") => void;
   emailAddresses: string;
-  setEmailAddresses: (v: string) => void;
+  setEmailAddresses: (value: string) => void;
   multiEmailAddresses: string;
-  setMultiEmailAddresses: (v: string) => void;
+  setMultiEmailAddresses: (value: string) => void;
   expiryValue: string;
-  setExpiryValue: (v: string) => void;
+  setExpiryValue: (value: string) => void;
   expiryUnit: "minutes" | "hours" | "days";
-  setExpiryUnit: (v: "minutes" | "hours" | "days") => void;
+  setExpiryUnit: (value: "minutes" | "hours" | "days") => void;
   allowedDomains: string[];
   generating: boolean;
   onGenerate: () => void;
 }
 
 export function CardKeyGenerateDialog({
-  dialogOpen, setDialogOpen, cardKeyMode, setCardKeyMode,
-  emailAddresses, setEmailAddresses, multiEmailAddresses, setMultiEmailAddresses,
-  expiryValue, setExpiryValue, expiryUnit, setExpiryUnit,
-  allowedDomains, generating, onGenerate,
+  dialogOpen,
+  setDialogOpen,
+  cardKeyMode,
+  setCardKeyMode,
+  emailAddresses,
+  setEmailAddresses,
+  multiEmailAddresses,
+  setMultiEmailAddresses,
+  expiryValue,
+  setExpiryValue,
+  expiryUnit,
+  setExpiryUnit,
+  allowedDomains,
+  generating,
+  onGenerate,
 }: CardKeyGenerateDialogProps) {
   const t = useTranslations("cardKey");
+  const primaryDomain = allowedDomains[0] || "example.com";
 
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
-        <Button>
+        <Button className="rounded-full">
           <Plus className="mr-2 h-4 w-4" />
           {t("generateCardKeys")}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+
+      <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl">{t("generateTitle")}</DialogTitle>
           <DialogDescription className="text-sm">{t("dialogDesc")}</DialogDescription>
         </DialogHeader>
+
         <div className="space-y-6 py-2">
-          <div className="space-y-3">
-            <div>
-              <Label className="text-sm font-semibold">{t("cardKeyType")}</Label>
-            </div>
+          <section className="space-y-3">
+            <Label className="text-sm font-semibold">{t("cardKeyType")}</Label>
             <Select value={cardKeyMode} onValueChange={(value: "single" | "multi") => setCardKeyMode(value)}>
               <SelectTrigger className="h-11">
                 <SelectValue />
@@ -85,91 +97,90 @@ export function CardKeyGenerateDialog({
                 </SelectItem>
               </SelectContent>
             </Select>
-            <div className="bg-muted/50 rounded-lg p-3 border border-muted">
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                {cardKeyMode === "single" ? `💡 ${t("singleModeTip")}` : `💡 ${t("multiModeTip")}`}
+
+            <div className="rounded-2xl border border-border/60 bg-muted/40 p-4 text-sm text-muted-foreground">
+              <strong className="block text-foreground">Tip</strong>
+              <p className="mt-2 leading-6">
+                {cardKeyMode === "single" ? t("singleModeTip") : t("multiModeTip")}
               </p>
             </div>
-          </div>
+          </section>
 
-          {cardKeyMode === "single" && (
-            <div className="space-y-3">
+          {cardKeyMode === "single" ? (
+            <section className="space-y-3">
               <div>
-                <Label htmlFor="emails" className="text-sm font-semibold">{t("emailListLabel")}</Label>
-                <p className="text-xs text-muted-foreground mt-1">{t("singleEmailHint")}</p>
+                <Label htmlFor="card-key-single-emails" className="text-sm font-semibold">
+                  {t("emailListLabel")}
+                </Label>
+                <p className="mt-1 text-xs text-muted-foreground">{t("singleEmailHint")}</p>
               </div>
+
               <Textarea
-                id="emails"
-                placeholder={`user1@${allowedDomains[0] || "example.com"}\nuser2@${allowedDomains[0] || "example.com"}\nuser3@${allowedDomains[0] || "example.com"}`}
+                id="card-key-single-emails"
+                placeholder={`user1@${primaryDomain}\nuser2@${primaryDomain}\nuser3@${primaryDomain}`}
                 value={emailAddresses}
-                onChange={(e) => setEmailAddresses(e.target.value)}
+                onChange={(event) => setEmailAddresses(event.target.value)}
                 rows={6}
                 className="font-mono text-sm"
               />
-              {allowedDomains.length > 0 && (
-                <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-3 border border-blue-200 dark:border-blue-900">
-                  <p className="text-xs text-blue-700 dark:text-blue-300">
-                    <span className="font-semibold">{t("allowedDomains")}</span>
-                    {allowedDomains.map((domain, index) => (
-                      <span key={domain}>
-                        {index > 0 && ", "}
-                        <code className="bg-blue-100 dark:bg-blue-900/50 px-1.5 py-0.5 rounded">@{domain}</code>
-                      </span>
-                    ))}
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {cardKeyMode === "multi" && (
-            <div className="space-y-3">
+            </section>
+          ) : (
+            <section className="space-y-3">
               <div>
-                <Label htmlFor="multi-emails" className="text-sm font-semibold">{t("emailListLabel")}</Label>
-                <p className="text-xs text-muted-foreground mt-1">{t("multiEmailHint")}</p>
+                <Label htmlFor="card-key-multi-emails" className="text-sm font-semibold">
+                  {t("emailListLabel")}
+                </Label>
+                <p className="mt-1 text-xs text-muted-foreground">{t("multiEmailHint")}</p>
               </div>
+
               <Textarea
-                id="multi-emails"
-                placeholder={`1@${allowedDomains[0] || "example.com"}\n2@${allowedDomains[0] || "example.com"}\n3@${allowedDomains[0] || "example.com"}`}
+                id="card-key-multi-emails"
+                placeholder={`ops@${primaryDomain}\nqa@${primaryDomain}\nreview@${primaryDomain}`}
                 value={multiEmailAddresses}
-                onChange={(e) => setMultiEmailAddresses(e.target.value)}
+                onChange={(event) => setMultiEmailAddresses(event.target.value)}
                 rows={8}
                 className="font-mono text-sm"
               />
-              {allowedDomains.length > 0 && (
-                <div className="bg-purple-50 dark:bg-purple-950/20 rounded-lg p-3 border border-purple-200 dark:border-purple-900">
-                  <p className="text-xs text-purple-700 dark:text-purple-300 mb-2">
-                    <span className="font-semibold">{t("allowedDomains")}</span>
-                    {allowedDomains.map((domain, index) => (
-                      <span key={domain}>
-                        {index > 0 && ", "}
-                        <code className="bg-purple-100 dark:bg-purple-900/50 px-1.5 py-0.5 rounded">@{domain}</code>
-                      </span>
-                    ))}
-                  </p>
-                  <p className="text-xs text-purple-600 dark:text-purple-400">💡{t("multiCardKeyTip")}</p>
-                </div>
-              )}
-            </div>
+            </section>
           )}
 
-          <div className="space-y-3">
-            <div>
-              <Label htmlFor="expiry" className="text-sm font-semibold">{t("expiryLabel")}</Label>
-              <p className="text-xs text-muted-foreground mt-1">{t("expiryHint")}</p>
+          {allowedDomains.length > 0 ? (
+            <div className="rounded-2xl border border-primary/15 bg-primary/5 p-4 text-sm text-muted-foreground">
+              <strong className="block text-foreground">{t("allowedDomains")}</strong>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {allowedDomains.map((domain) => (
+                  <code key={domain} className="rounded-full bg-background px-3 py-1 text-xs text-foreground">
+                    @{domain}
+                  </code>
+                ))}
+              </div>
+
+              {cardKeyMode === "multi" ? (
+                <p className="mt-3 leading-6">{t("multiCardKeyTip")}</p>
+              ) : null}
             </div>
+          ) : null}
+
+          <section className="space-y-3">
+            <div>
+              <Label htmlFor="card-key-expiry" className="text-sm font-semibold">
+                {t("expiryLabel")}
+              </Label>
+              <p className="mt-1 text-xs text-muted-foreground">{t("expiryHint")}</p>
+            </div>
+
             <div className="flex gap-3">
               <Input
-                id="expiry"
+                id="card-key-expiry"
                 type="number"
                 min="1"
                 value={expiryValue}
-                onChange={(e) => setExpiryValue(e.target.value)}
-                className="flex-1 h-11"
+                onChange={(event) => setExpiryValue(event.target.value)}
+                className="h-11 flex-1"
                 placeholder={t("expiryPlaceholder")}
               />
               <Select value={expiryUnit} onValueChange={(value: "minutes" | "hours" | "days") => setExpiryUnit(value)}>
-                <SelectTrigger className="w-28 h-11">
+                <SelectTrigger className="h-11 w-28">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -179,10 +190,15 @@ export function CardKeyGenerateDialog({
                 </SelectContent>
               </Select>
             </div>
-          </div>
+          </section>
 
-          <Button onClick={onGenerate} disabled={generating} className="w-full h-11 text-base font-medium" size="lg">
-            {generating && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
+          <Button
+            onClick={onGenerate}
+            disabled={generating}
+            size="lg"
+            className="h-11 w-full rounded-2xl text-base font-medium"
+          >
+            {generating ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
             {generating ? t("generating") : t("generateCardKeys")}
           </Button>
         </div>

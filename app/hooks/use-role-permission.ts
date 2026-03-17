@@ -4,8 +4,9 @@ import { useSession } from "next-auth/react"
 import { Permission, Role, hasPermission } from "@/lib/permissions"
 
 export function useRolePermission() {
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
   const roles = session?.user?.roles
+  const isReady = status !== "loading"
 
   const checkPermission = (permission: Permission) => {
     if (!roles) return false
@@ -21,5 +22,7 @@ export function useRolePermission() {
     checkPermission,
     hasRole,
     roles,
+    status,
+    isReady,
   }
 }

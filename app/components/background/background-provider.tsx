@@ -65,7 +65,13 @@ export function BackgroundProvider() {
       className="fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat transition-opacity duration-500"
       style={{ backgroundImage: `url(${bgUrl})` }}
     >
-      <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px]" />
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundColor: "hsl(var(--background) / var(--background-overlay-opacity))",
+          backdropFilter: "blur(var(--background-overlay-blur))",
+        }}
+      />
     </div>
   )
 }

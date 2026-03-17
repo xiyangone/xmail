@@ -11,7 +11,7 @@ export default async function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-[hsl(var(--page-bg-from))] to-[hsl(var(--page-bg-to))]">
+    <div className="relative flex min-h-screen items-center justify-center px-4">
       <LoginForm />
     </div>
   )

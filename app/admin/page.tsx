@@ -1,28 +1,29 @@
-import { Header } from "@/components/layout/header"
-import { auth } from "@/lib/auth"
-import { redirect } from "next/navigation"
-import dynamic from "next/dynamic"
+import dynamic from "next/dynamic";
+import { redirect } from "next/navigation";
+import { AppShell } from "@/components/layout/app-shell";
+import { auth } from "@/lib/auth";
 
 const AdminDashboard = dynamic(
   () => import("@/components/admin/admin-dashboard").then((mod) => ({ default: mod.AdminDashboard })),
-  { loading: () => <div className="text-sm text-muted-foreground py-12 text-center">加载中...</div> }
-)
+  {
+    loading: () => (
+      <div className="py-12 text-center text-sm text-muted-foreground">
+        Loading admin workspace...
+      </div>
+    ),
+  }
+);
 
 export default async function AdminPage() {
-  const session = await auth()
+  const session = await auth();
 
   if (!session?.user) {
-    redirect("/")
+    redirect("/");
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[hsl(var(--page-bg-from))] to-[hsl(var(--page-bg-to))]">
-      <div className="container mx-auto px-4 lg:px-8 max-w-[1600px]">
-        <Header />
-        <main className="pt-20 pb-5">
-          <AdminDashboard />
-        </main>
-      </div>
-    </div>
-  )
+    <AppShell>
+      <AdminDashboard />
+    </AppShell>
+  );
 }

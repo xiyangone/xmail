@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 import withSerwistInit from "@serwist/next";
 import createNextIntlPlugin from "next-intl/plugin";
 
+import("@opennextjs/cloudflare").then((mod) => mod.initOpenNextCloudflareForDev());
+
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
 const withSerwist = withSerwistInit({

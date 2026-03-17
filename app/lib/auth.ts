@@ -24,6 +24,12 @@ const ROLE_DESCRIPTIONS: Record<Role, string> = {
   [ROLES.TEMP_USER]: "临时用户（卡密用户）",
 };
 
+const authSecret =
+  process.env.AUTH_SECRET ??
+  (process.env.NODE_ENV === "development" ? "xmail-local-dev-secret" : undefined);
+
+const githubAuthEnabled = Boolean(process.env.AUTH_GITHUB_ID && process.env.AUTH_GITHUB_SECRET);
+
 const getDefaultRole = async (): Promise<Role> => {
   const { env } = await getCloudflareContext();
   const defaultRole = await env.SITE_CONFIG.get(
@@ -94,17 +100,21 @@ export async function checkPermission(permission: Permission) {
 }
 
 const nextAuth = NextAuth(async () => ({
-  secret: process.env.AUTH_SECRET,
+  secret: authSecret,
   trustHost: true,
   adapter: DrizzleAdapter(await createDb(), {
     usersTable: users,
     accountsTable: accounts,
   }),
   providers: [
-    GitHub({
-      clientId: process.env.AUTH_GITHUB_ID,
-      clientSecret: process.env.AUTH_GITHUB_SECRET,
-    }),
+    ...(githubAuthEnabled
+      ? [
+          GitHub({
+            clientId: process.env.AUTH_GITHUB_ID!,
+            clientSecret: process.env.AUTH_GITHUB_SECRET!,
+          }),
+        ]
+      : []),
     CredentialsProvider({
       name: "Credentials",
       credentials: {

@@ -1,4 +1,4 @@
-import { Header } from "@/components/layout/header"
+import { AppShell } from "@/components/layout/app-shell"
 import { ProfileCard } from "@/components/profile/profile-card"
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
@@ -12,13 +12,8 @@ export default async function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[hsl(var(--page-bg-from))] to-[hsl(var(--page-bg-to))]">
-      <div className="container mx-auto px-4 lg:px-8 max-w-[1600px]">
-        <Header />
-        <main className="pt-20 pb-5">
-          <ProfileCard user={session.user} />
-        </main>
-      </div>
-    </div>
+    <AppShell>
+      <ProfileCard user={session.user} />
+    </AppShell>
   )
 } 

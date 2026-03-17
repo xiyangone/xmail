@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useCallback, useDeferredValue, useEffect, useRef, useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { useRolePermission } from "@/hooks/use-role-permission";
 import { PERMISSIONS } from "@/lib/permissions";
@@ -17,15 +17,29 @@ export interface CardKey {
   isUsed: boolean;
   usedBy?: {
     id: string;
-    name: string;
-    username: string;
-  };
-  usedAt?: string;
-  createdAt: string;
-  expiresAt: string;
+    name: string | null;
+    username: string | null;
+  } | null;
+  usedAt?: string | Date | null;
+  createdAt: string | Date;
+  expiresAt: string | Date;
+}
+
+interface PaginationInfo {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
 }
 
 export type CardKeyFilter = "all" | "unused" | "used" | "expiring-soon";
+
+const DEFAULT_PAGINATION: PaginationInfo = {
+  page: 1,
+  pageSize: 8,
+  total: 0,
+  totalPages: 1,
+};
 
 export function useCardKeys() {
   const [cardKeys, setCardKeys] = useState<CardKey[]>([]);
@@ -40,6 +54,8 @@ export function useCardKeys() {
   const [filterStatus, setFilterStatus] = useState<CardKeyFilter>("all");
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
   const [searchText, setSearchText] = useState("");
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState<PaginationInfo>(DEFAULT_PAGINATION);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{
     type: "single" | "batch";
@@ -47,24 +63,32 @@ export function useCardKeys() {
     count?: number;
   } | null>(null);
   const [allowedDomains, setAllowedDomains] = useState<string[]>([]);
-  const { toast } = useToast();
-  const { checkPermission } = useRolePermission();
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const deferredSearchText = useDeferredValue(searchText.trim());
+  const { toast } = useToast();
+  const { checkPermission, isReady } = useRolePermission();
   const t = useTranslations("cardKey");
   const tc = useTranslations("common");
   const ta = useTranslations("admin");
 
-  const canManageCardKeys = checkPermission(PERMISSIONS.MANAGE_CARD_KEYS);
+  const canManageCardKeys = isReady && checkPermission(PERMISSIONS.MANAGE_CARD_KEYS);
+
+  useEffect(() => {
+    if (page !== 1) {
+      setPage(1);
+    }
+  }, [deferredSearchText, filterStatus, page]);
 
   const calculateExpiryMinutes = () => {
-    const value = parseInt(expiryValue);
+    const value = Number.parseInt(expiryValue, 10);
+
     switch (expiryUnit) {
       case "minutes":
         return value;
       case "hours":
         return value * 60;
       case "days":
-        return value * 24 * 60;
       default:
         return value * 24 * 60;
     }
@@ -73,100 +97,105 @@ export function useCardKeys() {
   const fetchAllowedDomains = useCallback(async () => {
     try {
       const response = await fetch("/api/config");
-      if (response.ok) {
-        const data = (await response.json()) as { emailDomains?: string };
-        const domains = data.emailDomains
-          ?.split(",")
-          .map((d: string) => d.trim()) || [EMAIL_CONFIG.DEFAULT_EMAIL_DOMAIN];
-        setAllowedDomains(domains);
+
+      if (!response.ok) {
+        return;
       }
+
+      const data = (await response.json()) as { emailDomains?: string };
+      const domains =
+        data.emailDomains?.split(",").map((domain) => domain.trim()).filter(Boolean) ??
+        [EMAIL_CONFIG.DEFAULT_EMAIL_DOMAIN];
+
+      setAllowedDomains(domains.length > 0 ? domains : [EMAIL_CONFIG.DEFAULT_EMAIL_DOMAIN]);
     } catch (error) {
       console.error("Failed to fetch domains:", error);
     }
   }, []);
 
   const fetchCardKeys = useCallback(async () => {
+    if (!canManageCardKeys) {
+      setCardKeys([]);
+      setPagination((current) => ({ ...current, total: 0, totalPages: 1 }));
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
     try {
-      const response = await fetch("/api/admin/card-keys");
+      const params = new URLSearchParams({
+        page: page.toString(),
+        pageSize: DEFAULT_PAGINATION.pageSize.toString(),
+        status: filterStatus,
+      });
+
+      if (deferredSearchText) {
+        params.set("search", deferredSearchText);
+      }
+
+      const response = await fetch(`/api/admin/card-keys?${params.toString()}`);
       if (!response.ok) {
         throw new Error(t("fetchFailed"));
       }
-      const data = (await response.json()) as { cardKeys: CardKey[] };
+
+      const data = (await response.json()) as {
+        cardKeys: CardKey[];
+        pagination: PaginationInfo;
+      };
+
       setCardKeys(data.cardKeys);
+      setPagination(data.pagination);
+
+      if (data.pagination.page !== page) {
+        setPage(data.pagination.page);
+      }
     } catch (error) {
       toast({
         title: tc("error"),
-        description:
-          error instanceof Error ? error.message : t("fetchFailed"),
+        description: error instanceof Error ? error.message : t("fetchFailed"),
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
-  }, [toast, t, tc]);
-
-  const filteredCardKeys = useMemo(() => {
-    const now = new Date();
-    const oneDayFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-
-    let filtered = cardKeys;
-
-    switch (filterStatus) {
-      case "unused":
-        filtered = cardKeys.filter(
-          (key) => !key.isUsed && new Date(key.expiresAt) > now
-        );
-        break;
-      case "used":
-        filtered = cardKeys.filter((key) => key.isUsed);
-        break;
-      case "expiring-soon":
-        filtered = cardKeys.filter(
-          (key) =>
-            !key.isUsed &&
-            new Date(key.expiresAt) > now &&
-            new Date(key.expiresAt) <= oneDayFromNow
-        );
-        break;
-      default:
-        filtered = cardKeys;
-    }
-
-    if (searchText.trim()) {
-      const searchLower = searchText.toLowerCase();
-      filtered = filtered.filter(
-        (key) =>
-          key.code.toLowerCase().includes(searchLower) ||
-          key.emailAddress.toLowerCase().includes(searchLower) ||
-          (key.usedBy?.name &&
-            key.usedBy.name.toLowerCase().includes(searchLower)) ||
-          (key.usedBy?.username &&
-            key.usedBy.username.toLowerCase().includes(searchLower))
-      );
-    }
-
-    return filtered;
-  }, [cardKeys, filterStatus, searchText]);
+  }, [canManageCardKeys, deferredSearchText, filterStatus, page, t, tc, toast]);
 
   useEffect(() => {
-    searchInputRef.current?.focus();
-  }, []);
+    if (!isReady) return;
+
+    fetchCardKeys();
+  }, [fetchCardKeys, isReady]);
 
   useEffect(() => {
-    if (canManageCardKeys) {
-      fetchCardKeys();
-      fetchAllowedDomains();
+    if (!isReady || !canManageCardKeys) return;
+    fetchAllowedDomains();
+  }, [canManageCardKeys, fetchAllowedDomains, isReady]);
+
+  useEffect(() => {
+    setSelectedKeys([]);
+  }, [cardKeys]);
+
+  const refreshCardKeys = () => {
+    if (page !== 1) {
+      setPage(1);
+      return;
     }
-  }, [canManageCardKeys, fetchCardKeys, fetchAllowedDomains]);
+
+    fetchCardKeys();
+  };
 
   const generateCardKeys = async () => {
     const addresses = (cardKeyMode === "single" ? emailAddresses : multiEmailAddresses)
       .split("\n")
-      .map((addr) => addr.trim())
-      .filter((addr) => addr.length > 0);
+      .map((address) => address.trim())
+      .filter((address) => address.length > 0);
 
     if (addresses.length === 0) {
-      toast({ title: tc("error"), description: t("enterAtLeastOne"), variant: "destructive" });
+      toast({
+        title: tc("error"),
+        description: t("enterAtLeastOne"),
+        variant: "destructive",
+      });
       return;
     }
 
@@ -200,14 +229,14 @@ export function useCardKeys() {
 
       if (!response.ok) {
         const data = (await response.json()) as { error: string };
-        throw new Error(data.error);
+        throw new Error(data.error || t("generateFailed"));
       }
 
-      const data = (await response.json()) as {
-        message: string;
-        cardKeys: { code: string; emailAddress: string }[];
-      };
-      toast({ title: tc("success"), description: data.message });
+      const data = (await response.json()) as { message: string };
+      toast({
+        title: tc("success"),
+        description: data.message,
+      });
 
       setDialogOpen(false);
       setCardKeyMode("single");
@@ -215,7 +244,8 @@ export function useCardKeys() {
       setMultiEmailAddresses("");
       setExpiryValue("7");
       setExpiryUnit("days");
-      fetchCardKeys();
+
+      refreshCardKeys();
     } catch (error) {
       toast({
         title: tc("error"),
@@ -229,72 +259,79 @@ export function useCardKeys() {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast({ title: tc("copied"), description: t("copiedToClipboard") });
+    toast({
+      title: tc("copied"),
+      description: t("copiedToClipboard"),
+    });
   };
 
   const openDeleteDialog = (type: "single" | "batch", id?: string) => {
     if (type === "batch" && selectedKeys.length === 0) {
-      toast({ title: tc("warning"), description: t("selectToDelete"), variant: "destructive" });
+      toast({
+        title: tc("warning"),
+        description: t("selectToDelete"),
+        variant: "destructive",
+      });
       return;
     }
-    setDeleteTarget({ type, id, count: type === "batch" ? selectedKeys.length : 1 });
+
+    setDeleteTarget({
+      type,
+      id,
+      count: type === "batch" ? selectedKeys.length : 1,
+    });
     setDeleteDialogOpen(true);
+  };
+
+  const deleteCardKey = async (id: string) => {
+    const response = await fetch(`/api/admin/card-keys?id=${id}`, { method: "DELETE" });
+
+    if (!response.ok) {
+      const data = (await response.json()) as { error?: string };
+      throw new Error(data.error || t("deleteFailed"));
+    }
   };
 
   const confirmDelete = async () => {
     if (!deleteTarget) return;
+
     try {
       if (deleteTarget.type === "single" && deleteTarget.id) {
         await deleteCardKey(deleteTarget.id);
+        toast({
+          title: tc("success"),
+          description: t("deleteSuccess"),
+        });
       } else if (deleteTarget.type === "batch") {
-        await deleteSelectedKeys();
-      }
-    } finally {
-      setDeleteDialogOpen(false);
-      setDeleteTarget(null);
-    }
-  };
+        const results = await Promise.allSettled(
+          selectedKeys.map(async (id) => {
+            await deleteCardKey(id);
+          })
+        );
 
-  const deleteCardKey = async (id: string) => {
-    try {
-      const response = await fetch(`/api/admin/card-keys?id=${id}`, { method: "DELETE" });
-      if (!response.ok) {
-        const data = (await response.json()) as { error: string };
-        throw new Error(data.error);
+        const successCount = results.filter((result) => result.status === "fulfilled").length;
+        const failCount = results.length - successCount;
+
+        toast({
+          title: t("deleteComplete"),
+          description:
+            failCount > 0
+              ? t("deleteResultWithFail", { success: successCount, fail: failCount })
+              : t("deleteResult", { success: successCount }),
+        });
       }
-      toast({ title: tc("success"), description: t("deleteSuccess") });
-      setSelectedKeys((prev) => prev.filter((k) => k !== id));
+
+      setSelectedKeys([]);
       fetchCardKeys();
     } catch (error) {
       toast({
         title: tc("error"),
-        description: error instanceof Error ? error.message : t("deleteFailed"),
+        description: error instanceof Error ? error.message : t("batchDeleteFailed"),
         variant: "destructive",
       });
-      throw error;
-    }
-  };
-
-  const deleteSelectedKeys = async () => {
-    try {
-      const results = await Promise.allSettled(
-        selectedKeys.map((id) =>
-          fetch(`/api/admin/card-keys?id=${id}`, { method: "DELETE" })
-        )
-      );
-      const successCount = results.filter((r) => r.status === "fulfilled").length;
-      const failCount = results.filter((r) => r.status === "rejected").length;
-      toast({
-        title: t("deleteComplete"),
-        description: failCount > 0
-          ? t("deleteResultWithFail", { success: successCount, fail: failCount })
-          : t("deleteResult", { success: successCount }),
-      });
-      setSelectedKeys([]);
-      fetchCardKeys();
-    } catch {
-      toast({ title: tc("error"), description: t("batchDeleteFailed"), variant: "destructive" });
-      throw new Error(t("batchDeleteFailed"));
+    } finally {
+      setDeleteDialogOpen(false);
+      setDeleteTarget(null);
     }
   };
 
@@ -303,9 +340,14 @@ export function useCardKeys() {
       const response = await fetch(`/api/admin/card-keys?id=${id}`, { method: "PATCH" });
       if (!response.ok) {
         const data = (await response.json()) as { error: string };
-        throw new Error(data.error);
+        throw new Error(data.error || t("resetFailed"));
       }
-      toast({ title: tc("success"), description: t("resetSuccess") });
+
+      toast({
+        title: tc("success"),
+        description: t("resetSuccess"),
+      });
+
       fetchCardKeys();
     } catch (error) {
       toast({
@@ -317,18 +359,20 @@ export function useCardKeys() {
   };
 
   const toggleSelectKey = (id: string) => {
-    setSelectedKeys((prev) =>
-      prev.includes(id) ? prev.filter((k) => k !== id) : [...prev, id]
+    setSelectedKeys((previous) =>
+      previous.includes(id) ? previous.filter((keyId) => keyId !== id) : [...previous, id]
     );
   };
 
   const toggleSelectAll = () => {
-    const allKeys = filteredCardKeys.map((k) => k.id);
-    if (selectedKeys.length === allKeys.length) {
+    const visibleKeys = cardKeys.map((cardKey) => cardKey.id);
+
+    if (selectedKeys.length === visibleKeys.length) {
       setSelectedKeys([]);
-    } else {
-      setSelectedKeys(allKeys);
+      return;
     }
+
+    setSelectedKeys(visibleKeys);
   };
 
   const getCardKeyStatus = (cardKey: CardKey) => {
@@ -338,52 +382,70 @@ export function useCardKeys() {
 
     if (cardKey.isUsed) {
       return { label: t("used"), variant: "used" as const };
-    } else if (expiresAt <= now) {
-      return { label: tc("expired"), variant: "expired" as const };
-    } else if (expiresAt <= oneDayFromNow) {
-      return { label: tc("expiringSoon"), variant: "expiring" as const };
-    } else {
-      return { label: t("unused"), variant: "unused" as const };
     }
+
+    if (expiresAt <= now) {
+      return { label: tc("expired"), variant: "expired" as const };
+    }
+
+    if (expiresAt <= oneDayFromNow) {
+      return { label: tc("expiringSoon"), variant: "expiring" as const };
+    }
+
+    return { label: t("unused"), variant: "unused" as const };
   };
 
   const filterOptions = [
-    { value: "all" as const, label: t("filterAll"), count: cardKeys.length },
-    {
-      value: "unused" as const,
-      label: t("unused"),
-      count: cardKeys.filter((k) => !k.isUsed && new Date(k.expiresAt) > new Date()).length,
-    },
-    {
-      value: "used" as const,
-      label: t("used"),
-      count: cardKeys.filter((k) => k.isUsed).length,
-    },
-    {
-      value: "expiring-soon" as const,
-      label: tc("expiringSoon"),
-      count: cardKeys.filter((k) => {
-        const now = new Date();
-        const oneDayFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-        return !k.isUsed && new Date(k.expiresAt) > now && new Date(k.expiresAt) <= oneDayFromNow;
-      }).length,
-    },
+    { value: "all" as const, label: t("filterAll") },
+    { value: "unused" as const, label: t("unused") },
+    { value: "used" as const, label: t("used") },
+    { value: "expiring-soon" as const, label: tc("expiringSoon") },
   ];
 
   return {
-    // State
-    cardKeys, loading, generating, cardKeyMode, emailAddresses, multiEmailAddresses,
-    expiryValue, expiryUnit, dialogOpen, filterStatus, selectedKeys, searchText,
-    deleteDialogOpen, deleteTarget, allowedDomains, canManageCardKeys,
-    filteredCardKeys, filterOptions, searchInputRef,
-    // Translations
-    t, tc, ta,
-    // Setters
-    setCardKeyMode, setEmailAddresses, setMultiEmailAddresses,
-    setExpiryValue, setExpiryUnit, setDialogOpen, setFilterStatus,
-    setSearchText, setDeleteDialogOpen,
-    // Actions
-    generateCardKeys, copyToClipboard, openDeleteDialog, confirmDelete,
-    resetCardKey, toggleSelectKey, toggleSelectAll, getCardKeyStatus,
+    cardKeys,
+    loading,
+    generating,
+    cardKeyMode,
+    emailAddresses,
+    multiEmailAddresses,
+    expiryValue,
+    expiryUnit,
+    dialogOpen,
+    filterStatus,
+    selectedKeys,
+    searchText,
+    page,
+    total: pagination.total,
+    pageSize: pagination.pageSize,
+    totalPages: pagination.totalPages,
+    deleteDialogOpen,
+    deleteTarget,
+    allowedDomains,
+    permissionReady: isReady,
+    canManageCardKeys,
+    filterOptions,
+    searchInputRef,
+    t,
+    tc,
+    ta,
+    setCardKeyMode,
+    setEmailAddresses,
+    setMultiEmailAddresses,
+    setExpiryValue,
+    setExpiryUnit,
+    setDialogOpen,
+    setFilterStatus,
+    setSearchText,
+    setPage,
+    setDeleteDialogOpen,
+    generateCardKeys,
+    copyToClipboard,
+    openDeleteDialog,
+    confirmDelete,
+    resetCardKey,
+    toggleSelectKey,
+    toggleSelectAll,
+    getCardKeyStatus,
   };
 }

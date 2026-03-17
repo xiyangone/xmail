@@ -1,4 +1,4 @@
-import { Header } from "@/components/layout/header"
+import { AppShell } from "@/components/layout/app-shell"
 import { ThreeColumnLayout } from "@/components/emails/three-column-layout"
 import { NoPermissionDialog } from "@/components/no-permission-dialog"
 import { auth } from "@/lib/auth"
@@ -20,14 +20,9 @@ export default async function MoePage() {
   const hasPermission = hasManagePermission || hasViewPermission
 
   return (
-    <div className="bg-gradient-to-b from-[hsl(var(--page-bg-from))] to-[hsl(var(--page-bg-to))] h-screen">
-      <div className="container mx-auto h-full px-4 lg:px-8 max-w-[1600px]">
-        <Header />
-        <main className="h-full">
-          <ThreeColumnLayout />
-          {!hasPermission && <NoPermissionDialog />}
-        </main>
-      </div>
-    </div>
+    <AppShell fullHeight mainClassName="h-full">
+      <ThreeColumnLayout />
+      {!hasPermission && <NoPermissionDialog />}
+    </AppShell>
   )
 } 

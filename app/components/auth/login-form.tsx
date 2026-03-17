@@ -335,7 +335,7 @@ export function LoginForm() {
   };
 
   return (
-    <Card className="w-[95%] max-w-lg border-2 border-primary/20">
+    <Card className="surface-panel-strong w-[95%] max-w-lg border-2 border-primary/20 shadow-2xl">
       <CardHeader className="space-y-2">
         <CardTitle className="text-2xl text-center bg-gradient-to-r from-[hsl(var(--gradient-start))] to-[hsl(var(--gradient-mid))] bg-clip-text text-transparent">
           {t("welcome")}
