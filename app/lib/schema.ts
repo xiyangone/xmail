@@ -260,6 +260,24 @@ export const emailShares = sqliteTable(
   })
 );
 
+// 用户个性化设置表
+export const userSettings = sqliteTable("user_settings", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id")
+    .notNull()
+    .unique()
+    .references(() => users.id, { onDelete: "cascade" }),
+  bgLight: text("bg_light"),       // 日间主题背景 URL
+  bgDark: text("bg_dark"),         // 夜间主题背景 URL
+  bgSakura: text("bg_sakura"),     // 樱花主题背景 URL
+  bgEnabled: integer("bg_enabled", { mode: "boolean" }).notNull().default(true),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
 export const apiKeysRelations = relations(apiKeys, ({ one }) => ({
   user: one(users, {
     fields: [apiKeys.userId],
@@ -296,10 +314,14 @@ export const userRolesRelations = relations(userRoles, ({ one }) => ({
   }),
 }));
 
-export const usersRelations = relations(users, ({ many }) => ({
+export const usersRelations = relations(users, ({ many, one }) => ({
   userRoles: many(userRoles),
   apiKeys: many(apiKeys),
   tempAccounts: many(tempAccounts),
+  settings: one(userSettings, {
+    fields: [users.id],
+    references: [userSettings.userId],
+  }),
 }));
 
 export const rolesRelations = relations(roles, ({ many }) => ({
@@ -310,5 +332,12 @@ export const emailSharesRelations = relations(emailShares, ({ one }) => ({
   email: one(emails, {
     fields: [emailShares.emailId],
     references: [emails.id],
+  }),
+}));
+
+export const userSettingsRelations = relations(userSettings, ({ one }) => ({
+  user: one(users, {
+    fields: [userSettings.userId],
+    references: [users.id],
   }),
 }));

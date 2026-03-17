@@ -169,6 +169,13 @@
       "when": 1773659420254,
       "tag": "0023_mute_oracle",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1773740111931,
+      "tag": "0024_grey_hiroim",
+      "breakpoints": true
     }
   ]
 }

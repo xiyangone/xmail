@@ -234,6 +234,8 @@
     "userManagement": "用户管理",
     "userManagementDesc": "管理系统用户，查看和修改用户角色权限",
     "manageUsers": "管理用户",
+    "adminDashboard": "管理后台",
+    "backgroundSettings": "背景设置",
     "backToMailbox": "返回邮箱",
     "roleManagement": "角色管理",
     "searchUserPlaceholder": "输入用户名或邮箱",
@@ -519,5 +521,19 @@
   "metadata": {
     "title": "XiYang Mail - 夕阳临时邮箱服务",
     "description": "安全、快速、一次性的临时邮箱地址，保护您的隐私，远离垃圾邮件。支持即时收件，到期自动失效。"
+  },
+  "backgroundSettings": {
+    "enableBg": "启用自定义背景",
+    "enableBgDesc": "关闭后将使用默认纯色背景",
+    "lightBg": "日间",
+    "darkBg": "夜间",
+    "sakuraBg": "樱花",
+    "bgUrlPlaceholder": "输入背景图片 URL",
+    "bgUrlHint": "支持图床链接，建议使用 1920x1080 以上分辨率的图片",
+    "saveSuccess": "保存成功",
+    "saveFailed": "保存失败",
+    "bgUpdated": "背景设置已更新，刷新页面后生效",
+    "globalBg": "全局背景图片",
+    "globalBgDesc": "为所有用户设置默认背景图片，用户可自行覆盖"
   }
 }

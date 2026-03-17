@@ -16,9 +16,8 @@ import { EMAIL_CONFIG, EMAIL_PREFIX_FORMATS } from "@/config"
 import { DomainEditor } from "./domain-editor"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { Settings } from "lucide-react"
-import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
+import { Sun, Moon, Cherry } from "lucide-react"
 
 export function WebsiteConfigContent() {
   const [defaultRole, setDefaultRole] = useState<string>("")
@@ -29,10 +28,13 @@ export function WebsiteConfigContent() {
   const [emailPrefixLength, setEmailPrefixLength] = useState<string>(EMAIL_CONFIG.DEFAULT_PREFIX_LENGTH.toString())
   const [emailPrefixFormat, setEmailPrefixFormat] = useState<string>(EMAIL_CONFIG.DEFAULT_PREFIX_FORMAT)
   const [messagePollInterval, setMessagePollInterval] = useState<string>(EMAIL_CONFIG.POLL_INTERVAL.toString())
+  const [bgLight, setBgLight] = useState("")
+  const [bgDark, setBgDark] = useState("")
+  const [bgSakura, setBgSakura] = useState("")
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
-  const router = useRouter()
   const t = useTranslations("websiteConfig")
+  const tb = useTranslations("backgroundSettings")
   const tr = useTranslations("roles")
   const tc = useTranslations("common")
 
@@ -41,9 +43,12 @@ export function WebsiteConfigContent() {
   }, [])
 
   const fetchConfig = async () => {
-    const res = await fetch("/api/config")
-    if (res.ok) {
-      const data = await res.json() as {
+    const [configRes, bgRes] = await Promise.all([
+      fetch("/api/config"),
+      fetch("/api/config/background"),
+    ])
+    if (configRes.ok) {
+      const data = await configRes.json() as {
         defaultRole: Exclude<Role, typeof ROLES.EMPEROR>,
         emailDomains: string,
         adminContact: string,
@@ -62,28 +67,45 @@ export function WebsiteConfigContent() {
       setEmailPrefixFormat(data.emailPrefixFormat || EMAIL_CONFIG.DEFAULT_PREFIX_FORMAT)
       setMessagePollInterval(data.messagePollInterval || EMAIL_CONFIG.POLL_INTERVAL.toString())
     }
+    if (bgRes.ok) {
+      const bgData = await bgRes.json() as { bgLight: string; bgDark: string; bgSakura: string }
+      setBgLight(bgData.bgLight || "")
+      setBgDark(bgData.bgDark || "")
+      setBgSakura(bgData.bgSakura || "")
+    }
   }
 
   const handleSave = async () => {
     setLoading(true)
     try {
-      const res = await fetch("/api/config", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          defaultRole,
-          emailDomains,
-          adminContact,
-          maxEmails: maxEmails || EMAIL_CONFIG.MAX_ACTIVE_EMAILS.toString(),
-          allowRegister,
-          emailPrefixLength,
-          emailPrefixFormat,
-          messagePollInterval
+      const [configRes, bgRes] = await Promise.all([
+        fetch("/api/config", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            defaultRole,
+            emailDomains,
+            adminContact,
+            maxEmails: maxEmails || EMAIL_CONFIG.MAX_ACTIVE_EMAILS.toString(),
+            allowRegister,
+            emailPrefixLength,
+            emailPrefixFormat,
+            messagePollInterval
+          }),
         }),
-      })
+        fetch("/api/config/background", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ bgLight, bgDark, bgSakura }),
+        }),
+      ])
 
-      if (!res.ok) {
-        const errorData = await res.json() as { error?: string }
+      if (!configRes.ok) {
+        const errorData = await configRes.json() as { error?: string }
+        throw new Error(errorData.error || t("saveFailed"))
+      }
+      if (!bgRes.ok) {
+        const errorData = await bgRes.json() as { error?: string }
         throw new Error(errorData.error || t("saveFailed"))
       }
 
@@ -252,15 +274,43 @@ export function WebsiteConfigContent() {
         </div>
       </div>
 
-      <div className="pt-4 border-t">
-        <Button
-          variant="outline"
-          onClick={() => router.push("/admin/settings/cleanup")}
-          className="w-full gap-2"
-        >
-          <Settings className="w-4 h-4" />
-          {t("cleanupPolicy")}
-        </Button>
+      <div className="space-y-4 pt-4 border-t">
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">{tb("globalBg")}</Label>
+          <p className="text-xs text-muted-foreground">{tb("globalBgDesc")}</p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Sun className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+          <span className="text-sm min-w-[60px]">{tb("lightBg")}</span>
+          <Input
+            value={bgLight}
+            onChange={(e) => setBgLight(e.target.value)}
+            placeholder={tb("bgUrlPlaceholder")}
+            className="flex-1"
+          />
+        </div>
+        <div className="flex items-center gap-3">
+          <Moon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+          <span className="text-sm min-w-[60px]">{tb("darkBg")}</span>
+          <Input
+            value={bgDark}
+            onChange={(e) => setBgDark(e.target.value)}
+            placeholder={tb("bgUrlPlaceholder")}
+            className="flex-1"
+          />
+        </div>
+        <div className="flex items-center gap-3">
+          <Cherry className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+          <span className="text-sm min-w-[60px]">{tb("sakuraBg")}</span>
+          <Input
+            value={bgSakura}
+            onChange={(e) => setBgSakura(e.target.value)}
+            placeholder={tb("bgUrlPlaceholder")}
+            className="flex-1"
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">{tb("bgUrlHint")}</p>
       </div>
 
       <Button

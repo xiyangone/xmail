@@ -4,7 +4,7 @@ import { User } from "next-auth"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { signOut } from "next-auth/react"
-import { Github, Settings, Crown, Sword, User2, Gem, Mail, CreditCard, Zap, Users } from "lucide-react"
+import { Github, Settings, Crown, Sword, User2, Gem, Mail, Zap, Shield, ImageIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useRolePermission } from "@/hooks/use-role-permission"
 import { PERMISSIONS } from "@/lib/permissions"
@@ -23,6 +23,9 @@ const EmailServiceConfigContent = dynamic(() => import("./email-service-config-c
   loading: () => <div className="text-sm text-muted-foreground">加载中...</div>
 })
 const ApiKeySection = dynamic(() => import("./api-key-section").then(mod => ({ default: mod.ApiKeySection })), {
+  loading: () => <div className="text-sm text-muted-foreground">加载中...</div>
+})
+const BackgroundSettingsContent = dynamic(() => import("@/components/background/background-settings").then(mod => ({ default: mod.BackgroundSettingsContent })), {
   loading: () => <div className="text-sm text-muted-foreground">加载中...</div>
 })
 
@@ -126,49 +129,22 @@ export function ProfileCard({ user }: ProfileCardProps) {
 
       {canManageWebhook && <ApiKeySection />}
 
-      {canManageCardKeys && (
-        <div className="bg-background rounded-lg border-2 border-primary/20 px-6 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4 flex-1 min-w-0">
-              <CreditCard className="w-6 h-6 text-primary flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-semibold">{t("cardKeyManagement")}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {t("cardKeyManagementDesc")}
-                </p>
-              </div>
-            </div>
-            <Button
-              onClick={() => router.push("/admin/card-keys")}
-              className="gap-2 flex-shrink-0 bg-primary hover:bg-primary/90"
-            >
-              <CreditCard className="w-4 h-4" />
-              {t("manageCardKeys")}
-            </Button>
-          </div>
-        </div>
+      {canManageWebhook && (
+        <CollapsibleSection title={t("backgroundSettings")} icon={ImageIcon} storageKey="profile-bg-open">
+          <BackgroundSettingsContent />
+        </CollapsibleSection>
       )}
 
-      {canPromote && (
-        <div className="bg-background rounded-lg border-2 border-primary/20 px-6 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4 flex-1 min-w-0">
-              <Users className="w-6 h-6 text-primary flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-semibold">{t("userManagement")}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {t("userManagementDesc")}
-                </p>
-              </div>
-            </div>
-            <Button
-              onClick={() => router.push("/admin/users")}
-              className="gap-2 flex-shrink-0 bg-primary hover:bg-primary/90"
-            >
-              <Users className="w-4 h-4" />
-              {t("manageUsers")}
-            </Button>
-          </div>
+      {(canManageCardKeys || canPromote) && (
+        <div className="flex flex-col sm:flex-row gap-4 px-1">
+          <Button
+            onClick={() => router.push("/admin")}
+            className="gap-2 flex-1"
+            variant="outline"
+          >
+            <Shield className="w-4 h-4" />
+            {t("adminDashboard")}
+          </Button>
         </div>
       )}
 

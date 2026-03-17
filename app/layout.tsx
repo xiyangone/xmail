@@ -8,6 +8,7 @@ import { jetBrainsMono } from "./fonts";
 import "./globals.css";
 import { Providers } from "./providers";
 import { FloatMenu } from "@/components/float-menu";
+import { BackgroundProvider } from "@/components/background/background-provider";
 
 export const dynamic = "force-dynamic";
 
@@ -124,7 +125,10 @@ export default async function RootLayout({
           storageKey="temp-mail-theme"
         >
           <NextIntlClientProvider messages={messages}>
-            <Providers>{children}</Providers>
+            <Providers>
+              <BackgroundProvider />
+              {children}
+            </Providers>
             <FloatMenu />
           </NextIntlClientProvider>
           <Toaster />

@@ -234,6 +234,8 @@
     "userManagement": "User Management",
     "userManagementDesc": "Manage system users, view and modify user roles",
     "manageUsers": "Manage Users",
+    "adminDashboard": "Admin Dashboard",
+    "backgroundSettings": "Background Settings",
     "backToMailbox": "Back to Mailbox",
     "roleManagement": "Role Management",
     "searchUserPlaceholder": "Enter username or email",
@@ -519,5 +521,19 @@
   "metadata": {
     "title": "XiYang Mail - Disposable Email Service",
     "description": "Secure, fast, disposable email addresses to protect your privacy from spam. Instant delivery, auto expiry."
+  },
+  "backgroundSettings": {
+    "enableBg": "Enable Custom Background",
+    "enableBgDesc": "Disable to use default solid background",
+    "lightBg": "Light",
+    "darkBg": "Dark",
+    "sakuraBg": "Sakura",
+    "bgUrlPlaceholder": "Enter background image URL",
+    "bgUrlHint": "Supports image hosting URLs, recommend 1920x1080+ resolution",
+    "saveSuccess": "Saved",
+    "saveFailed": "Save Failed",
+    "bgUpdated": "Background updated, refresh to apply",
+    "globalBg": "Global Background Images",
+    "globalBgDesc": "Set default background for all users, users can override with their own"
   }
 }
