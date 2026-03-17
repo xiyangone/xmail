@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { EmailList } from "./email-list";
 import { MessageListContainer } from "./message-list-container";
 import { MessageView } from "./message-view";
@@ -21,6 +21,7 @@ export function ThreeColumnLayout() {
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(
     null
   );
+  const [isDesktop, setIsDesktop] = useState<boolean | null>(null);
   const [selectedMessageType, setSelectedMessageType] = useState<
     "received" | "sent"
   >("received");
@@ -35,6 +36,20 @@ export function ThreeColumnLayout() {
     "p-2 border-b-2 border-primary/20 flex items-center justify-between shrink-0";
   const titleClass = "text-sm font-bold px-2 w-full overflow-hidden";
 
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 1024px)");
+    const updateLayout = () => {
+      setIsDesktop(mediaQuery.matches);
+    };
+
+    updateLayout();
+    mediaQuery.addEventListener("change", updateLayout);
+
+    return () => {
+      mediaQuery.removeEventListener("change", updateLayout);
+    };
+  }, []);
+
   // 移动端视图逻辑
   const getMobileView = () => {
     if (selectedMessageId) return "message";
@@ -43,6 +58,10 @@ export function ThreeColumnLayout() {
   };
 
   const mobileView = getMobileView();
+
+  if (isDesktop === null) {
+    return <div className="pb-5 pt-20 h-full flex flex-col" />;
+  }
 
   const copyEmailAddress = () => {
     copyToClipboard(selectedEmail?.address || "");
@@ -62,87 +81,87 @@ export function ThreeColumnLayout() {
 
   return (
     <div className="pb-5 pt-20 h-full flex flex-col">
-      {/* 桌面端三栏布局 */}
-      <div className="hidden lg:grid grid-cols-12 gap-4 h-full min-h-0">
-        <div className={cn("col-span-3", columnClass)}>
-          <div className={headerClass}>
-            <h2 className={titleClass}>{t("myMailbox")}</h2>
+      {isDesktop ? (
+        <div className="grid grid-cols-12 gap-4 h-full min-h-0">
+          <div className={cn("col-span-3", columnClass)}>
+            <div className={headerClass}>
+              <h2 className={titleClass}>{t("myMailbox")}</h2>
+            </div>
+            <div className="flex-1 overflow-auto">
+              <EmailList
+                onEmailSelect={(email) => {
+                  setSelectedEmail(email);
+                  setSelectedMessageId(null);
+                  setSelectedMessageType("received");
+                }}
+                selectedEmailId={selectedEmail?.id}
+              />
+            </div>
           </div>
-          <div className="flex-1 overflow-auto">
-            <EmailList
-              onEmailSelect={(email) => {
-                setSelectedEmail(email);
-                setSelectedMessageId(null);
-                setSelectedMessageType("received"); // 切换邮箱时重置为收件箱
-              }}
-              selectedEmailId={selectedEmail?.id}
-            />
-          </div>
-        </div>
 
-        <div className={cn("col-span-4", columnClass)}>
-          <div className={headerClass}>
-            <h2 className={titleClass}>
-              {selectedEmail ? (
-                <div className="w-full flex justify-between items-center gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate min-w-0">
-                      {selectedEmail.address}
-                    </span>
-                    <div
-                      className="shrink-0 cursor-pointer text-primary"
-                      onClick={copyEmailAddress}
-                    >
-                      <Copy className="size-4" />
+          <div className={cn("col-span-4", columnClass)}>
+            <div className={headerClass}>
+              <h2 className={titleClass}>
+                {selectedEmail ? (
+                  <div className="w-full flex justify-between items-center gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate min-w-0">
+                        {selectedEmail.address}
+                      </span>
+                      <div
+                        className="shrink-0 cursor-pointer text-primary"
+                        onClick={copyEmailAddress}
+                      >
+                        <Copy className="size-4" />
+                      </div>
                     </div>
+                    {selectedEmail && canSendEmails && (
+                      <SendDialog
+                        emailId={selectedEmail.id}
+                        fromAddress={selectedEmail.address}
+                        onSendSuccess={handleSendSuccess}
+                      />
+                    )}
                   </div>
-                  {selectedEmail && canSendEmails && (
-                    <SendDialog
-                      emailId={selectedEmail.id}
-                      fromAddress={selectedEmail.address}
-                      onSendSuccess={handleSendSuccess}
-                    />
-                  )}
-                </div>
-              ) : (
-                t("noEmailSelected")
-              )}
-            </h2>
-          </div>
-          {selectedEmail && (
-            <div className="flex-1 overflow-auto">
-              <MessageListContainer
-                email={selectedEmail}
-                onMessageSelect={handleMessageSelect}
-                selectedMessageId={selectedMessageId}
-                refreshTrigger={refreshTrigger}
-              />
+                ) : (
+                  t("noEmailSelected")
+                )}
+              </h2>
             </div>
-          )}
-        </div>
-
-        <div className={cn("col-span-5", columnClass)}>
-          <div className={headerClass}>
-            <h2 className={titleClass}>
-              {selectedMessageId ? t("messageContent") : t("noMessageSelected")}
-            </h2>
+            {selectedEmail && (
+              <div className="flex-1 overflow-auto">
+                <MessageListContainer
+                  email={selectedEmail}
+                  onMessageSelect={handleMessageSelect}
+                  selectedMessageId={selectedMessageId}
+                  refreshTrigger={refreshTrigger}
+                />
+              </div>
+            )}
           </div>
-          {selectedEmail && selectedMessageId && (
-            <div className="flex-1 overflow-auto">
-              <MessageView
-                emailId={selectedEmail.id}
-                messageId={selectedMessageId}
-                messageType={selectedMessageType}
-                onClose={() => setSelectedMessageId(null)}
-              />
-            </div>
-          )}
-        </div>
-      </div>
 
-      {/* 移动端单栏布局 */}
-      <div className="lg:hidden h-full min-h-0">
-        <div className={cn("h-full", columnClass)}>
+          <div className={cn("col-span-5", columnClass)}>
+            <div className={headerClass}>
+              <h2 className={titleClass}>
+                {selectedMessageId
+                  ? t("messageContent")
+                  : t("noMessageSelected")}
+              </h2>
+            </div>
+            {selectedEmail && selectedMessageId && (
+              <div className="flex-1 overflow-auto">
+                <MessageView
+                  emailId={selectedEmail.id}
+                  messageId={selectedMessageId}
+                  messageType={selectedMessageType}
+                  onClose={() => setSelectedMessageId(null)}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className={cn("h-full min-h-0", columnClass)}>
           {mobileView === "list" && (
             <>
               <div className={headerClass}>
@@ -153,7 +172,7 @@ export function ThreeColumnLayout() {
                   onEmailSelect={(email) => {
                     setSelectedEmail(email);
                     setSelectedMessageId(null);
-                    setSelectedMessageType("received"); // 切换邮箱时重置为收件箱
+                    setSelectedMessageType("received");
                   }}
                   selectedEmailId={selectedEmail?.id}
                 />
@@ -213,7 +232,9 @@ export function ThreeColumnLayout() {
                 >
                   {t("backToMessages")}
                 </button>
-                <span className="text-sm font-medium">{t("messageContent")}</span>
+                <span className="text-sm font-medium">
+                  {t("messageContent")}
+                </span>
               </div>
               <div className="flex-1 overflow-auto">
                 <MessageView
@@ -226,7 +247,7 @@ export function ThreeColumnLayout() {
             </div>
           )}
         </div>
-      </div>
+      )}
     </div>
   );
 }
