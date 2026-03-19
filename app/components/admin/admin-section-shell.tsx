@@ -21,8 +21,8 @@ export function AdminSectionShell({
   contentClassName,
 }: AdminSectionShellProps) {
   return (
-    <section className={cn("surface-panel overflow-hidden", className)}>
-      <div className="border-b border-border/60 px-5 py-5 sm:px-6">
+    <section className={cn("theme-surface-admin-shell surface-panel overflow-hidden", className)}>
+      <div className="theme-surface-admin-shell-header border-b border-border/60 px-5 py-5 sm:px-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="space-y-1">
             <h2 className="text-xl font-semibold tracking-tight text-foreground">{title}</h2>

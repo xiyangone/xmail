@@ -1,4 +1,5 @@
 import { ThemeProvider } from "@/components/theme/theme-provider";
+import { ThemeColorMeta } from "@/components/theme/theme-color-meta";
 import { Toaster } from "@/components/ui/toaster";
 import { cn } from "@/lib/utils";
 import type { Metadata, Viewport } from "next";
@@ -10,6 +11,7 @@ import { Providers } from "./providers";
 import { FloatMenu } from "@/components/float-menu";
 import { BackgroundProvider } from "@/components/background/background-provider";
 import { APP_THEMES } from "@/lib/background-config";
+import { auth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -39,9 +41,9 @@ export async function generateMetadata(): Promise<Metadata> {
       "邮件服务",
       "XiYang Mail",
     ].join(", "),
-    authors: [{ name: "SoftMoe Studio" }],
-    creator: "SoftMoe Studio",
-    publisher: "SoftMoe Studio",
+    authors: [{ name: "XiYang Mail" }],
+    creator: "XiYang Mail",
+    publisher: "XiYang Mail",
     robots: {
       index: true,
       follow: true,
@@ -63,17 +65,13 @@ export async function generateMetadata(): Promise<Metadata> {
       title,
       description,
     },
-    manifest: "/manifest.json",
-    icons: [{ rel: "apple-touch-icon", url: "/icons/icon-192x192.png" }],
   };
 }
 
 export const viewport: Viewport = {
-  themeColor: "#FF8A3D",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
 };
 
 export default async function RootLayout({
@@ -83,6 +81,7 @@ export default async function RootLayout({
 }) {
   const locale = await getLocale();
   const messages = await getMessages();
+  const session = await auth();
 
   return (
     <html lang={locale} suppressHydrationWarning>
@@ -102,19 +101,59 @@ export default async function RootLayout({
 })();`,
           }}
         />
-        <meta name="application-name" content="XiYang Mail" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="XiYang Mail" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function () {
+  try {
+    if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+
+    var cleanupKey = "__xmail_sw_cleanup_v1";
+
+    navigator.serviceWorker.getRegistrations().then(function (registrations) {
+      if (!registrations.length) {
+        try {
+          sessionStorage.removeItem(cleanupKey);
+        } catch {}
+        return;
+      }
+
+      Promise.all(
+        registrations.map(function (registration) {
+          return registration.unregister().catch(function () {});
+        })
+      )
+        .then(function () {
+          if (!("caches" in window)) return;
+
+          return caches.keys().then(function (keys) {
+            return Promise.all(
+              keys.map(function (key) {
+                return caches.delete(key);
+              })
+            );
+          });
+        })
+        .finally(function () {
+          try {
+            if (sessionStorage.getItem(cleanupKey) === "1") return;
+            sessionStorage.setItem(cleanupKey, "1");
+          } catch {}
+
+          window.location.reload();
+        });
+    }).catch(function () {});
+  } catch {}
+})();`,
+          }}
+        />
         <meta name="format-detection" content="telephone=no" />
-        <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body
         className={cn(
           jetBrainsMono.variable,
           "font-jetbrains min-h-screen antialiased",
           "bg-background text-foreground",
-          "transition-colors duration-300"
+          "theme-color-transition"
         )}
       >
         <ThemeProvider
@@ -122,11 +161,11 @@ export default async function RootLayout({
           defaultTheme="system"
           enableSystem
           themes={[...APP_THEMES]}
-          disableTransitionOnChange={false}
           storageKey="temp-mail-theme"
         >
+          <ThemeColorMeta />
           <NextIntlClientProvider messages={messages}>
-            <Providers>
+            <Providers session={session}>
               <BackgroundProvider />
               {children}
             </Providers>

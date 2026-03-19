@@ -1,9 +1,7 @@
-import { auth } from "@/lib/auth"
-import { NextResponse } from "next/server"
-import { PERMISSIONS } from "@/lib/permissions"
-import { checkPermission } from "@/lib/auth"
-import { Permission } from "@/lib/permissions"
 import { handleApiKeyAuth } from "@/lib/apiKey"
+import { auth, checkPermission } from "@/lib/auth"
+import { PERMISSIONS, type Permission } from "@/lib/permissions"
+import { NextResponse } from "next/server"
 
 const API_PERMISSIONS: Record<string, Permission> = {
   '/api/emails': PERMISSIONS.MANAGE_EMAIL,
@@ -20,13 +18,16 @@ export async function middleware(request: Request) {
   const pathname = new URL(request.url).pathname
   const method = request.method
 
-  // API Key 认证
+  // Keep public config reads available before any auth gate.
+  if ((pathname === '/api/config' || pathname === '/api/config/background') && method === 'GET') {
+    return NextResponse.next()
+  }
+
   const apiKey = request.headers.get("X-API-Key")
   if (apiKey) {
     return handleApiKeyAuth(apiKey, pathname, request.headers)
   }
 
-  // Session 认证
   const session = await auth()
   if (!session?.user) {
     return NextResponse.json(
@@ -35,11 +36,6 @@ export async function middleware(request: Request) {
     )
   }
 
-  if (pathname === '/api/config' && method === 'GET') {
-    return NextResponse.next()
-  }
-
-  // 临时用户可以 GET /api/emails 查看绑定的邮箱
   if (pathname.startsWith('/api/emails') && method === 'GET') {
     const hasTempPermission = await checkPermission(PERMISSIONS.VIEW_TEMP_EMAIL)
     if (hasTempPermission) {
@@ -74,4 +70,4 @@ export const config = {
     '/api/cleanup/:path*',
     '/api/admin/:path*',
   ]
-} 
+}

@@ -14,7 +14,7 @@ export function SharedErrorPage({ status, message }: SharedErrorPageProps) {
   const isExpired = status === 410;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
+    <div className="light theme-static-light page-gradient-background min-h-screen flex items-center justify-center p-4">
       <div className="max-w-md w-full space-y-8">
         <BrandHeader showCTA={false} />
 

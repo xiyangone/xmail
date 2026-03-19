@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Mail, RefreshCw, Loader2, Info } from "lucide-react";
 import { formatContactDisplay } from "@/lib/contact-address";
+import { formatZhCnDateTime } from "@/lib/format-zh-cn-datetime";
 import { cn } from "@/lib/utils";
 import { useThrottle } from "@/hooks/use-throttle";
 import { useToast } from "@/components/ui/use-toast";
@@ -13,11 +14,14 @@ interface Message {
   from_address?: string;
   to_address?: string;
   subject: string;
-  received_at?: number;
-  sent_at?: number;
+  received_at?: number | string | Date;
+  sent_at?: number | string | Date;
 }
 
 interface SharedMessageListProps {
+  initialMessages?: Message[];
+  initialNextCursor?: string | null;
+  initialTotal?: number;
   token: string;
   onMessageSelect: (messageId: string) => void;
   selectedMessageId?: string;
@@ -30,16 +34,19 @@ interface MessagesResponse {
 }
 
 export function SharedMessageList({
+  initialMessages = [],
+  initialNextCursor = null,
+  initialTotal = 0,
   token,
   onMessageSelect,
   selectedMessageId,
 }: SharedMessageListProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [total, setTotal] = useState(0);
+  const [hasMore, setHasMore] = useState(!!initialNextCursor);
+  const [nextCursor, setNextCursor] = useState<string | null>(initialNextCursor);
+  const [total, setTotal] = useState(initialTotal);
   const listRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const t = useTranslations("shared");
@@ -115,7 +122,9 @@ export function SharedMessageList({
   }, 200);
 
   useEffect(() => {
-    fetchMessages();
+    if (initialMessages.length === 0) {
+      fetchMessages();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
@@ -144,9 +153,9 @@ export function SharedMessageList({
         </div>
       </div>
 
-      <div className="mx-3 mt-3 p-2 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg flex items-start gap-2">
-        <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-        <p className="text-xs text-blue-700 dark:text-blue-300">
+      <div className="mx-3 mt-3 flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-2">
+        <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600" />
+        <p className="text-xs text-blue-700">
           <strong>{t("refreshHintTitle")}</strong>
           {t("refreshHint")}
         </p>
@@ -181,15 +190,9 @@ export function SharedMessageList({
                     t("unknownSender")}
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  {new Date(
+                  {formatZhCnDateTime(
                     message.received_at || message.sent_at || 0
-                  ).toLocaleString("zh-CN", {
-                    year: "numeric",
-                    month: "2-digit",
-                    day: "2-digit",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  )}
                 </div>
               </div>
             </div>

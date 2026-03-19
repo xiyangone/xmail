@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "xmail-email-receiver-worker",
+  "send_metrics": false,
   "compatibility_date": "2026-03-01",
   "compatibility_flags": ["nodejs_compat"],
   "main": "workers/email-receiver.ts",

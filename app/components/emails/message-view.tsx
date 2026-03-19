@@ -8,7 +8,7 @@ import { formatContactDisplay } from "@/lib/contact-address";
 import { useTheme } from "next-themes";
 import { useToast } from "@/components/ui/use-toast";
 import { useTranslations } from "next-intl";
-import { resolveAppTheme } from "@/lib/background-config";
+import { resolveAppTheme, THEME_IFRAME_COLORS } from "@/lib/background-config";
 
 interface Message {
   id: string;
@@ -95,20 +95,7 @@ export function MessageView({
     if (viewMode !== "html" || !message?.html) return undefined;
     const activeTheme = resolveAppTheme(resolvedTheme);
     const isDark = activeTheme === "dark";
-    const isSakura = activeTheme === "sakura";
-    const isAmber = activeTheme === "amber";
-    const colors = {
-      text: isDark ? "#f5f3ff" : isSakura ? "#4a1942" : isAmber ? "#4a2c15" : "#111827",
-      bg: isDark ? "#1a1a1a" : isSakura ? "#fff5f7" : isAmber ? "#fff7ed" : "#ffffff",
-      link: isDark ? "#a78bfa" : isSakura ? "#db2777" : isAmber ? "#c2410c" : "#2563eb",
-      scrollbar: isDark
-        ? "130, 109, 217"
-        : isSakura
-          ? "219, 39, 119"
-          : isAmber
-            ? "234, 88, 12"
-            : "37, 99, 235",
-    };
+    const colors = THEME_IFRAME_COLORS[activeTheme];
     return `<!DOCTYPE html>
 <html>
   <head>
@@ -163,7 +150,7 @@ export function MessageView({
     return (
       <div className="flex items-center justify-center h-32">
         <Loader2 className="w-5 h-5 animate-spin text-primary/60" />
-        <span className="ml-2 text-sm text-gray-500">{t("loadingDetail")}</span>
+        <span className="ml-2 text-sm text-muted-foreground">{t("loadingDetail")}</span>
       </div>
     );
   }
@@ -189,9 +176,9 @@ export function MessageView({
 
   return (
     <div className="h-full flex flex-col animate-fade-in">
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm p-4 space-y-3 border-b border-primary/20 shadow-sm">
+      <div className="surface-toolbar-workspace sticky top-0 z-10 p-4 space-y-3">
         <h3 className="text-base font-bold">{message.subject}</h3>
-        <div className="text-xs text-gray-500 space-y-1">
+        <div className="text-xs text-muted-foreground space-y-1">
           {fromLabel && <p>{t("from", { address: fromLabel })}</p>}
           {toLabel && <p>{t("to", { address: toLabel })}</p>}
           <p>
@@ -203,11 +190,11 @@ export function MessageView({
       </div>
 
       {message.html && message.content && (
-        <div className="border-b border-primary/20 p-2 bg-muted/30">
+        <div className="border-b border-primary/10 px-3 py-2 bg-[hsl(var(--background)/0.2)]">
           <RadioGroup
             value={viewMode}
             onValueChange={(value) => setViewMode(value as ViewMode)}
-            className="flex items-center gap-2 bg-background/50 backdrop-blur-sm p-1 rounded-lg"
+            className="surface-choice-rail flex max-w-fit items-center gap-2 p-1"
           >
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="html" id="html" />

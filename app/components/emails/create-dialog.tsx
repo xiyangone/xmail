@@ -242,7 +242,7 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
                 </div>
               </div>
             ) : (
-              <span className="text-gray-400">...</span>
+              <span className="text-muted-foreground">...</span>
             )}
           </div>
         </div>

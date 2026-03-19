@@ -13,8 +13,8 @@ interface Message {
   from_address?: string;
   to_address?: string;
   subject: string;
-  received_at?: number | Date;
-  sent_at?: number | Date;
+  received_at?: number | string | Date;
+  sent_at?: number | string | Date;
 }
 
 interface Email {
@@ -26,6 +26,7 @@ interface Email {
 
 interface SharedEmailPageClientProps {
   email: Email;
+  expiresAtLabel: string;
   initialMessages: Message[];
   initialNextCursor: string | null;
   initialTotal: number;
@@ -34,6 +35,10 @@ interface SharedEmailPageClientProps {
 
 export function SharedEmailPageClient({
   email,
+  expiresAtLabel,
+  initialMessages,
+  initialNextCursor,
+  initialTotal,
   token,
 }: SharedEmailPageClientProps) {
   const t = useTranslations("shared");
@@ -57,7 +62,7 @@ export function SharedEmailPageClient({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+    <div className="light theme-static-light min-h-screen page-gradient-background">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* 顶部品牌区域 */}
         <div className="text-center mb-8">
@@ -71,16 +76,7 @@ export function SharedEmailPageClient({
                 <h2 className="text-xl font-bold">{email.address}</h2>
               </div>
               <p className="text-sm text-muted-foreground">
-                {t("expiresAt", {
-                  time: new Date(email.expiresAt).toLocaleString("zh-CN", {
-                    year: "numeric",
-                    month: "2-digit",
-                    day: "2-digit",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    second: "2-digit",
-                  }),
-                })}
+                {t("expiresAt", { time: expiresAtLabel })}
               </p>
             </div>
           </div>
@@ -95,6 +91,9 @@ export function SharedEmailPageClient({
                   {!selectedMessageId ? (
                     <div className="flex-1">
                       <SharedMessageList
+                        initialMessages={initialMessages}
+                        initialNextCursor={initialNextCursor}
+                        initialTotal={initialTotal}
                         token={token}
                         onMessageSelect={setSelectedMessageId}
                         selectedMessageId={selectedMessageId || undefined}
@@ -126,6 +125,9 @@ export function SharedEmailPageClient({
                 <>
                   <div className="w-80 border-r border-border">
                     <SharedMessageList
+                      initialMessages={initialMessages}
+                      initialNextCursor={initialNextCursor}
+                      initialTotal={initialTotal}
                       token={token}
                       onMessageSelect={setSelectedMessageId}
                       selectedMessageId={selectedMessageId || undefined}

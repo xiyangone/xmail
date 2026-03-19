@@ -1,8 +1,8 @@
 import { NotFoundError } from "cloudflare";
 import "dotenv/config";
 import { execSync } from "node:child_process";
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
-import { resolve } from "node:path";
+import { readFileSync, writeFileSync, existsSync, rmSync } from "node:fs";
+import { basename, resolve } from "node:path";
 import {
   createDatabase,
   createKVNamespace,
@@ -14,6 +14,9 @@ const PROJECT_NAME = process.env.PROJECT_NAME || "xmail";
 const DATABASE_NAME = process.env.DATABASE_NAME || "xmail-db";
 const KV_NAMESPACE_NAME = process.env.KV_NAMESPACE_NAME || "xmail-kv";
 const KV_NAMESPACE_ID = process.env.KV_NAMESPACE_ID;
+
+// Keep Wrangler deploy logs quiet unless the caller explicitly overrides it.
+process.env.WRANGLER_SEND_METRICS ??= "false";
 
 /**
  * 验证必要的环境变量
@@ -50,7 +53,7 @@ const setupConfigFile = (examplePath: string, targetPath: string) => {
 
     // 处理自定义项目名称
     if (PROJECT_NAME !== "xmail") {
-      const wranglerFileName = targetPath.split("/").at(-1);
+      const wranglerFileName = basename(targetPath);
 
       switch (wranglerFileName) {
         case "wrangler.json":
@@ -316,7 +319,7 @@ const pushWorkerSecrets = () => {
     execSync(`pnpm dlx wrangler secret bulk ${runtimeEnvFile}`, { stdio: "inherit" });
 
     // 清理临时文件
-    execSync(`rm ${runtimeEnvFile}`, { stdio: "inherit" });
+    rmSync(runtimeEnvFile, { force: true });
 
     console.log("✅ Secrets pushed successfully");
   } catch (error) {
@@ -452,32 +455,6 @@ const setupEnvFile = () => {
     console.error("❌ .env.example file not found!");
     throw new Error(".env.example file not found");
   }
-};
-
-/**
- * 更新环境变量
- */
-const updateEnvVar = (name: string, value: string) => {
-  // 首先更新进程环境变量
-  process.env[name] = value;
-  
-  // 然后尝试更新.env文件
-  const envFilePath = resolve(".env");
-  if (!existsSync(envFilePath)) {
-    setupEnvFile();
-  }
-  
-  let envContent = readFileSync(envFilePath, "utf-8");
-  const regex = new RegExp(`^${name}\\s*=\\s*".*?"`, "m");
-  
-  if (envContent.match(regex)) {
-    envContent = envContent.replace(regex, `${name} = "${value}"`);
-  } else {
-    envContent += `\n${name} = "${value}"`;
-  }
-  
-  writeFileSync(envFilePath, envContent);
-  console.log(`✅ Updated ${name} in .env file`);
 };
 
 /**

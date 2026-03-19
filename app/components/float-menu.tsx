@@ -19,7 +19,7 @@ export function FloatMenu() {
             <Button
               variant="outline"
               size="icon"
-              className="bg-white dark:bg-background rounded-full shadow-lg group relative border-primary/20 hover:border-primary/50 hover:shadow-xl transition-all duration-300"
+              className="bg-background rounded-full shadow-lg group relative border-primary/20 hover:border-primary/50 hover:shadow-xl transition-all duration-300"
               onClick={() =>
                 window.open("https://space.bilibili.com/272756942", "_blank")
               }

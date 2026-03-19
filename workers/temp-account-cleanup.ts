@@ -7,12 +7,14 @@ interface Env {
   SITE_URL: string;
 }
 
-export default {
+const tempAccountCleanupWorker = {
   async scheduled(
     controller: ScheduledController,
     env: Env,
     ctx: ExecutionContext
   ): Promise<void> {
+    void controller;
+    void ctx;
     console.log("开始清理过期临时账号...");
 
     try {
@@ -91,3 +93,5 @@ export default {
     });
   },
 };
+
+export default tempAccountCleanupWorker;

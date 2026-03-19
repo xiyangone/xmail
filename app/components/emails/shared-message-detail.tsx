@@ -5,10 +5,11 @@ import { Loader2 } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { formatContactDisplay } from "@/lib/contact-address";
-import { useTheme } from "next-themes";
+import { formatZhCnDateTime } from "@/lib/format-zh-cn-datetime";
 import { useToast } from "@/components/ui/use-toast";
 import { useTranslations } from "next-intl";
-import { resolveAppTheme } from "@/lib/background-config";
+import { resolveAppTheme, THEME_IFRAME_COLORS } from "@/lib/background-config";
+import { useTheme } from "next-themes";
 
 interface Message {
   id: string;
@@ -17,8 +18,8 @@ interface Message {
   subject: string;
   content?: string;
   html?: string;
-  received_at?: number;
-  sent_at?: number;
+  received_at?: number | string | Date;
+  sent_at?: number | string | Date;
 }
 
 interface SharedMessageDetailProps {
@@ -36,8 +37,8 @@ export function SharedMessageDetail({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("html");
-  const { resolvedTheme } = useTheme();
   const { toast } = useToast();
+  const { resolvedTheme } = useTheme();
   const t = useTranslations("shared");
   const te = useTranslations("email");
   const tc = useTranslations("common");
@@ -91,20 +92,7 @@ export function SharedMessageDetail({
     if (viewMode !== "html" || !message?.html) return undefined;
     const activeTheme = resolveAppTheme(resolvedTheme);
     const isDark = activeTheme === "dark";
-    const isSakura = activeTheme === "sakura";
-    const isAmber = activeTheme === "amber";
-    const colors = {
-      text: isDark ? "#e5e7eb" : isSakura ? "#4a1942" : isAmber ? "#4a2c15" : "#1f2937",
-      bg: isDark ? "#1f2937" : isSakura ? "#fff5f7" : isAmber ? "#fff7ed" : "#ffffff",
-      link: isDark ? "#a78bfa" : isSakura ? "#db2777" : isAmber ? "#c2410c" : "#7c3aed",
-      scrollbar: isDark
-        ? "130, 109, 217"
-        : isSakura
-          ? "219, 39, 119"
-          : isAmber
-            ? "234, 88, 12"
-            : "124, 58, 237",
-    };
+    const colors = THEME_IFRAME_COLORS[activeTheme];
     return `<!DOCTYPE html>
 <html>
   <head>
@@ -143,6 +131,10 @@ export function SharedMessageDetail({
       ::-webkit-scrollbar-thumb:hover {
         background: rgba(${colors.scrollbar}, ${isDark ? 0.5 : 0.4});
       }
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(${colors.scrollbar}, ${isDark ? 0.3 : 0.2}) transparent;
+      }
     </style>
   </head>
   <body>${message.html}</body>
@@ -155,7 +147,7 @@ export function SharedMessageDetail({
     return (
       <div className="flex items-center justify-center h-32">
         <Loader2 className="w-5 h-5 animate-spin text-primary/60" />
-        <span className="ml-2 text-sm text-gray-500">{te("loadingDetail")}</span>
+        <span className="ml-2 text-sm text-muted-foreground">{te("loadingDetail")}</span>
       </div>
     );
   }
@@ -177,14 +169,15 @@ export function SharedMessageDetail({
     <div className="h-full flex flex-col animate-fade-in">
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm p-4 space-y-3 border-b border-primary/20 shadow-sm">
         <h3 className="text-base font-bold">{message.subject}</h3>
-        <div className="text-xs text-gray-500 space-y-1">
+        <div className="text-xs text-muted-foreground space-y-1">
           {fromLabel && <p>{te("from", { address: fromLabel })}</p>}
           {toLabel && <p>{te("to", { address: toLabel })}</p>}
           <p>
             {te("time", {
-              time: new Date(
-                message.sent_at || message.received_at || 0
-              ).toLocaleString(),
+              time: formatZhCnDateTime(
+                message.sent_at || message.received_at || 0,
+                { includeSeconds: true }
+              ),
             })}
           </p>
         </div>

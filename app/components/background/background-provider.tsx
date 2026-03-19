@@ -40,21 +40,25 @@ export function BackgroundProvider() {
     ? (userEnabled ? userBg?.[urlKey] : "") || globalBg[urlKey]
     : "";
 
-  if (!backgroundUrl) {
-    return <div className="page-gradient-background fixed inset-0 -z-10" />;
-  }
-
   return (
-    <div
-      className="fixed inset-0 -z-10 bg-cover bg-center bg-no-repeat transition-opacity duration-500"
-      style={{ backgroundImage: `url(${backgroundUrl})` }}
-    >
-      <div
-        className="absolute inset-0 bg-[radial-gradient(circle_at_top,hsla(var(--primary)/0.14),transparent_34%),linear-gradient(180deg,hsla(var(--background)/0.3),hsla(var(--background)/0.58))]"
-        style={{
-          backdropFilter: "blur(var(--background-overlay-blur))",
-        }}
-      />
+    <div className="fixed inset-0 -z-10 overflow-hidden">
+      <div className="page-gradient-background absolute inset-0" />
+      {backgroundUrl ? (
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-500"
+          style={{ backgroundImage: `url(${backgroundUrl})` }}
+        >
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(circle at 50% -12%, hsl(var(--primary) / var(--background-image-glow-opacity)), transparent 52%), linear-gradient(180deg, hsl(var(--background) / var(--background-image-overlay-start)) 0%, hsl(var(--background) / var(--background-image-overlay-mid)) 42%, hsl(var(--background) / var(--background-image-overlay-end)) 100%)",
+              backdropFilter: "blur(var(--background-overlay-blur))",
+              WebkitBackdropFilter: "blur(var(--background-overlay-blur))",
+            }}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -92,6 +92,10 @@
       "autoExpiry": {
         "title": "Auto Expiry",
         "description": "Expires automatically"
+      },
+      "share": {
+        "title": "Mailbox Sharing",
+        "description": "Create share links to view emails and codes together"
       }
     }
   },

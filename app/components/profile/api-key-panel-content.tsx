@@ -137,7 +137,7 @@ export function ApiKeyPanelContent() {
           </div>
         </div>
       ) : apiKeys.length === 0 ? (
-        <div className="text-center py-8 space-y-3">
+        <div className="theme-surface-empty-state text-center py-8 space-y-3 rounded-2xl px-4">
           <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
             <Key className="w-6 h-6 text-primary" />
           </div>
@@ -153,7 +153,7 @@ export function ApiKeyPanelContent() {
           {apiKeys.map((key) => (
             <div
               key={key.id}
-              className="flex items-center justify-between p-4 rounded-lg border bg-card"
+              className="theme-surface-inline-panel flex items-center justify-between rounded-2xl border p-4"
             >
               <div className="space-y-1">
                 <div className="font-medium">{key.name}</div>
@@ -197,7 +197,7 @@ export function ApiKeyPanelContent() {
             </button>
 
             {showExamples && (
-              <div className="rounded-lg border bg-card p-4 space-y-4">
+              <div className="theme-surface-inline-panel rounded-2xl border p-4 space-y-4">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="text-sm font-medium">{t("getConfig")}</div>
@@ -214,7 +214,7 @@ export function ApiKeyPanelContent() {
                       <Copy className="w-4 h-4" />
                     </Button>
                   </div>
-                  <pre className="text-xs bg-muted/50 rounded-lg p-4 overflow-x-auto">
+                  <pre className="theme-surface-code-block text-xs rounded-xl p-4 overflow-x-auto">
                     {`curl ${window.location.protocol}//${window.location.host}/api/config \\
   -H "X-API-Key: YOUR_API_KEY"`}
                   </pre>

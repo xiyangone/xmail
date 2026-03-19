@@ -121,7 +121,7 @@ const EmailItem = memo(function EmailItem({
         {isChecked ? (
           <CheckSquare className="h-4 w-4 text-primary" />
         ) : (
-          <Square className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <Square className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
         )}
       </button>
       <Mail className="h-5 w-5 text-primary/70 group-hover:text-primary transition-colors flex-shrink-0" />
@@ -129,7 +129,7 @@ const EmailItem = memo(function EmailItem({
         <div className="font-medium truncate group-hover:text-primary transition-colors">
           {email.address}
         </div>
-        <div className="flex items-center gap-2 text-xs text-gray-500">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {isPermanent ? (
             <span className="px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 font-medium">
               {tc("permanent")}
@@ -137,7 +137,7 @@ const EmailItem = memo(function EmailItem({
           ) : (
             <>
               {isExpiringSoon && (
-                <span className="px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 font-medium animate-pulse">
+                <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium animate-pulse">
                   {tc("expiringSoon")}
                 </span>
               )}
@@ -394,60 +394,65 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
   return (
     <>
       <div className="flex flex-col h-full">
-        <div className="p-2 flex justify-between items-center border-b border-primary/20">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className={cn("h-8 w-8", refreshing && "animate-spin")}
-              title={tc("manualRefresh")}
-            >
-              <RefreshCw className="h-4 w-4" />
-            </Button>
-            {emails.length > 0 && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={toggleSelectAll}
-                  className="h-8 w-8"
-                  title={
-                    selectedEmails.length === emails.length
-                      ? t("deselectAll")
-                      : t("selectAll")
-                  }
-                >
-                  {selectedEmails.length === emails.length ? (
-                    <CheckSquare className="h-4 w-4 text-primary" />
-                  ) : (
-                    <Square className="h-4 w-4" />
-                  )}
-                </Button>
-                {selectedEmails.length > 0 && (
+        <div className="border-b border-primary/16 bg-[hsl(var(--background)/0.08)] px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-1.5">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className={cn("h-8 w-8", refreshing && "animate-spin")}
+                title={tc("manualRefresh")}
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+              {emails.length > 0 && (
+                <>
                   <Button
                     variant="ghost"
-                    size="sm"
-                    onClick={() => setBatchDeleteDialogOpen(true)}
-                    className="h-8 text-destructive hover:text-destructive"
+                    size="icon"
+                    onClick={toggleSelectAll}
+                    className="h-8 w-8"
+                    title={
+                      selectedEmails.length === emails.length
+                        ? t("deselectAll")
+                        : t("selectAll")
+                    }
                   >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    {t("deleteCount", { count: selectedEmails.length })}
+                    {selectedEmails.length === emails.length ? (
+                      <CheckSquare className="h-4 w-4 text-primary" />
+                    ) : (
+                      <Square className="h-4 w-4" />
+                    )}
                   </Button>
-                )}
-              </>
-            )}
-            <span className="text-xs text-gray-500">
-              {role === ROLES.EMPEROR
-                ? t("mailCountUnlimited", { count: total })
-                : t("mailCount", { count: total, max: config?.maxEmails || EMAIL_CONFIG.MAX_ACTIVE_EMAILS })}
-            </span>
+                  {selectedEmails.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setBatchDeleteDialogOpen(true)}
+                      className="h-8 text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      {t("deleteCount", { count: selectedEmails.length })}
+                    </Button>
+                  )}
+                </>
+              )}
+              <span className="truncate text-[11px] tracking-[0.04em] text-muted-foreground">
+                {role === ROLES.EMPEROR
+                  ? t("mailCountUnlimited", { count: total })
+                  : t("mailCount", {
+                      count: total,
+                      max: config?.maxEmails || EMAIL_CONFIG.MAX_ACTIVE_EMAILS,
+                    })}
+              </span>
+            </div>
+            {canCreateEmail && <CreateDialog onEmailCreated={handleRefresh} />}
           </div>
-          {canCreateEmail && <CreateDialog onEmailCreated={handleRefresh} />}
         </div>
 
-        <div className="flex-1 overflow-auto p-2" onScroll={handleScroll}>
+        <div className="flex-1 overflow-auto px-3 py-3" onScroll={handleScroll}>
           {loading ? (
             <EmailListSkeleton />
           ) : emails.length > 0 ? (
@@ -465,7 +470,7 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
                 />
               ))}
               {loadingMore && (
-                <div className="text-center text-sm text-gray-500 py-2 animate-pulse">
+                <div className="text-center text-sm text-muted-foreground py-2 animate-pulse">
                   {tc("loadingMore")}
                 </div>
               )}

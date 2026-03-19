@@ -225,12 +225,12 @@ export function ShareDialog({ emailId }: ShareDialogProps) {
               <Label className="text-sm font-medium">{t("share.currentLinks")}</Label>
               <div className="max-h-[240px] overflow-y-auto">
                 {loading ? (
-                  <div className="text-sm text-gray-500 text-center py-8 flex flex-col items-center gap-2">
+                  <div className="text-sm text-muted-foreground text-center py-8 flex flex-col items-center gap-2">
                     <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
                     <span>{tc("loading")}</span>
                   </div>
                 ) : shares.length === 0 ? (
-                  <div className="text-sm text-gray-500 text-center py-8 flex flex-col items-center gap-2">
+                  <div className="text-sm text-muted-foreground text-center py-8 flex flex-col items-center gap-2">
                     <div className="text-3xl">📭</div>
                     <div>
                       <div className="font-medium mb-0.5">{t("share.noLinks")}</div>

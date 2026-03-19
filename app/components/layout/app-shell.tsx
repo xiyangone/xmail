@@ -16,7 +16,7 @@ export function AppShell({
   mainClassName,
 }: AppShellProps) {
   return (
-    <div className={cn("relative min-h-screen", fullHeight && "h-screen")}>
+    <div className={cn("relative min-h-screen", fullHeight && "h-[100dvh] overflow-hidden")}>
       <div
         className={cn(
           "container mx-auto max-w-[1600px] px-4 lg:px-8",
@@ -27,8 +27,8 @@ export function AppShell({
         <Header />
         <main
           className={cn(
-            "relative pb-5 pt-[4.75rem]",
-            fullHeight && "h-[calc(100vh-5rem)]",
+            "relative",
+            fullHeight ? "mt-[4.25rem] h-[calc(100dvh-4.25rem-0.5rem)] min-h-0 pb-2" : "pb-5 pt-[4.25rem]",
             mainClassName
           )}
         >

@@ -11,6 +11,7 @@ import { PERMISSIONS } from "@/lib/permissions"
 import { CollapsibleSection } from "./collapsible-section"
 import dynamic from "next/dynamic"
 import { useTranslations } from "next-intl"
+import { MAILBOX_ROUTE } from "@/lib/routes"
 
 const WebhookConfig = dynamic(() => import("./webhook-config").then(mod => ({ default: mod.WebhookConfig })), {
   loading: () => <div className="text-sm text-muted-foreground">加载中...</div>
@@ -51,9 +52,9 @@ export function ProfileCard({ user }: ProfileCardProps) {
   } as const
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6 animate-fade-in-up">
-      <div className="bg-background rounded-lg border-2 border-primary/20 p-6 hover:border-primary/30 transition-all duration-300 hover:shadow-lg">
-        <div className="flex items-center gap-6">
+    <div className="mx-auto max-w-2xl space-y-5 animate-fade-in-up pb-6">
+      <div className="profile-hero-surface surface-panel-strong rounded-[2rem] p-6 sm:p-7">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-6">
           <div className="relative group">
             {user.image && (
               <>
@@ -62,7 +63,7 @@ export function ProfileCard({ user }: ProfileCardProps) {
                   alt={user.name || ta("userAvatar")}
                   width={80}
                   height={80}
-                  className="rounded-full ring-2 ring-primary/20 group-hover:ring-primary/40 transition-all duration-300 group-hover:scale-105"
+                  className="rounded-full ring-2 ring-primary/25 shadow-[0_18px_36px_hsl(var(--primary)/0.16)] transition-all duration-300 group-hover:scale-105 group-hover:ring-primary/45"
                 />
                 <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-primary/0 via-transparent to-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </>
@@ -72,7 +73,7 @@ export function ProfileCard({ user }: ProfileCardProps) {
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-bold truncate">{user.name}</h2>
               {user.email && (
-                <div className="flex items-center gap-1 text-xs text-primary bg-primary/10 px-2 py-0.5 rounded-full flex-shrink-0">
+                <div className="profile-pill-surface flex flex-shrink-0 items-center gap-1 rounded-full border border-primary/18 px-2.5 py-1 text-xs text-primary backdrop-blur-xl">
                   <Github className="w-3 h-3" />
                   {t("githubLinked")}
                 </div>
@@ -82,14 +83,14 @@ export function ProfileCard({ user }: ProfileCardProps) {
               {user.email ? user.email : t("usernameLabel", { name: user.username ?? "" })}
             </p>
             {user.roles && (
-              <div className="flex gap-2 mt-2">
+              <div className="mt-3 flex flex-wrap gap-2">
                 {user.roles.map(({ name }) => {
                   const roleConfig = roleConfigs[name as keyof typeof roleConfigs]
                   const Icon = roleConfig.icon
                   return (
                     <div
                       key={name}
-                      className="flex items-center gap-1 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded"
+                      className="profile-pill-surface flex items-center gap-1 rounded-full border border-primary/15 px-3 py-1 text-xs text-primary backdrop-blur-xl"
                       title={roleConfig.name}
                     >
                       <Icon className="w-3 h-3" />
@@ -129,34 +130,33 @@ export function ProfileCard({ user }: ProfileCardProps) {
         </CollapsibleSection>
       )}
 
-      {(canManageCardKeys || canPromote) && (
-        <div className="flex flex-col sm:flex-row gap-4 px-1">
+      <div className="profile-action-surface surface-panel rounded-[1.75rem] p-1.5 sm:p-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <Button
-            onClick={() => router.push("/admin")}
-            className="gap-2 flex-1 rounded-full"
-            variant="outline"
+            onClick={() => router.push(MAILBOX_ROUTE)}
+            className="gap-2 flex-1 rounded-[1.15rem] shadow-[0_18px_40px_hsl(var(--primary)/0.22)]"
           >
-            <Shield className="w-4 h-4" />
-            {t("adminDashboard")}
+            <Mail className="w-4 h-4" />
+            {t("backToMailbox")}
+          </Button>
+          {(canManageCardKeys || canPromote) && (
+            <Button
+              onClick={() => router.push("/admin")}
+              variant="glass"
+              className="gap-2 flex-1 rounded-[1.15rem]"
+            >
+              <Shield className="w-4 h-4" />
+              {t("adminDashboard")}
+            </Button>
+          )}
+          <Button
+            variant="glass"
+            onClick={() => signOut({ callbackUrl: "/" })}
+            className="flex-1 rounded-[1.15rem] border-primary/18 text-muted-foreground shadow-none hover:border-primary/28 hover:text-foreground"
+          >
+            {ta("logout")}
           </Button>
         </div>
-      )}
-
-      <div className="flex flex-col sm:flex-row gap-4 px-1">
-        <Button
-          onClick={() => router.push("/moe")}
-          className="gap-2 flex-1 rounded-full"
-        >
-          <Mail className="w-4 h-4" />
-          {t("backToMailbox")}
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => signOut({ callbackUrl: "/" })}
-          className="flex-1 rounded-full"
-        >
-          {ta("logout")}
-        </Button>
       </div>
     </div>
   )

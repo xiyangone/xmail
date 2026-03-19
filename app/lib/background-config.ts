@@ -45,3 +45,17 @@ export const backgroundThemeKeys: Record<
 export function resolveAppTheme(theme?: string): AppTheme {
   return APP_THEMES.includes(theme as AppTheme) ? (theme as AppTheme) : "light";
 }
+
+export interface ThemeIframeColors {
+  text: string;
+  bg: string;
+  link: string;
+  scrollbar: string;
+}
+
+export const THEME_IFRAME_COLORS: Record<AppTheme, ThemeIframeColors> = {
+  light: { text: "#111827", bg: "#ffffff", link: "#2563eb", scrollbar: "37, 99, 235" },
+  dark: { text: "#f5f3ff", bg: "#1a1a1a", link: "#a78bfa", scrollbar: "130, 109, 217" },
+  sakura: { text: "#4a1942", bg: "#fff5f7", link: "#db2777", scrollbar: "219, 39, 119" },
+  amber: { text: "#4a2c15", bg: "#fff7ed", link: "#c2410c", scrollbar: "234, 88, 12" },
+};

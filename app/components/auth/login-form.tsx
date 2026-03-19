@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, type FormEvent } from "react";
 import { signIn } from "next-auth/react";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,8 @@ export function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [activeTab, setActiveTab] = useState("login");
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [, setTurnstileToken] = useState<string | null>(null);
+  const [hasRenderedTurnstile, setHasRenderedTurnstile] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -45,15 +46,41 @@ export function LoginForm() {
   const turnstileRef = useRef<HTMLDivElement>(null);
   const turnstileWidgetId = useRef<string | null>(null);
   const turnstileTokenRef = useRef<string | null>(null);
+  const turnstilePendingResolveRef = useRef<((token: string | null) => void) | null>(null);
 
   // 加载 Turnstile 脚本
+  const resolveTurnstileRequest = useCallback((token: string | null) => {
+    turnstilePendingResolveRef.current?.(token);
+    turnstilePendingResolveRef.current = null;
+  }, []);
+
+  const waitForTurnstileApi = useCallback(async (timeoutMs = 5000) => {
+    if (!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) {
+      return null;
+    }
+
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      if (typeof window !== "undefined" && (window as any).turnstile) {
+        return (window as any).turnstile;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+
+    return null;
+  }, []);
+
   useEffect(() => {
+    if (!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) {
+      return;
+    }
     if (document.querySelector('script[src*="challenges.cloudflare.com/turnstile"]')) {
       return;
     }
     const script = document.createElement("script");
     script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
     script.async = true;
+    script.defer = true;
     document.head.appendChild(script);
   }, []);
 
@@ -83,24 +110,29 @@ export function LoginForm() {
         callback: (token: string) => {
           setTurnstileToken(token);
           turnstileTokenRef.current = token;
+          resolveTurnstileRequest(token);
         },
         "expired-callback": () => {
           setTurnstileToken(null);
           turnstileTokenRef.current = null;
+          resolveTurnstileRequest(null);
         },
         "error-callback": () => {
           setTurnstileToken(null);
           turnstileTokenRef.current = null;
+          resolveTurnstileRequest(null);
         },
         theme: "auto",
         size: "flexible",
+        appearance: "always",
       }
     );
-  }, []);
+    setHasRenderedTurnstile(true);
+  }, [resolveTurnstileRequest]);
 
   // 切换 tab 或脚本加载完成时渲染 widget
   useEffect(() => {
-    // 等待脚本加载
+    // 等待脚本加载后立即渲染
     const timer = setInterval(() => {
       if ((window as any).turnstile) {
         clearInterval(timer);
@@ -113,6 +145,7 @@ export function LoginForm() {
 
   // 重置 Turnstile（提交失败后刷新）
   const resetTurnstile = useCallback(() => {
+    turnstilePendingResolveRef.current = null;
     if (turnstileWidgetId.current && (window as any).turnstile) {
       (window as any).turnstile.reset(turnstileWidgetId.current);
     }
@@ -121,18 +154,53 @@ export function LoginForm() {
   }, []);
 
   // 等待 Turnstile 产生新 token（注册后自动登录用）
-  const waitForNewTurnstileToken = useCallback(async (timeoutMs = 5000): Promise<string | null> => {
-    turnstileTokenRef.current = null;
-    resetTurnstile();
-    const start = Date.now();
-    while (Date.now() - start < timeoutMs) {
-      if (turnstileTokenRef.current) {
+  const ensureTurnstileToken = useCallback(
+    async (forceRefresh = false, timeoutMs = 30000): Promise<string | null> => {
+      if (!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) {
+        return "";
+      }
+
+      if (turnstileTokenRef.current && !forceRefresh) {
         return turnstileTokenRef.current;
       }
-      await new Promise(r => setTimeout(r, 200));
-    }
-    return null;
-  }, [resetTurnstile]);
+
+      const turnstile = await waitForTurnstileApi();
+      if (!turnstile) {
+        return null;
+      }
+
+      // widget 已由 useEffect 预渲染，等待它就绪
+      if (!turnstileWidgetId.current) {
+        return null;
+      }
+
+      setTurnstileToken(null);
+      turnstileTokenRef.current = null;
+
+      const tokenPromise = new Promise<string | null>((resolve) => {
+        turnstilePendingResolveRef.current = resolve;
+      });
+
+      try {
+        turnstile.reset(turnstileWidgetId.current);
+      } catch {
+        resolveTurnstileRequest(null);
+        return null;
+      }
+
+      const timeoutPromise = new Promise<string | null>((resolve) => {
+        setTimeout(() => {
+          if (turnstilePendingResolveRef.current) {
+            resolveTurnstileRequest(null);
+            resolve(null);
+          }
+        }, timeoutMs);
+      });
+
+      return Promise.race([tokenPromise, timeoutPromise]);
+    },
+    [resolveTurnstileRequest, waitForTurnstileApi]
+  );
 
   // 根据当前标签页自动聚焦到对应的输入框
   useEffect(() => {
@@ -178,10 +246,21 @@ export function LoginForm() {
 
     setLoading(true);
     try {
+      const token = await ensureTurnstileToken();
+      if (token === null) {
+        toast({
+          title: t("errors.loginFailed"),
+          description: "人机验证未完成，请重试",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
       const result = await signIn("credentials", {
         username,
         password,
-        turnstileToken: turnstileToken || "",
+        turnstileToken: token,
         redirect: false,
       });
 
@@ -213,10 +292,21 @@ export function LoginForm() {
 
     setLoading(true);
     try {
+      const token = await ensureTurnstileToken();
+      if (token === null) {
+        toast({
+          title: t("errors.registerFailed"),
+          description: "人机验证未完成，请重试",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password, turnstileToken: turnstileToken || "" }),
+        body: JSON.stringify({ username, password, turnstileToken: token }),
       });
 
       const data = (await response.json()) as { error?: string };
@@ -233,7 +323,7 @@ export function LoginForm() {
       }
 
       // 注册成功后获取新 Turnstile token 再自动登录
-      const freshToken = await waitForNewTurnstileToken(5000);
+      const freshToken = await ensureTurnstileToken(true, 30000);
       if (freshToken) {
         const result = await signIn("credentials", {
           username,
@@ -285,9 +375,20 @@ export function LoginForm() {
 
     setLoading(true);
     try {
+      const token = await ensureTurnstileToken();
+      if (token === null) {
+        toast({
+          title: t("errors.cardKeyLoginFailed"),
+          description: "人机验证未完成，请重试",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
       const result = await signIn("card-key", {
         cardKey,
-        turnstileToken: turnstileToken || "",
+        turnstileToken: token,
         redirect: false,
       });
 
@@ -332,6 +433,22 @@ export function LoginForm() {
     setShowLoginPassword(false);
     setShowRegisterPassword(false);
     setShowConfirmPassword(false);
+    resetTurnstile();
+  };
+
+  const handleLoginSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    void handleLogin();
+  };
+
+  const handleRegisterSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    void handleRegister();
+  };
+
+  const handleCardKeySubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    void handleCardKeyLogin();
   };
 
   return (
@@ -352,7 +469,8 @@ export function LoginForm() {
             <TabsTrigger value="cardkey">{t("cardKeyTab")}</TabsTrigger>
           </TabsList>
           <div className="min-h-[220px]">
-            <TabsContent value="login" className="space-y-4 mt-0">
+            <TabsContent value="login" className="mt-0">
+              <form className="space-y-4" onSubmit={handleLoginSubmit}>
               <div className="space-y-3">
                 <div className="space-y-1.5">
                   <div className="relative">
@@ -366,6 +484,9 @@ export function LoginForm() {
                         errors.username &&
                           "border-destructive focus-visible:ring-destructive"
                       )}
+                      autoComplete="username"
+                      autoCapitalize="none"
+                      spellCheck={false}
                       placeholder={t("usernamePlaceholder")}
                       value={username}
                       onChange={(e) => {
@@ -392,6 +513,7 @@ export function LoginForm() {
                         errors.password &&
                           "border-destructive focus-visible:ring-destructive"
                       )}
+                      autoComplete="current-password"
                       type={showLoginPassword ? "text" : "password"}
                       placeholder={t("passwordPlaceholder")}
                       value={password}
@@ -422,8 +544,8 @@ export function LoginForm() {
 
               <div className="space-y-3 pt-1">
                 <Button
+                  type="submit"
                   className="w-full"
-                  onClick={handleLogin}
                   disabled={loading}
                 >
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -435,13 +557,14 @@ export function LoginForm() {
                     <span className="w-full border-t" />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">
+                    <span className="bg-card px-2 text-muted-foreground">
                       {tc("or")}
                     </span>
                   </div>
                 </div>
 
                 <Button
+                  type="button"
                   variant="outline"
                   className="w-full"
                   onClick={handleGithubLogin}
@@ -450,8 +573,10 @@ export function LoginForm() {
                   {t("loginWithGithub")}
                 </Button>
               </div>
+              </form>
             </TabsContent>
-            <TabsContent value="register" className="space-y-4 mt-0">
+            <TabsContent value="register" className="mt-0">
+              <form className="space-y-4" onSubmit={handleRegisterSubmit}>
               <div className="space-y-3">
                 <div className="space-y-1.5">
                   <div className="relative">
@@ -465,6 +590,9 @@ export function LoginForm() {
                         errors.username &&
                           "border-destructive focus-visible:ring-destructive"
                       )}
+                      autoComplete="username"
+                      autoCapitalize="none"
+                      spellCheck={false}
                       placeholder={t("usernamePlaceholder")}
                       value={username}
                       onChange={(e) => {
@@ -491,6 +619,7 @@ export function LoginForm() {
                         errors.password &&
                           "border-destructive focus-visible:ring-destructive"
                       )}
+                      autoComplete="new-password"
                       type={showRegisterPassword ? "text" : "password"}
                       placeholder={t("passwordPlaceholder")}
                       value={password}
@@ -528,6 +657,7 @@ export function LoginForm() {
                         errors.confirmPassword &&
                           "border-destructive focus-visible:ring-destructive"
                       )}
+                      autoComplete="new-password"
                       type={showConfirmPassword ? "text" : "password"}
                       placeholder={t("confirmPasswordPlaceholder")}
                       value={confirmPassword}
@@ -558,16 +688,18 @@ export function LoginForm() {
 
               <div className="space-y-3 pt-1">
                 <Button
+                  type="submit"
                   className="w-full"
-                  onClick={handleRegister}
                   disabled={loading}
                 >
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {t("register")}
                 </Button>
               </div>
+              </form>
             </TabsContent>
-            <TabsContent value="cardkey" className="space-y-4 mt-0">
+            <TabsContent value="cardkey" className="mt-0">
+              <form className="space-y-4" onSubmit={handleCardKeySubmit}>
               <div className="space-y-3">
                 <div className="space-y-1.5">
                   <div className="relative">
@@ -577,6 +709,7 @@ export function LoginForm() {
                     <Input
                       ref={cardKeyRef}
                       className="h-9 pl-9 pr-3"
+                      autoComplete="off"
                       placeholder={t("cardKeyPlaceholder")}
                       value={cardKey}
                       onChange={(e) => {
@@ -591,17 +724,24 @@ export function LoginForm() {
 
               <div className="space-y-3 pt-1">
                 <Button
+                  type="submit"
                   className="w-full"
-                  onClick={handleCardKeyLogin}
                   disabled={loading}
                 >
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {t("cardKeyLogin")}
                 </Button>
               </div>
+              </form>
             </TabsContent>
           </div>
-          <div ref={turnstileRef} className="flex justify-center my-3" />
+          <div
+            ref={turnstileRef}
+            className={cn(
+              "flex justify-center overflow-hidden transition-all duration-200",
+              hasRenderedTurnstile ? "my-3 min-h-[65px]" : "my-0 min-h-0"
+            )}
+          />
         </Tabs>
       </CardContent>
     </Card>

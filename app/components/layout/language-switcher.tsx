@@ -30,10 +30,10 @@ export function LanguageSwitcher() {
   return (
     <Button
       type="button"
-      variant="ghost"
+      variant="plain"
       size="sm"
       onClick={toggleLocale}
-      className="gap-2 rounded-full px-3"
+      className="surface-header-action gap-2 rounded-full px-3.5"
       title={`${t("switchLanguage")}: ${localeLabels[nextLocale]}`}
     >
       <Globe className="h-4 w-4" />

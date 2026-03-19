@@ -92,6 +92,10 @@
       "autoExpiry": {
         "title": "自动过期",
         "description": "到期自动失效"
+      },
+      "share": {
+        "title": "分享邮箱",
+        "description": "生成分享链接，一起查看邮件和验证码"
       }
     }
   },

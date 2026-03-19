@@ -210,15 +210,15 @@ export function AdminDashboard() {
     <div className="mx-auto grid max-w-7xl gap-6 animate-fade-in-up xl:grid-cols-[280px_minmax(0,1fr)]">
       <aside className="space-y-4 xl:sticky xl:top-20 xl:self-start">
         <Button
-          variant="outline"
+          variant="glass"
           onClick={() => router.push("/profile")}
-          className="rounded-full border-primary/15 bg-background/60 px-4 backdrop-blur"
+          className="rounded-full border-primary/20 px-4 shadow-[0_16px_34px_hsl(var(--primary)/0.14)]"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           {t("backToProfile")}
         </Button>
 
-        <nav className="surface-panel overflow-hidden p-3">
+        <nav className="theme-surface-admin-sidebar surface-panel overflow-hidden p-3">
           <div className="flex flex-col gap-1">
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -230,10 +230,10 @@ export function AdminDashboard() {
                   type="button"
                   onClick={() => handleTabChange(tab.id)}
                   className={cn(
-                    "group relative flex w-full items-center gap-3 rounded-2xl px-4 py-3.5 text-left transition-all",
+                    "theme-surface-admin-nav-item group relative flex w-full items-center gap-3 rounded-2xl px-4 py-3.5 text-left transition-all",
                     isActive
-                      ? "bg-primary/12 text-foreground shadow-sm ring-1 ring-primary/15"
-                      : "text-muted-foreground hover:bg-background/75 hover:text-foreground"
+                      ? "theme-surface-admin-nav-item-active text-foreground shadow-sm ring-1 ring-primary/20"
+                      : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   <span

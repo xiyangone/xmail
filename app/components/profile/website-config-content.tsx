@@ -112,7 +112,7 @@ export function WebsiteConfigContent() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="theme-surface-inline-panel flex items-center justify-between rounded-2xl px-4 py-3.5">
         <div className="space-y-0.5">
           <Label htmlFor="allow-register" className="text-sm font-medium">
             {t("allowRegister")}
@@ -122,7 +122,7 @@ export function WebsiteConfigContent() {
         <Switch id="allow-register" checked={allowRegister} onCheckedChange={setAllowRegister} />
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="theme-surface-inline-panel flex items-center gap-4 rounded-2xl px-4 py-3.5">
         <span className="text-sm">{t("defaultRole")}</span>
         <Select value={defaultRole} onValueChange={setDefaultRole}>
           <SelectTrigger className="w-32">
@@ -136,7 +136,7 @@ export function WebsiteConfigContent() {
         </Select>
       </div>
 
-      <div className="space-y-2">
+      <div className="theme-surface-inline-panel space-y-2 rounded-2xl px-4 py-3.5">
         <span className="text-sm font-medium">{t("emailDomains")}</span>
         <DomainEditor
           value={emailDomains}
@@ -145,7 +145,7 @@ export function WebsiteConfigContent() {
         />
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="theme-surface-inline-panel flex items-center gap-4 rounded-2xl px-4 py-3.5">
         <span className="text-sm">{t("adminContact")}</span>
         <div className="flex-1">
           <Input
@@ -156,7 +156,7 @@ export function WebsiteConfigContent() {
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="theme-surface-inline-panel flex items-center gap-4 rounded-2xl px-4 py-3.5">
         <span className="text-sm">{t("maxEmails")}</span>
         <div className="flex-1">
           <Input
@@ -170,7 +170,7 @@ export function WebsiteConfigContent() {
         </div>
       </div>
 
-      <div className="space-y-4 border-t pt-4">
+      <div className="theme-surface-inline-panel space-y-4 rounded-2xl px-4 py-4">
         <div className="space-y-2">
           <Label className="text-sm font-medium">{t("pollConfig")}</Label>
           <p className="text-xs text-muted-foreground">{t("pollConfigDesc")}</p>
@@ -195,7 +195,7 @@ export function WebsiteConfigContent() {
         </div>
       </div>
 
-      <div className="space-y-4 border-t pt-4">
+      <div className="theme-surface-inline-panel space-y-4 rounded-2xl px-4 py-4">
         <div className="space-y-2">
           <Label className="text-sm font-medium">{t("prefixConfig")}</Label>
           <p className="text-xs text-muted-foreground">{t("prefixConfigDesc")}</p>

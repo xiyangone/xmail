@@ -48,9 +48,6 @@ wrangler.toml
 wrangler.email.toml
 wrangler.cleanup.toml
 
-public/workbox-*.js
-public/sw.js
-
 # local memory cache
 .cunzhi-memory/
 

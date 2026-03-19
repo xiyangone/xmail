@@ -53,8 +53,8 @@ export function MessageListContainer({
           onValueChange={handleTabChange}
           className="h-full flex flex-col"
         >
-          <div className="p-2 border-b border-primary/20">
-            <SlidingTabsList>
+          <div className="border-b border-primary/12 px-4 py-3">
+            <SlidingTabsList className="surface-tabs-rail">
               <SlidingTabsTrigger value="received">
                 <Inbox className="h-4 w-4" />
                 {t("inbox")}

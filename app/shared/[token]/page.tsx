@@ -1,6 +1,7 @@
 import { getSharedEmail, getSharedEmailMessages } from "@/lib/shared-data";
 import { SharedErrorPage } from "@/components/emails/shared-error-page";
 import { SharedEmailPageClient } from "./page-client";
+import { formatZhCnDateTime } from "@/lib/format-zh-cn-datetime";
 
 
 interface PageProps {
@@ -19,10 +20,14 @@ export default async function SharedEmailPage({ params }: PageProps) {
 
   // 获取初始消息列表
   const initialData = await getSharedEmailMessages(token, 20);
+  const expiresAtLabel = formatZhCnDateTime(email.expiresAt, {
+    includeSeconds: true,
+  });
 
   return (
     <SharedEmailPageClient
       email={email}
+      expiresAtLabel={expiresAtLabel}
       initialMessages={initialData.messages}
       initialNextCursor={initialData.nextCursor}
       initialTotal={initialData.total}
@@ -30,4 +35,3 @@ export default async function SharedEmailPage({ params }: PageProps) {
     />
   );
 }
-

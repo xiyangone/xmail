@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Mail } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
+import { MAILBOX_ROUTE } from "@/lib/routes"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,9 +32,10 @@ export function ActionButton({ isLoggedIn }: ActionButtonProps) {
   if (isLoggedIn) {
     return (
       <Button 
+        variant="plain"
         size="lg" 
-        onClick={() => router.push("/moe")}
-        className="gap-2 bg-primary hover:bg-primary/90 text-white px-8"
+        onClick={() => router.push(MAILBOX_ROUTE)}
+        className="gradient-primary gap-2 rounded-full border border-primary/20 px-8 text-primary-foreground shadow-[0_18px_40px_hsl(var(--primary)/0.26)] hover:opacity-95 hover:shadow-[0_22px_48px_hsl(var(--primary)/0.34)]"
       >
         <Mail className="w-5 h-5" />
         {t("enterMailbox")}
@@ -45,8 +47,9 @@ export function ActionButton({ isLoggedIn }: ActionButtonProps) {
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
         <Button
+          variant="plain"
           size="lg"
-          className="gap-2 bg-primary hover:bg-primary/90 text-white px-8"
+          className="gradient-primary gap-2 rounded-full border border-primary/20 px-8 text-primary-foreground shadow-[0_18px_40px_hsl(var(--primary)/0.26)] hover:opacity-95 hover:shadow-[0_22px_48px_hsl(var(--primary)/0.34)]"
         >
           <Mail className="w-5 h-5" />
           {t("enterMailbox")}

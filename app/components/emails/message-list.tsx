@@ -493,7 +493,7 @@ export function MessageList({
               </div>
             )}
           </div>
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-muted-foreground">
             {total > 0 ? t("messageCount", { count: total }) : t("noMessages")}
           </span>
         </div>
@@ -527,18 +527,18 @@ export function MessageList({
                         <div className="mt-1 flex items-center justify-between gap-2">
                           {verificationCode ? (
                             <div
-                              className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 hover:bg-orange-100 dark:hover:bg-orange-900/40 transition-colors cursor-pointer"
+                              className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-colors cursor-pointer"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleCopyCode(verificationCode, message.id);
                               }}
                               title={t("copyVerificationCode")}
                             >
-                              <span className="text-[10px] text-orange-600 dark:text-orange-400 font-medium">
+                              <span className="text-[10px] text-primary/80 font-medium">
                                 {t("verificationCode")}
                               </span>
                               <span
-                                className="text-sm font-bold text-orange-700 dark:text-orange-300 tracking-wider"
+                                className="text-sm font-bold text-primary tracking-wider"
                                 style={{
                                   fontFamily:
                                     '"JetBrains Mono Nerd Font", "Maple Mono", "JetBrains Mono", monospace',
@@ -549,11 +549,11 @@ export function MessageList({
                               {copiedCodeId === message.id ? (
                                 <Check className="w-3 h-3 text-green-600 dark:text-green-400" />
                               ) : (
-                                <Copy className="w-3 h-3 text-orange-500 dark:text-orange-400" />
+                                <Copy className="w-3 h-3 text-primary/60" />
                               )}
                             </div>
                           ) : (
-                            <span className="truncate text-xs text-gray-500">
+                            <span className="truncate text-xs text-muted-foreground">
                               {contactLabel || ""}
                             </span>
                           )}
@@ -581,7 +581,7 @@ export function MessageList({
                 );
               })}
               {loadingMore && (
-                <div className="text-center text-sm text-gray-500 py-2">
+                <div className="text-center text-sm text-muted-foreground py-2">
                   {tc("loadingMore")}
                 </div>
               )}

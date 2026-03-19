@@ -88,7 +88,7 @@ export function EmailServiceConfigContent() {
 
   return (
     <form className="space-y-4" onSubmit={handleSave}>
-      <div className="flex items-center justify-between">
+      <div className="theme-surface-inline-panel flex items-center justify-between rounded-2xl px-4 py-3.5">
         <div className="space-y-0.5">
           <Label htmlFor="enabled" className="text-sm font-medium">
             {t("enableResend")}
@@ -153,12 +153,12 @@ export function EmailServiceConfigContent() {
               {t("allowedRoles")}
             </Label>
             <div className="space-y-4">
-              <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg text-sm">
-                <p className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <div className="theme-surface-inline-panel rounded-2xl border p-4 text-sm">
+                <p className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-primary rounded-full"></div>
                   {t("fixedRules")}
                 </p>
-                <div className="space-y-2 text-blue-800">
+                <div className="space-y-2 text-foreground/80">
                   <div className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
                     <span><strong>{t("emperorRule")}</strong></span>
@@ -171,8 +171,8 @@ export function EmailServiceConfigContent() {
               </div>
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                  <p className="text-sm font-medium text-gray-900">{t("configurableRoles")}</p>
+                  <div className="w-2 h-2 bg-primary rounded-full"></div>
+                  <p className="text-sm font-medium text-foreground">{t("configurableRoles")}</p>
                 </div>
                 {[
                   { value: "duke", label: t("dukeLabel"), key: "duke" as const },
@@ -184,10 +184,10 @@ export function EmailServiceConfigContent() {
                   return (
                     <div
                       key={role.value}
-                      className={`group relative p-4 border-2 rounded-xl transition-all duration-200 ${
+                      className={`theme-surface-inline-panel group relative rounded-2xl border-2 p-4 transition-all duration-200 ${
                         isEnabled
                           ? 'border-primary/30 bg-primary/5 shadow-sm'
-                          : 'border-gray-200 hover:border-primary/20 hover:shadow-sm'
+                          : 'border-border hover:border-primary/20 hover:shadow-sm'
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -224,7 +224,7 @@ export function EmailServiceConfigContent() {
                         </div>
                         <div className="flex items-center space-x-3">
                           <div className="text-right">
-                            <Label className="text-xs font-medium text-gray-600 block mb-1">{t("dailyLimit")}</Label>
+                            <Label className="text-xs font-medium text-muted-foreground block mb-1">{t("dailyLimit")}</Label>
                             <div className="flex items-center space-x-2">
                               <Input
                                 type="number"

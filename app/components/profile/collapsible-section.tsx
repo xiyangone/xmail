@@ -21,14 +21,14 @@ export function CollapsibleSection({
   storageKey,
   action
 }: CollapsibleSectionProps) {
-  const [isOpen, setIsOpen] = useState(defaultOpen)
+  const [isOpen, setIsOpen] = useState(false)
+  const [isReady, setIsReady] = useState(false)
 
   useEffect(() => {
     const saved = localStorage.getItem(storageKey)
-    if (saved !== null) {
-      setIsOpen(saved === "true")
-    }
-  }, [storageKey])
+    setIsOpen(saved !== null ? saved === "true" : defaultOpen)
+    setIsReady(true)
+  }, [defaultOpen, storageKey])
 
   const toggleOpen = () => {
     const newState = !isOpen
@@ -37,31 +37,33 @@ export function CollapsibleSection({
   }
 
   return (
-    <div className="bg-background rounded-lg border-2 border-primary/20 overflow-hidden">
-      <div className="px-6 py-4 flex items-center gap-4 border-b border-transparent">
-        <button
-          type="button"
-          onClick={toggleOpen}
-          className="flex items-center gap-4 flex-1 min-w-0"
-        >
-          <Icon className="w-6 h-6 text-primary flex-shrink-0" />
-          <h2 className="text-lg font-semibold flex-1 text-left">{title}</h2>
-          <ChevronUp
-            className={cn(
-              "w-5 h-5 text-primary transition-transform flex-shrink-0",
-              !isOpen && "rotate-180"
-            )}
-          />
-        </button>
-        {action && (
-          <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-            {action}
-          </div>
-        )}
+    <div className="profile-section-surface surface-panel-strong overflow-hidden rounded-[1.75rem]">
+      <div className="profile-section-toolbar surface-toolbar-workspace px-5 py-4 sm:px-6">
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={toggleOpen}
+            className="group flex min-w-0 flex-1 items-center gap-4 text-left"
+          >
+            <Icon className="h-5 w-5 flex-shrink-0 text-primary transition-transform duration-300 group-hover:scale-105" />
+            <h2 className="flex-1 text-left text-lg font-semibold">{title}</h2>
+            <ChevronUp
+              className={cn(
+                "h-5 w-5 flex-shrink-0 text-primary transition-transform",
+                !isOpen && "rotate-180"
+              )}
+            />
+          </button>
+          {action && (
+            <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+              {action}
+            </div>
+          )}
+        </div>
       </div>
 
-      {isOpen && (
-        <div className="px-6 pb-5 pt-3">
+      {isReady && isOpen && (
+        <div className="profile-section-content px-5 pb-5 pt-4 sm:px-6 sm:pb-6">
           {children}
         </div>
       )}

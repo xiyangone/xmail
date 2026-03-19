@@ -110,7 +110,7 @@ export function WebhookConfig() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="theme-surface-inline-panel flex items-center justify-between rounded-2xl px-4 py-3.5">
         <div className="space-y-0.5">
           <Label>{t("enableWebhook")}</Label>
           <div className="text-sm text-muted-foreground">
@@ -181,15 +181,15 @@ export function WebhookConfig() {
             </button>
 
             {showDocs && (
-              <div className="rounded-md bg-muted p-4 text-sm space-y-3">
+              <div className="theme-surface-inline-panel rounded-2xl p-4 text-sm space-y-3">
                 <p>{t("docsHeader")}</p>
-                <pre className="bg-background p-2 rounded text-xs">
+                <pre className="theme-surface-code-block rounded-xl p-2 text-xs">
                   Content-Type: application/json{'\n'}
                   X-Webhook-Event: new_message
                 </pre>
 
                 <p>{t("docsBodyExample")}</p>
-                <pre className="bg-background p-2 rounded text-xs overflow-auto">
+                <pre className="theme-surface-code-block rounded-xl p-2 text-xs overflow-auto">
                   {`{
   "emailId": "email-uuid",
   "messageId": "message-uuid",
