@@ -33,10 +33,11 @@ export function LanguageSwitcher() {
       variant="plain"
       size="sm"
       onClick={toggleLocale}
-      className="surface-header-action gap-2 rounded-full px-3.5"
+      className="surface-header-action h-10 w-10 rounded-full px-0 sm:w-auto sm:gap-2 sm:px-3.5"
       title={`${t("switchLanguage")}: ${localeLabels[nextLocale]}`}
+      aria-label={`${t("switchLanguage")}: ${localeLabels[nextLocale]}`}
     >
-      <Globe className="h-4 w-4" />
+      <Globe className="h-5 w-5 sm:h-4 sm:w-4" />
       <span className="hidden sm:inline text-xs font-semibold tracking-wide">
         {localeLabels[current] ?? current}
       </span>

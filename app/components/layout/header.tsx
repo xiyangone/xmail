@@ -10,7 +10,7 @@ export function Header() {
         <div className="surface-header-shell px-4 sm:px-5 lg:px-6">
           <div className="relative flex h-14 items-center justify-between gap-4">
             <Logo />
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-1 sm:gap-2 md:gap-3">
               <LanguageSwitcher />
               <ThemeToggle />
               <SignButton />
