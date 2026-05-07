@@ -16,6 +16,13 @@ export const PERMISSIONS = {
   MANAGE_API_KEY: "manage_api_key",
   MANAGE_CARD_KEYS: "manage_card_keys", // 管理卡密权限
   VIEW_TEMP_EMAIL: "view_temp_email", // 查看临时邮箱权限
+  VIEW_PERMISSIONS: "view_permissions",
+  MANAGE_PERMISSIONS: "manage_permissions",
+  VIEW_OPERATIONS: "view_operations",
+  MANAGE_OPERATIONS: "manage_operations",
+  VIEW_AUDIT_LOGS: "view_audit_logs",
+  VIEW_WEBHOOK_LOGS: "view_webhook_logs",
+  VIEW_EMAIL_RECEIVER_LOGS: "view_email_receiver_logs",
 } as const;
 
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];

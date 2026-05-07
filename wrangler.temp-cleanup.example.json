@@ -9,7 +9,8 @@
     "crons": ["*/30 * * * *"]
   },
   "vars": {
-    "SITE_URL": "https://mail.xiyangone.cn"
+    "SITE_URL": "https://mail.xiyangone.cn",
+    "INTERNAL_WORKER_SECRET": "${INTERNAL_WORKER_SECRET}"
   },
   "kv_namespaces": [
     {

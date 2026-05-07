@@ -2,6 +2,8 @@ import { PERMISSIONS, Role, ROLES } from "@/lib/permissions";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { EMAIL_CONFIG } from "@/config";
 import { checkPermission } from "@/lib/auth";
+import { recordAdminMutationAudit } from "@/lib/admin-audit";
+import { getUserId } from "@/lib/apiKey";
 
 
 export async function GET() {
@@ -90,6 +92,28 @@ export async function POST(request: Request) {
   }
 
   await Promise.all(promises);
+
+  const actorUserId = await getUserId();
+  if (actorUserId) {
+    await recordAdminMutationAudit({
+      request,
+      actorUserId,
+      action: "config.update",
+      targetType: "site_config",
+      targetId: "global",
+      summary: "更新站点基础配置",
+      metadata: {
+        defaultRole,
+        emailDomains,
+        adminContact,
+        maxEmails,
+        allowRegister,
+        emailPrefixLength,
+        emailPrefixFormat,
+        messagePollInterval,
+      },
+    });
+  }
 
   return Response.json({ success: true });
 }

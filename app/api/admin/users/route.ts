@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { SQL } from "drizzle-orm";
 import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { auth, checkPermission, getUserRole } from "@/lib/auth";
+import { recordAdminMutationAudit } from "@/lib/admin-audit";
 import { createDb } from "@/lib/db";
 import { roles, tempAccounts, userRoles, users } from "@/lib/schema";
 import { PERMISSIONS, ROLES } from "@/lib/permissions";
@@ -189,6 +190,20 @@ export async function DELETE(request: NextRequest) {
     }
 
     await db.delete(users).where(eq(users.id, userId));
+    await recordAdminMutationAudit({
+      request,
+      actorUserId: session.user.id,
+      action: "user.delete",
+      targetType: "user",
+      targetId: userId,
+      summary: `删除用户 ${user.username ?? user.email ?? user.name ?? userId}`,
+      metadata: {
+        targetUserRole,
+        username: user.username,
+        email: user.email,
+      },
+      db,
+    });
 
     return NextResponse.json({
       success: true,

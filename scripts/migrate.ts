@@ -1,7 +1,9 @@
-import { readFileSync } from 'fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs'
 import { exec } from 'child_process'
 import { promisify } from 'util'
 import { join } from 'path'
+import { tmpdir } from 'os'
+import { buildPermissionSeedSql } from './lib/permission-seed-sql'
 
 const execAsync = promisify(exec)
 
@@ -55,6 +57,17 @@ async function migrate() {
     // Applying migrations
     console.log(`Applying migrations to ${mode} database: ${dbName}`)
     await execAsync(`wrangler d1 migrations apply ${dbName} --${mode}`)
+
+    const seedDir = mkdtempSync(join(tmpdir(), 'xmail-permission-seed-'))
+    const seedPath = join(seedDir, 'permission-seed.sql')
+
+    try {
+      writeFileSync(seedPath, buildPermissionSeedSql(), 'utf-8')
+      console.log('Seeding default permissions and route policies...')
+      await execAsync(`wrangler d1 execute ${dbName} --${mode} --file "${seedPath}"`)
+    } finally {
+      rmSync(seedDir, { recursive: true, force: true })
+    }
 
     console.log('Migration completed successfully!')
   } catch (error) {

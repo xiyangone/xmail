@@ -1,0 +1,384 @@
+import { PERMISSIONS, ROLE_PERMISSIONS, ROLES, type Permission, type Role } from "./permissions";
+
+export const POLICY_ACCESS = {
+  PUBLIC: "public",
+  AUTHENTICATED: "authenticated",
+  PERMISSION: "permission",
+  INTERNAL: "internal",
+} as const;
+
+export type PolicyAccess = (typeof POLICY_ACCESS)[keyof typeof POLICY_ACCESS];
+
+export interface PermissionDefinition {
+  key: Permission;
+  name: string;
+  description: string;
+}
+
+export interface RoutePolicyDefinition {
+  pathPattern: string;
+  methods: string;
+  access: PolicyAccess;
+  requiredPermissions: Permission[];
+  allowApiKey: boolean;
+  allowInternal: boolean;
+  priority: number;
+  enabled: boolean;
+  description: string;
+}
+
+export const DEFAULT_PERMISSION_DEFINITIONS: PermissionDefinition[] = [
+  { key: PERMISSIONS.MANAGE_EMAIL, name: "Manage email", description: "Create and manage temporary mailboxes and messages." },
+  { key: PERMISSIONS.MANAGE_WEBHOOK, name: "Manage webhook", description: "Configure webhook notifications." },
+  { key: PERMISSIONS.PROMOTE_USER, name: "Manage users", description: "View users and change user roles." },
+  { key: PERMISSIONS.MANAGE_CONFIG, name: "Manage config", description: "Manage global site, background, cleanup and email service configuration." },
+  { key: PERMISSIONS.MANAGE_API_KEY, name: "Manage API keys", description: "Create, disable and delete API keys." },
+  { key: PERMISSIONS.MANAGE_CARD_KEYS, name: "Manage card keys", description: "Generate, reset and delete card keys." },
+  { key: PERMISSIONS.VIEW_TEMP_EMAIL, name: "View temp email", description: "Read card-key bound temporary mailboxes." },
+  { key: PERMISSIONS.VIEW_PERMISSIONS, name: "View permissions", description: "View role permissions, route policies and API key scopes." },
+  { key: PERMISSIONS.MANAGE_PERMISSIONS, name: "Manage permissions", description: "Edit dynamic role permissions, route policies and API key scopes." },
+  { key: PERMISSIONS.VIEW_OPERATIONS, name: "View operations", description: "View operations center health summaries and worker status." },
+  { key: PERMISSIONS.MANAGE_OPERATIONS, name: "Manage operations", description: "Run operational tasks and diagnostics." },
+  { key: PERMISSIONS.VIEW_AUDIT_LOGS, name: "View audit logs", description: "View admin audit logs." },
+  { key: PERMISSIONS.VIEW_WEBHOOK_LOGS, name: "View webhook logs", description: "View webhook delivery logs." },
+  { key: PERMISSIONS.VIEW_EMAIL_RECEIVER_LOGS, name: "View email receiver logs", description: "View inbound email receiver logs." },
+];
+
+export const DEFAULT_ROLE_PERMISSION_KEYS: Record<Role, Permission[]> = ROLE_PERMISSIONS;
+
+const ADMIN_READ_PERMISSIONS = [PERMISSIONS.VIEW_PERMISSIONS, PERMISSIONS.MANAGE_PERMISSIONS];
+const OPS_READ_PERMISSIONS = [PERMISSIONS.VIEW_OPERATIONS, PERMISSIONS.MANAGE_OPERATIONS];
+
+export const DEFAULT_ROUTE_POLICIES: RoutePolicyDefinition[] = [
+  {
+    pathPattern: "/api/config/background",
+    methods: "GET",
+    access: POLICY_ACCESS.PUBLIC,
+    requiredPermissions: [],
+    allowApiKey: true,
+    allowInternal: false,
+    priority: 300,
+    enabled: true,
+    description: "Public background config read.",
+  },
+  {
+    pathPattern: "/api/config",
+    methods: "GET",
+    access: POLICY_ACCESS.PUBLIC,
+    requiredPermissions: [],
+    allowApiKey: true,
+    allowInternal: false,
+    priority: 300,
+    enabled: true,
+    description: "Public site config read.",
+  },
+  {
+    pathPattern: "/api/config/:path*",
+    methods: "*",
+    access: POLICY_ACCESS.PERMISSION,
+    requiredPermissions: [PERMISSIONS.MANAGE_CONFIG],
+    allowApiKey: true,
+    allowInternal: false,
+    priority: 220,
+    enabled: true,
+    description: "Protected config sub-routes.",
+  },
+  {
+    pathPattern: "/api/config",
+    methods: "*",
+    access: POLICY_ACCESS.PERMISSION,
+    requiredPermissions: [PERMISSIONS.MANAGE_CONFIG],
+    allowApiKey: true,
+    allowInternal: false,
+    priority: 210,
+    enabled: true,
+    description: "Protected site config writes.",
+  },
+  {
+    pathPattern: "/api/emails",
+    methods: "GET",
+    access: POLICY_ACCESS.PERMISSION,
+    requiredPermissions: [PERMISSIONS.MANAGE_EMAIL, PERMISSIONS.VIEW_TEMP_EMAIL],
+    allowApiKey: true,
+    allowInternal: false,
+    priority: 250,
+    enabled: true,
+    description: "Mailbox list read.",
+  },
+  {
+    pathPattern: "/api/emails/:path*",
+    methods: "GET",
+    access: POLICY_ACCESS.PERMISSION,
+    requiredPermissions: [PERMISSIONS.MANAGE_EMAIL, PERMISSIONS.VIEW_TEMP_EMAIL],
+    allowApiKey: true,
+    allowInternal: false,
+    priority: 240,
+    enabled: true,
+    description: "Mailbox and message reads.",
+  },
+  {
+    pathPattern: "/api/emails/:path*",
+    methods: "*",
+    access: POLICY_ACCESS.PERMISSION,
+    requiredPermissions: [PERMISSIONS.MANAGE_EMAIL],
+    allowApiKey: true,
+    allowInternal: false,
+    priority: 230,
+    enabled: true,
+    description: "Mailbox mutation routes.",
+  },
+  {
+    pathPattern: "/api/emails",
+    methods: "*",
+    access: POLICY_ACCESS.PERMISSION,
+    requiredPermissions: [PERMISSIONS.MANAGE_EMAIL],
+    allowApiKey: true,
+    allowInternal: false,
+    priority: 220,
+    enabled: true,
+    description: "Mailbox collection mutations.",
+  },
+  {
+    pathPattern: "/api/webhook/:path*",
+    methods: "*",
+    access: POLICY_ACCESS.PERMISSION,
+    requiredPermissions: [PERMISSIONS.MANAGE_WEBHOOK],
+    allowApiKey: false,
+    allowInternal: false,
+    priority: 220,
+    enabled: true,
+    description: "Webhook management and test routes.",
+  },
+  {
+    pathPattern: "/api/webhook",
+    methods: "*",
+    access: POLICY_ACCESS.PERMISSION,
+    requiredPermissions: [PERMISSIONS.MANAGE_WEBHOOK],
+    allowApiKey: false,
+    allowInternal: false,
+    priority: 210,
+    enabled: true,
+    description: "Webhook management route.",
+  },
+  {
+    pathPattern: "/api/roles/init-emperor",
+    methods: "GET",
+    access: POLICY_ACCESS.AUTHENTICATED,
+    requiredPermissions: [],
+    allowApiKey: false,
+    allowInternal: false,
+    priority: 260,
+    enabled: true,
+    description: "Initial emperor bootstrap remains authenticated but self-guarded by the route.",
+  },
+  {
+    pathPattern: "/api/roles/:path*",
+    methods: "*",
+    access: POLICY_ACCESS.PERMISSION,
+    requiredPermissions: [PERMISSIONS.PROMOTE_USER],
+    allowApiKey: false,
+    allowInternal: false,
+    priority: 210,
+    enabled: true,
+    description: "Role and user promotion routes.",
+  },
+  {
+    pathPattern: "/api/api-keys/:path*",
+    methods: "*",
+    access: POLICY_ACCESS.PERMISSION,
+    requiredPermissions: [PERMISSIONS.MANAGE_API_KEY],
+    allowApiKey: false,
+    allowInternal: false,
+    priority: 220,
+    enabled: true,
+    description: "API key item routes.",
+  },
+  {
+    pathPattern: "/api/api-keys",
+    methods: "*",
+    access: POLICY_ACCESS.PERMISSION,
+    requiredPermissions: [PERMISSIONS.MANAGE_API_KEY],
+    allowApiKey: false,
+    allowInternal: false,
+    priority: 210,
+    enabled: true,
+    description: "API key collection routes.",
+  },
+  {
+    pathPattern: "/api/cleanup/temp-accounts",
+    methods: "*",
+    access: POLICY_ACCESS.PERMISSION,
+    requiredPermissions: [PERMISSIONS.MANAGE_OPERATIONS, PERMISSIONS.MANAGE_CONFIG],
+    allowApiKey: false,
+    allowInternal: true,
+    priority: 260,
+    enabled: true,
+    description: "Temporary account cleanup, callable by admins or internal cleanup worker.",
+  },
+  {
+    pathPattern: "/api/cleanup/:path*",
+    methods: "*",
+    access: POLICY_ACCESS.PERMISSION,
+    requiredPermissions: [PERMISSIONS.MANAGE_CONFIG],
+    allowApiKey: false,
+    allowInternal: false,
+    priority: 210,
+    enabled: true,
+    description: "Cleanup configuration routes.",
+  },
+  {
+    pathPattern: "/api/admin/permissions/:path*",
+    methods: "GET",
+    access: POLICY_ACCESS.PERMISSION,
+    requiredPermissions: ADMIN_READ_PERMISSIONS,
+    allowApiKey: false,
+    allowInternal: false,
+    priority: 280,
+    enabled: true,
+    description: "Read permission administration data.",
+  },
+  {
+    pathPattern: "/api/admin/permissions/:path*",
+    methods: "*",
+    access: POLICY_ACCESS.PERMISSION,
+    requiredPermissions: [PERMISSIONS.MANAGE_PERMISSIONS],
+    allowApiKey: false,
+    allowInternal: false,
+    priority: 270,
+    enabled: true,
+    description: "Mutate permission administration data.",
+  },
+  {
+    pathPattern: "/api/admin/permissions",
+    methods: "GET",
+    access: POLICY_ACCESS.PERMISSION,
+    requiredPermissions: ADMIN_READ_PERMISSIONS,
+    allowApiKey: false,
+    allowInternal: false,
+    priority: 260,
+    enabled: true,
+    description: "Read permission administration overview.",
+  },
+  {
+    pathPattern: "/api/admin/permissions",
+    methods: "*",
+    access: POLICY_ACCESS.PERMISSION,
+    requiredPermissions: [PERMISSIONS.MANAGE_PERMISSIONS],
+    allowApiKey: false,
+    allowInternal: false,
+    priority: 250,
+    enabled: true,
+    description: "Mutate permission administration overview.",
+  },
+  {
+    pathPattern: "/api/admin/operations/webhook-logs",
+    methods: "GET",
+    access: POLICY_ACCESS.PERMISSION,
+    requiredPermissions: [PERMISSIONS.VIEW_WEBHOOK_LOGS, PERMISSIONS.VIEW_OPERATIONS, PERMISSIONS.MANAGE_OPERATIONS],
+    allowApiKey: false,
+    allowInternal: false,
+    priority: 285,
+    enabled: true,
+    description: "Webhook log viewer.",
+  },
+  {
+    pathPattern: "/api/admin/operations/email-receiver-logs",
+    methods: "GET",
+    access: POLICY_ACCESS.PERMISSION,
+    requiredPermissions: [PERMISSIONS.VIEW_EMAIL_RECEIVER_LOGS, PERMISSIONS.VIEW_OPERATIONS, PERMISSIONS.MANAGE_OPERATIONS],
+    allowApiKey: false,
+    allowInternal: false,
+    priority: 285,
+    enabled: true,
+    description: "Inbound email log viewer.",
+  },
+  {
+    pathPattern: "/api/admin/operations/audit-logs",
+    methods: "GET",
+    access: POLICY_ACCESS.PERMISSION,
+    requiredPermissions: [PERMISSIONS.VIEW_AUDIT_LOGS, PERMISSIONS.MANAGE_OPERATIONS],
+    allowApiKey: false,
+    allowInternal: false,
+    priority: 285,
+    enabled: true,
+    description: "Admin audit log viewer.",
+  },
+  {
+    pathPattern: "/api/admin/operations/:path*",
+    methods: "GET",
+    access: POLICY_ACCESS.PERMISSION,
+    requiredPermissions: OPS_READ_PERMISSIONS,
+    allowApiKey: false,
+    allowInternal: false,
+    priority: 270,
+    enabled: true,
+    description: "Operations center read APIs.",
+  },
+  {
+    pathPattern: "/api/admin/operations/:path*",
+    methods: "*",
+    access: POLICY_ACCESS.PERMISSION,
+    requiredPermissions: [PERMISSIONS.MANAGE_OPERATIONS],
+    allowApiKey: false,
+    allowInternal: false,
+    priority: 260,
+    enabled: true,
+    description: "Operations center mutation APIs.",
+  },
+  {
+    pathPattern: "/api/admin/users",
+    methods: "*",
+    access: POLICY_ACCESS.PERMISSION,
+    requiredPermissions: [PERMISSIONS.PROMOTE_USER],
+    allowApiKey: false,
+    allowInternal: false,
+    priority: 250,
+    enabled: true,
+    description: "Admin user management.",
+  },
+  {
+    pathPattern: "/api/admin/card-keys/:path*",
+    methods: "*",
+    access: POLICY_ACCESS.PERMISSION,
+    requiredPermissions: [PERMISSIONS.MANAGE_CARD_KEYS],
+    allowApiKey: false,
+    allowInternal: false,
+    priority: 250,
+    enabled: true,
+    description: "Admin card key sub-routes.",
+  },
+  {
+    pathPattern: "/api/admin/card-keys",
+    methods: "*",
+    access: POLICY_ACCESS.PERMISSION,
+    requiredPermissions: [PERMISSIONS.MANAGE_CARD_KEYS],
+    allowApiKey: false,
+    allowInternal: false,
+    priority: 240,
+    enabled: true,
+    description: "Admin card key management.",
+  },
+  {
+    pathPattern: "/api/admin/:path*",
+    methods: "*",
+    access: POLICY_ACCESS.PERMISSION,
+    requiredPermissions: [PERMISSIONS.MANAGE_OPERATIONS],
+    allowApiKey: false,
+    allowInternal: false,
+    priority: 100,
+    enabled: true,
+    description: "Fallback for future admin APIs.",
+  },
+];
+
+export function getDefaultRolePermissions(role: Role): Permission[] {
+  return DEFAULT_ROLE_PERMISSION_KEYS[role] ?? [];
+}
+
+export function getAllPermissionKeys(): Permission[] {
+  return DEFAULT_PERMISSION_DEFINITIONS.map((permission) => permission.key);
+}
+
+export function isKnownRole(value: string): value is Role {
+  return Object.values(ROLES).includes(value as Role);
+}

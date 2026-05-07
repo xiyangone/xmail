@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth, checkPermission } from "@/lib/auth";
+import { recordAdminMutationAudit } from "@/lib/admin-audit";
 import { PERMISSIONS } from "@/lib/permissions";
 import { generateBatchCardKeys, generateMultiCardKey } from "@/lib/card-keys";
 import { EMAIL_CONFIG } from "@/config";
@@ -93,6 +94,20 @@ export async function POST(request: Request) {
         emailAddresses,
         expiryMinutes
       );
+      await recordAdminMutationAudit({
+        request,
+        actorUserId: session.user.id,
+        action: "card_key.generate",
+        targetType: "card_key",
+        targetId: null,
+        summary: `生成 ${cardKeys.length} 个单卡密`,
+        metadata: {
+          mode: "single",
+          count: cardKeys.length,
+          expiryMinutes,
+          emailAddresses,
+        },
+      });
 
       return NextResponse.json({
         success: true,
@@ -133,6 +148,21 @@ export async function POST(request: Request) {
 
       // 生成多卡密（一个卡密绑定多个邮箱地址）
       const cardKey = await generateMultiCardKey(emailAddresses, expiryMinutes);
+      await recordAdminMutationAudit({
+        request,
+        actorUserId: session.user.id,
+        action: "card_key.generate",
+        targetType: "card_key",
+        targetId: null,
+        summary: `生成1个多卡密（绑定${emailAddresses.length}个邮箱）`,
+        metadata: {
+          mode: "multi",
+          count: 1,
+          emailCount: emailAddresses.length,
+          expiryMinutes,
+          emailAddresses,
+        },
+      });
 
       return NextResponse.json({
         success: true,

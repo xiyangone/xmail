@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import { getCloudflareContext } from "@opennextjs/cloudflare"
 import { checkPermission } from "@/lib/auth"
+import { recordAdminMutationAudit } from "@/lib/admin-audit"
+import { getUserId } from "@/lib/apiKey"
 import { PERMISSIONS } from "@/lib/permissions"
 
 
@@ -57,6 +59,19 @@ export async function POST(request: Request) {
     env.SITE_CONFIG.put("CLEANUP_DELETE_EXPIRED_EMAILS", String(config.deleteExpiredEmails)),
     env.SITE_CONFIG.put("CLEANUP_CARD_KEY_DEFAULT_DAYS", String(config.cardKeyDefaultDays)),
   ])
+
+  const actorUserId = await getUserId()
+  if (actorUserId) {
+    await recordAdminMutationAudit({
+      request,
+      actorUserId,
+      action: "config.cleanup.update",
+      targetType: "site_config",
+      targetId: "cleanup",
+      summary: "更新清理任务配置",
+      metadata: config,
+    })
+  }
 
   return NextResponse.json({ success: true })
 }

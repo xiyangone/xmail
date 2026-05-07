@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import { getCloudflareContext } from "@opennextjs/cloudflare"
 import { checkPermission } from "@/lib/auth"
+import { recordAdminMutationAudit } from "@/lib/admin-audit"
+import { getUserId } from "@/lib/apiKey"
 import { PERMISSIONS } from "@/lib/permissions"
 import { EMAIL_CONFIG } from "@/config"
 
@@ -128,6 +130,23 @@ export async function POST(request: Request) {
       env.SITE_CONFIG.put("RESEND_API_KEY", config.apiKey.trim()),
       env.SITE_CONFIG.put("EMAIL_ROLE_LIMITS", JSON.stringify(customLimits))
     ])
+
+    const actorUserId = await getUserId()
+    if (actorUserId) {
+      await recordAdminMutationAudit({
+        request,
+        actorUserId,
+        action: "config.email_service.update",
+        targetType: "site_config",
+        targetId: "email_service",
+        summary: "更新 Resend 发件服务配置",
+        metadata: {
+          enabled: config.enabled,
+          apiKeyConfigured: Boolean(config.apiKey.trim()),
+          roleLimits: customLimits,
+        },
+      })
+    }
 
     return NextResponse.json({ success: true })
   } catch (error) {

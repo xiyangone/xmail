@@ -1,5 +1,7 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { checkPermission } from "@/lib/auth";
+import { recordAdminMutationAudit } from "@/lib/admin-audit";
+import { getUserId } from "@/lib/apiKey";
 import { defaultBackgroundSettings, type BackgroundSettingsConfig } from "@/lib/background-config";
 import { PERMISSIONS } from "@/lib/permissions";
 
@@ -87,6 +89,26 @@ export async function POST(request: Request) {
   }
 
   await Promise.all(promises);
+
+  const actorUserId = await getUserId();
+  if (actorUserId) {
+    await recordAdminMutationAudit({
+      request,
+      actorUserId,
+      action: "config.background.update",
+      targetType: "site_config",
+      targetId: "background",
+      summary: "更新全局背景配置",
+      metadata: {
+        updatedKeys: Object.keys(payload),
+        bgEnabled: payload.bgEnabled,
+        bgLightEnabled: payload.bgLightEnabled,
+        bgDarkEnabled: payload.bgDarkEnabled,
+        bgSakuraEnabled: payload.bgSakuraEnabled,
+        bgAmberEnabled: payload.bgAmberEnabled,
+      },
+    });
+  }
 
   return Response.json({ success: true });
 }

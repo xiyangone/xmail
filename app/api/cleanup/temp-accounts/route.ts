@@ -1,20 +1,31 @@
 import { NextResponse } from "next/server"
+import { headers } from "next/headers"
 import { getCloudflareContext } from "@opennextjs/cloudflare"
 import { createDb } from "@/lib/db"
 import { cardKeys, tempAccounts, users, emails } from "@/lib/schema"
 import { eq, and, lt, inArray } from "drizzle-orm"
 import { checkPermission } from "@/lib/auth"
 import { PERMISSIONS } from "@/lib/permissions"
+import { recordWorkerRun } from "@/lib/operations-log"
 
 
 export async function POST() {
-  const canAccess = await checkPermission(PERMISSIONS.MANAGE_CONFIG)
+  const headersList = await headers()
+  const isInternal = headersList.get("X-Auth-Source") === "internal"
+  const canAccess =
+    isInternal ||
+    (await checkPermission(PERMISSIONS.MANAGE_OPERATIONS)) ||
+    (await checkPermission(PERMISSIONS.MANAGE_CONFIG))
+
   if (!canAccess) {
     return NextResponse.json(
       { error: "权限不足" },
       { status: 403 }
     )
   }
+
+  const startedAt = new Date()
+  let runId: string | null = null
 
   try {
     const { env } = await getCloudflareContext()
@@ -112,19 +123,60 @@ export async function POST() {
       }
     }
 
+    const counts = {
+      cleanedUsedCardKeys,
+      cleanedUnusedCardKeys,
+      cleanedEmails,
+    }
+    const finishedAt = new Date()
+    const durationMs = Math.max(0, finishedAt.getTime() - startedAt.getTime())
+
+    try {
+      runId = await recordWorkerRun({
+        workerName: "temp-account-cleanup",
+        runType: "temp-account-cleanup",
+        trigger: isInternal ? "scheduled" : "manual",
+        status: "success",
+        startedAt,
+        finishedAt,
+        durationMs,
+        counts,
+      }, db)
+    } catch (logError) {
+      console.error("记录临时账号清理日志失败:", logError)
+    }
+
     return NextResponse.json({
       success: true,
       message: `清理完成：${cleanedUsedCardKeys} 个已用卡密及临时账号，${cleanedUnusedCardKeys} 个未用卡密，${cleanedEmails} 个过期邮箱`,
+      counts,
+      durationMs,
+      runId,
       cleanedUsedCardKeys,
       cleanedUnusedCardKeys,
       cleanedEmails,
     })
   } catch (error) {
     console.error("清理失败:", error)
+    try {
+      runId = await recordWorkerRun({
+        workerName: "temp-account-cleanup",
+        runType: "temp-account-cleanup",
+        trigger: isInternal ? "scheduled" : "manual",
+        status: "failed",
+        startedAt,
+        finishedAt: new Date(),
+        errorMessage: error instanceof Error ? error.message : "清理失败",
+      })
+    } catch (logError) {
+      console.error("记录临时账号清理失败日志失败:", logError)
+    }
+
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "清理失败"
+        error: error instanceof Error ? error.message : "清理失败",
+        runId,
       },
       { status: 500 }
     )

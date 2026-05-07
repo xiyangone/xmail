@@ -1,0 +1,11 @@
+packages:
+  - .
+
+allowBuilds:
+  '@parcel/watcher': true
+  '@swc/core': true
+  bun: true
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
+  workerd: true

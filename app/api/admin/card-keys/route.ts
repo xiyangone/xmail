@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { SQL } from "drizzle-orm";
 import { and, count, desc, eq, gt, lte, or, sql } from "drizzle-orm";
 import { auth, checkPermission } from "@/lib/auth";
+import { recordAdminMutationAudit } from "@/lib/admin-audit";
 import { createDb } from "@/lib/db";
 import { cardKeys, tempAccounts, users } from "@/lib/schema";
 import { PERMISSIONS } from "@/lib/permissions";
@@ -95,6 +96,20 @@ export async function PATCH(request: NextRequest) {
         usedAt: null,
       })
       .where(eq(cardKeys.id, cardKeyId));
+    await recordAdminMutationAudit({
+      request,
+      actorUserId: session.user.id,
+      action: "card_key.reset",
+      targetType: "card_key",
+      targetId: cardKeyId,
+      summary: `重置卡密 ${cardKey.emailAddress}`,
+      metadata: {
+        mode: cardKey.mode,
+        emailAddress: cardKey.emailAddress,
+        usedBy: cardKey.usedBy,
+      },
+      db,
+    });
 
     return NextResponse.json({
       success: true,
@@ -238,6 +253,21 @@ export async function DELETE(request: NextRequest) {
     }
 
     await db.delete(cardKeys).where(eq(cardKeys.id, cardKeyId));
+    await recordAdminMutationAudit({
+      request,
+      actorUserId: session.user.id,
+      action: "card_key.delete",
+      targetType: "card_key",
+      targetId: cardKeyId,
+      summary: tempAccount ? "删除卡密及关联临时用户" : "删除卡密",
+      metadata: {
+        mode: cardKey.mode,
+        emailAddress: cardKey.emailAddress,
+        hadTempAccount: Boolean(tempAccount),
+        tempUserId: tempAccount?.userId ?? null,
+      },
+      db,
+    });
 
     return NextResponse.json({
       success: true,

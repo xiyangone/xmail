@@ -1,7 +1,7 @@
 import localFont from "next/font/local";
 
 export const jetBrainsMono = localFont({
-  src: "../public/fonts/JetBrainsMonoNL-Regular.ttf",
+  src: "../public/fonts/MapleMono-NF-CN-Regular.ttf",
   variable: "--font-jetbrains-mono",
   display: "swap",
   preload: false,

@@ -5,6 +5,47 @@
 
 interface Env {
   SITE_URL: string;
+  INTERNAL_WORKER_SECRET?: string;
+}
+
+interface CleanupResult {
+  success: boolean;
+  counts?: {
+    cleanedUsedCardKeys?: number;
+    cleanedUnusedCardKeys?: number;
+    cleanedEmails?: number;
+  };
+  durationMs?: number;
+  runId?: string | null;
+  cleanedCount?: number;
+  error?: string;
+}
+
+function buildInternalHeaders(env: Env) {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (env.INTERNAL_WORKER_SECRET) {
+    headers["X-Internal-Worker-Secret"] = env.INTERNAL_WORKER_SECRET;
+  }
+
+  return headers;
+}
+
+async function runCleanup(env: Env): Promise<{ result: CleanupResult; status: number }> {
+  const response = await fetch(`${env.SITE_URL}/api/cleanup/temp-accounts`, {
+    method: "POST",
+    headers: buildInternalHeaders(env),
+  });
+
+  const result = (await response.json()) as CleanupResult;
+
+  if (!response.ok) {
+    throw new Error(result.error ?? `清理请求失败: ${response.status} ${response.statusText}`);
+  }
+
+  return { result, status: response.status };
 }
 
 const tempAccountCleanupWorker = {
@@ -18,36 +59,17 @@ const tempAccountCleanupWorker = {
     console.log("开始清理过期临时账号...");
 
     try {
-      const response = await fetch(
-        `${env.SITE_URL}/api/cleanup/temp-accounts`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(
-          `清理请求失败: ${response.status} ${response.statusText}`
-        );
-      }
-
-      const result = (await response.json()) as {
-        success: boolean;
-        cleanedCount?: number;
-        error?: string;
-      };
+      const { result } = await runCleanup(env);
       console.log("清理结果:", result);
 
       if (result.success) {
-        console.log(`成功清理了 ${result.cleanedCount} 个过期临时账号`);
+        console.log(`成功清理临时账号任务，runId=${result.runId ?? "none"}`);
       } else {
         console.error("清理失败:", result.error);
       }
     } catch (error) {
       console.error("清理过期临时账号时发生错误:", error);
+      throw error;
     }
   },
 
@@ -55,24 +77,10 @@ const tempAccountCleanupWorker = {
     // 支持手动触发清理
     if (request.method === "POST") {
       try {
-        const response = await fetch(
-          `${env.SITE_URL}/api/cleanup/temp-accounts`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        const result = (await response.json()) as {
-          success: boolean;
-          cleanedCount?: number;
-          error?: string;
-        };
+        const { result, status } = await runCleanup(env);
         return new Response(JSON.stringify(result), {
           headers: { "Content-Type": "application/json" },
-          status: response.status,
+          status,
         });
       } catch (error) {
         return new Response(

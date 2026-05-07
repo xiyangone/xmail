@@ -16,6 +16,7 @@
   <a href="#部署">部署</a> •
   <a href="#邮箱域名配置">邮箱域名配置</a> •
   <a href="#权限系统">权限系统</a> •
+  <a href="#运维中心">运维中心</a> •
   <a href="#卡密系统">卡密系统</a> •
   <a href="#系统设置">系统设置</a> •
   <a href="#发件功能">发件功能</a> •
@@ -64,7 +65,8 @@
 - 🎉 **可爱的 UI**：简洁可爱萌萌哒 UI 界面，集成 JetBrains Mono Nerd Font 字体
 - 📤 **发件功能**：支持使用临时邮箱发送邮件，基于 Resend 服务
 - 🔔 **Webhook 通知**：支持通过 webhook 接收新邮件通知
-- 🛡️ **权限系统**：支持基于角色的权限控制系统
+- 🛡️ **策略化权限系统**：支持基于角色、数据库权限表、路由策略和 API Key Scope 的细粒度访问控制
+- 🧭 **运维中心**：管理后台内置 Worker 运行、清理历史、Webhook 日志、邮件接收日志、审计日志和配置诊断
 - 🔑 **OpenAPI**：支持通过 API Key 访问 OpenAPI
 - 🎫 **卡密系统**：支持通过卡密快速创建临时账号，支持单邮箱和多邮箱模式，支持卡密重置和重复登录
 - 🏷️ **域名标签管理**：优化的域名配置界面，支持标签式显示和批量添加，智能分组排序（顶级域名优先，同级别按字母顺序，同组内按长度排序）
@@ -149,7 +151,7 @@ cp wrangler.cleanup.example.json wrangler.cleanup.json
 cp .env.example .env.local
 ```
 
-设置 AUTH_GITHUB_ID, AUTH_GITHUB_SECRET, AUTH_SECRET
+设置 AUTH_GITHUB_ID, AUTH_GITHUB_SECRET, AUTH_SECRET, INTERNAL_WORKER_SECRET
 
 5. 创建本地数据库表结构
 
@@ -255,6 +257,7 @@ pnpm deploy:worker
    - `AUTH_GITHUB_ID`: GitHub OAuth App ID
    - `AUTH_GITHUB_SECRET`: GitHub OAuth App Secret
    - `AUTH_SECRET`: NextAuth Secret，用来加密 session，请设置一个随机字符串
+   - `INTERNAL_WORKER_SECRET`: 内部 Worker 调用密钥，主 Worker 与临时账号清理 Worker 必须使用相同值
    - `CUSTOM_DOMAIN`: 网站自定义域名，用于访问 XiYang Mail (可选，如果不填，则使用 Workers 默认域名 *.workers.dev)
    - `PROJECT_NAME`: Worker 名称（可选，如果不填，则为 xmail）
    - `DATABASE_NAME`: D1 数据库名称 (可选，如果不填，则为 xmail-db)
@@ -397,6 +400,31 @@ pnpm deploy:worker
 - **API Key 管理**：创建和管理 API 访问密钥
 - **用户管理**：升降用户角色
 - **系统设置**：管理系统全局设置
+
+### 动态权限策略
+
+权限系统现在同时包含静态角色兜底和数据库动态策略：
+
+- `permission`：系统内所有权限点定义，例如 `manage_permissions`、`view_operations`、`view_audit_logs`
+- `role_permission`：角色到权限点的动态授权关系，管理后台的“权限策略”页可调整非 emperor 角色权限
+- `route_policy`：API 路由访问策略，支持 `public`、`authenticated`、`permission`、`internal` 四类访问模式
+- `api_key_scope`：API Key 可选权限范围；未配置 scope 时继承持有人权限，配置后只允许命中的权限路由
+
+默认权限和路由策略会在迁移脚本中写入。运行 `pnpm db:migrate-local` 或 `pnpm db:migrate-remote` 后，迁移流程会同时补齐权限定义、默认角色授权和路由策略。
+
+## 运维中心
+
+管理后台 `/admin` 已扩展为运维中心。拥有 `view_operations` 或 `manage_operations` 权限的用户可以查看：
+
+- **运维概览**：汇总 Worker 失败、Webhook 失败、邮件接收失败和审计事件数量
+- **Worker 运行**：读取 `worker_run`，展示定时任务和手动清理任务的运行状态、耗时、计数和错误摘要
+- **清理历史**：聚焦过期邮箱、卡密和临时账号清理记录
+- **Webhook 日志**：读取 `webhook_log`，只展示状态、事件、URL、重试次数和错误摘要，不返回请求 payload
+- **邮件接收日志**：读取 `email_receiver_log`，查看收件人、发件人、主题、Webhook 状态和错误摘要
+- **审计日志**：读取 `admin_audit_log`，记录用户删除、卡密生成/重置/删除、配置变更、权限策略变更等高风险管理操作
+- **配置诊断**：检查 D1、KV、Resend、Turnstile、GitHub OAuth、Auth Secret 和 `INTERNAL_WORKER_SECRET` 是否已配置，不展示密钥原文
+
+临时账号清理 Worker 调用 `/api/cleanup/temp-accounts` 时会携带 `X-Internal-Worker-Secret` 请求头。生产环境应为主 Worker 和 `wrangler.temp-cleanup.json` 配置相同的 `INTERNAL_WORKER_SECRET`，避免外部请求伪造内部清理任务。
 
 ## 卡密系统
 
@@ -1159,6 +1187,7 @@ console.log("注册成功！");
 - `AUTH_GITHUB_ID`: GitHub OAuth App ID
 - `AUTH_GITHUB_SECRET`: GitHub OAuth App Secret
 - `AUTH_SECRET`: NextAuth Secret，用来加密 session，请设置一个随机字符串
+- `INTERNAL_WORKER_SECRET`: 内部 Worker 调用密钥，用于校验 `/api/cleanup/temp-accounts` 的定时清理请求
 
 ### Cloudflare 配置
 

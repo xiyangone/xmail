@@ -2,7 +2,21 @@
 
 import dynamic from "next/dynamic";
 import type { LucideIcon } from "lucide-react";
-import { ArrowLeft, ChevronRight, CreditCard, ImageIcon, Settings, Users } from "lucide-react";
+import {
+  Activity,
+  ArrowLeft,
+  ChevronRight,
+  CreditCard,
+  FileClock,
+  ImageIcon,
+  Mail,
+  ServerCog,
+  Settings,
+  ShieldCheck,
+  Stethoscope,
+  Users,
+  Webhook,
+} from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { ComponentType } from "react";
 import { useEffect, useMemo } from "react";
@@ -14,7 +28,19 @@ import { useRolePermission } from "@/hooks/use-role-permission";
 import { PERMISSIONS } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
-type AdminTabId = "card-keys" | "users" | "cleanup" | "background";
+type AdminTabId =
+  | "card-keys"
+  | "users"
+  | "cleanup"
+  | "background"
+  | "permissions"
+  | "operations"
+  | "workers"
+  | "cleanup-runs"
+  | "webhooks"
+  | "mail-logs"
+  | "audit"
+  | "diagnostics";
 
 const CardKeysContent = dynamic(
   () => import("./card-keys/card-keys-content").then((mod) => ({ default: mod.CardKeysContent })),
@@ -39,6 +65,46 @@ const GlobalBackgroundSettingsContent = dynamic(
   { loading: () => <AdminModuleLoadingState /> }
 );
 
+const PermissionsContent = dynamic(
+  () => import("./permissions/permissions-content").then((mod) => ({ default: mod.PermissionsContent })),
+  { loading: () => <AdminModuleLoadingState /> }
+);
+
+const OperationsOverviewContent = dynamic(
+  () => import("./operations/operations-overview-content").then((mod) => ({ default: mod.OperationsOverviewContent })),
+  { loading: () => <AdminModuleLoadingState /> }
+);
+
+const WorkerRunsContent = dynamic(
+  () => import("./operations/worker-runs-content").then((mod) => ({ default: mod.WorkerRunsContent })),
+  { loading: () => <AdminModuleLoadingState /> }
+);
+
+const CleanupRunsContent = dynamic(
+  () => import("./operations/cleanup-runs-content").then((mod) => ({ default: mod.CleanupRunsContent })),
+  { loading: () => <AdminModuleLoadingState /> }
+);
+
+const WebhookLogsContent = dynamic(
+  () => import("./operations/webhook-logs-content").then((mod) => ({ default: mod.WebhookLogsContent })),
+  { loading: () => <AdminModuleLoadingState /> }
+);
+
+const EmailReceiverLogsContent = dynamic(
+  () => import("./operations/email-receiver-logs-content").then((mod) => ({ default: mod.EmailReceiverLogsContent })),
+  { loading: () => <AdminModuleLoadingState /> }
+);
+
+const AuditLogsContent = dynamic(
+  () => import("./operations/audit-logs-content").then((mod) => ({ default: mod.AuditLogsContent })),
+  { loading: () => <AdminModuleLoadingState /> }
+);
+
+const DiagnosticsContent = dynamic(
+  () => import("./operations/diagnostics-content").then((mod) => ({ default: mod.DiagnosticsContent })),
+  { loading: () => <AdminModuleLoadingState /> }
+);
+
 interface AdminTabConfig {
   id: AdminTabId;
   title: string;
@@ -48,7 +114,20 @@ interface AdminTabConfig {
 }
 
 function isAdminTabId(value: string | null): value is AdminTabId {
-  return value === "card-keys" || value === "users" || value === "cleanup" || value === "background";
+  return (
+    value === "card-keys" ||
+    value === "users" ||
+    value === "cleanup" ||
+    value === "background" ||
+    value === "permissions" ||
+    value === "operations" ||
+    value === "workers" ||
+    value === "cleanup-runs" ||
+    value === "webhooks" ||
+    value === "mail-logs" ||
+    value === "audit" ||
+    value === "diagnostics"
+  );
 }
 
 function AdminModuleLoadingState() {
@@ -119,6 +198,13 @@ export function AdminDashboard() {
   const canManageCardKeys = checkPermission(PERMISSIONS.MANAGE_CARD_KEYS);
   const canPromote = checkPermission(PERMISSIONS.PROMOTE_USER);
   const canManageConfig = checkPermission(PERMISSIONS.MANAGE_CONFIG);
+  const canViewPermissions =
+    checkPermission(PERMISSIONS.VIEW_PERMISSIONS) || checkPermission(PERMISSIONS.MANAGE_PERMISSIONS);
+  const canViewOperations =
+    checkPermission(PERMISSIONS.VIEW_OPERATIONS) || checkPermission(PERMISSIONS.MANAGE_OPERATIONS);
+  const canViewWebhookLogs = canViewOperations || checkPermission(PERMISSIONS.VIEW_WEBHOOK_LOGS);
+  const canViewEmailReceiverLogs = canViewOperations || checkPermission(PERMISSIONS.VIEW_EMAIL_RECEIVER_LOGS);
+  const canViewAuditLogs = checkPermission(PERMISSIONS.VIEW_AUDIT_LOGS) || checkPermission(PERMISSIONS.MANAGE_OPERATIONS);
 
   const tabs = useMemo(
     (): AdminTabConfig[] => {
@@ -151,11 +237,77 @@ export function AdminDashboard() {
           enabled: canManageConfig,
           component: GlobalBackgroundSettingsContent,
         },
+        {
+          id: "permissions",
+          title: t("permissions"),
+          icon: ShieldCheck,
+          enabled: canViewPermissions,
+          component: PermissionsContent,
+        },
+        {
+          id: "operations",
+          title: t("operations"),
+          icon: Activity,
+          enabled: canViewOperations,
+          component: OperationsOverviewContent,
+        },
+        {
+          id: "workers",
+          title: t("workers"),
+          icon: ServerCog,
+          enabled: canViewOperations,
+          component: WorkerRunsContent,
+        },
+        {
+          id: "cleanup-runs",
+          title: t("cleanupRuns"),
+          icon: Settings,
+          enabled: canViewOperations || canManageConfig,
+          component: CleanupRunsContent,
+        },
+        {
+          id: "webhooks",
+          title: t("webhookLogs"),
+          icon: Webhook,
+          enabled: canViewWebhookLogs,
+          component: WebhookLogsContent,
+        },
+        {
+          id: "mail-logs",
+          title: t("mailLogs"),
+          icon: Mail,
+          enabled: canViewEmailReceiverLogs,
+          component: EmailReceiverLogsContent,
+        },
+        {
+          id: "audit",
+          title: t("auditLogs"),
+          icon: FileClock,
+          enabled: canViewAuditLogs,
+          component: AuditLogsContent,
+        },
+        {
+          id: "diagnostics",
+          title: t("diagnostics"),
+          icon: Stethoscope,
+          enabled: canViewOperations,
+          component: DiagnosticsContent,
+        },
       ];
 
       return tabItems.filter((tab) => tab.enabled);
     },
-    [canManageCardKeys, canManageConfig, canPromote, t]
+    [
+      canManageCardKeys,
+      canManageConfig,
+      canPromote,
+      canViewAuditLogs,
+      canViewEmailReceiverLogs,
+      canViewOperations,
+      canViewPermissions,
+      canViewWebhookLogs,
+      t,
+    ]
   );
 
   const requestedTab = searchParams.get("tab");
