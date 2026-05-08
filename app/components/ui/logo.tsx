@@ -12,7 +12,7 @@ export function Logo() {
       <span className="surface-header-action relative flex h-10 w-10 items-center justify-center overflow-hidden p-0 shadow-[0_10px_24px_hsl(var(--primary)/0.14)]">
         <span className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,hsl(var(--primary-light)/0.32),transparent_62%)]" />
         <Image
-          src="/cat.svg"
+          src="/icon.svg"
           alt="XiYang Mail Logo"
           width={32}
           height={32}

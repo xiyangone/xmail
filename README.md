@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/cat.svg" alt="XiYang Mail Logo" width="100" height="100">
+  <img src="public/icon.svg" alt="XiYang Mail Logo" width="100" height="100">
   <h1 align="center">XiYang Mail</h1>
 </p>
 

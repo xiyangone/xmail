@@ -3,7 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
-import { ExternalLink } from "lucide-react";
+import { ImageIcon } from "lucide-react";
 import {
   backgroundThemeKeys,
   defaultBackgroundSettings,
@@ -43,38 +43,50 @@ export function BackgroundProvider() {
     : "";
 
   return (
-    <div className="fixed inset-0 -z-10 overflow-hidden">
-      <div className="page-gradient-background absolute inset-0" />
+    <>
+      <div className="fixed inset-0 -z-10 overflow-hidden">
+        <div className="page-gradient-background absolute inset-0" />
+        {backgroundUrl ? (
+          <div
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-500"
+            style={{ backgroundImage: `url(${backgroundUrl})` }}
+          >
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  "radial-gradient(circle at 50% -12%, hsl(var(--primary) / var(--background-image-glow-opacity)), transparent 52%), linear-gradient(180deg, hsl(var(--background) / var(--background-image-overlay-start)) 0%, hsl(var(--background) / var(--background-image-overlay-mid)) 42%, hsl(var(--background) / var(--background-image-overlay-end)) 100%)",
+                backdropFilter: "blur(var(--background-overlay-blur))",
+                WebkitBackdropFilter: "blur(var(--background-overlay-blur))",
+              }}
+            />
+          </div>
+        ) : null}
+      </div>
+
       {backgroundUrl ? (
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-500"
-          style={{ backgroundImage: `url(${backgroundUrl})` }}
+          className="pointer-events-none fixed bottom-6 left-6 z-[100]"
+          onMouseEnter={() => setShowLink(true)}
+          onMouseLeave={() => setShowLink(false)}
         >
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                "radial-gradient(circle at 50% -12%, hsl(var(--primary) / var(--background-image-glow-opacity)), transparent 52%), linear-gradient(180deg, hsl(var(--background) / var(--background-image-overlay-start)) 0%, hsl(var(--background) / var(--background-image-overlay-mid)) 42%, hsl(var(--background) / var(--background-image-overlay-end)) 100%)",
-              backdropFilter: "blur(var(--background-overlay-blur))",
-              WebkitBackdropFilter: "blur(var(--background-overlay-blur))",
-            }}
-          />
-          <button
-            className="absolute bottom-4 right-4 p-2 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-sm transition-all duration-200 opacity-60 hover:opacity-100 group"
-            onMouseEnter={() => setShowLink(true)}
-            onMouseLeave={() => setShowLink(false)}
-            onClick={() => window.open(backgroundUrl, "_blank")}
+          <a
+            className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full border border-primary/20 bg-background shadow-lg opacity-80 transition-all duration-300 hover:border-primary/50 hover:opacity-100 hover:shadow-xl"
+            href={backgroundUrl}
+            target="_blank"
+            rel="noreferrer"
             title="查看原图"
           >
-            <ExternalLink className="h-4 w-4 text-white" />
-            {showLink && (
-              <div className="absolute bottom-full right-0 mb-2 px-3 py-1.5 rounded-lg bg-black/80 backdrop-blur-sm text-xs text-white max-w-[280px] truncate whitespace-nowrap animate-fade-in-up">
-                {backgroundUrl}
-              </div>
-            )}
-          </button>
+            <ImageIcon className="h-4 w-4 text-primary transition-transform duration-300 hover:scale-110" />
+            <span className="sr-only">查看原图</span>
+          </a>
+          {showLink && (
+            <div className="absolute bottom-full left-0 mb-2 max-w-[280px] truncate whitespace-nowrap rounded-lg bg-black/80 px-3 py-1.5 text-xs text-white backdrop-blur-sm animate-fade-in-up">
+              {backgroundUrl}
+            </div>
+          )}
         </div>
       ) : null}
-    </div>
+    </>
   );
 }

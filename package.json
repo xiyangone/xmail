@@ -1,6 +1,6 @@
 {
   "name": "xmail",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -51,6 +51,7 @@
     "postal-mime": "^2.7.4",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "sharp": "^0.34.5",
     "tailwind-merge": "^3.5.0",
     "zod": "^3.25.76",
     "zustand": "^5.0.13"
