@@ -1,539 +1,1078 @@
-"use client";
-
-import { useEffect, useState, useCallback, useMemo, memo } from "react";
-import { useSession } from "next-auth/react";
-import { CreateDialog } from "./create-dialog";
-import { ShareDialog } from "./share-dialog";
-import { Mail, RefreshCw, Trash2, CheckSquare, Square } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { useThrottle } from "@/hooks/use-throttle";
-import { EMAIL_CONFIG } from "@/config";
-import { useToast } from "@/components/ui/use-toast";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { ROLES, Role } from "@/lib/permissions";
-import { useConfig } from "@/hooks/use-config";
-import { EmailListSkeleton } from "@/components/ui/loading-skeletons";
-import { EmptyState } from "@/components/ui/empty-state";
-import { useTranslations } from "next-intl";
-
-interface Email {
-  id: string;
-  address: string;
-  createdAt: number;
-  expiresAt: number;
-}
-
-interface EmailListProps {
-  onEmailSelect: (email: Email | null) => void;
-  selectedEmailId?: string;
-}
-
-interface EmailResponse {
-  emails: Email[];
-  nextCursor: string | null;
-  total: number;
-}
-
-// 优化的邮箱列表项组件
-const EmailItem = memo(function EmailItem({
-  email,
-  index,
-  isSelected,
-  isChecked,
-  onSelect,
-  onDelete,
-  onToggleCheck,
-}: {
-  email: Email;
-  index: number;
-  isSelected: boolean;
-  isChecked: boolean;
-  onSelect: (email: Email) => void;
-  onDelete: (email: Email) => void;
-  onToggleCheck: (emailId: string) => void;
-}) {
-  const tc = useTranslations("common");
-
-  const { isExpiringSoon, isPermanent, formattedExpiry } = useMemo(() => {
-    const expiryTime = new Date(email.expiresAt).getTime();
-    const now = Date.now();
-    const isPerm = new Date(email.expiresAt).getFullYear() === 9999;
-    const isExpiring = expiryTime - now < 24 * 60 * 60 * 1000 && !isPerm;
-    const formatted = isPerm
-      ? ""
-      : new Date(email.expiresAt).toLocaleString("zh-CN", {
-          month: "2-digit",
-          day: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
-        });
-    return {
-      isExpiringSoon: isExpiring,
-      isPermanent: isPerm,
-      formattedExpiry: formatted,
-    };
-  }, [email.expiresAt]);
-
-  const handleClick = useCallback(() => {
-    onSelect(email);
-  }, [email, onSelect]);
-
-  const handleDelete = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      onDelete(email);
-    },
-    [email, onDelete]
-  );
-
-  const handleCheckboxClick = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      onToggleCheck(email.id);
-    },
-    [email.id, onToggleCheck]
-  );
-
-  return (
-    <div
-      className={cn(
-        "flex items-center gap-2 p-3 rounded-lg cursor-pointer text-sm group transition-all duration-200",
-        "hover:bg-primary/10 hover:shadow-md hover:scale-[1.02]",
-        "border border-transparent hover:border-primary/20",
-        isSelected && "bg-primary/15 border-primary/30 shadow-md",
-        "animate-fade-in"
-      )}
-      style={{ animationDelay: `${index * 50}ms` }}
-      onClick={handleClick}
-    >
-      <button onClick={handleCheckboxClick} className="flex-shrink-0">
-        {isChecked ? (
-          <CheckSquare className="h-4 w-4 text-primary" />
-        ) : (
-          <Square className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-        )}
-      </button>
-      <Mail className="h-5 w-5 text-primary/70 group-hover:text-primary transition-colors flex-shrink-0" />
-      <div className="truncate flex-1 space-y-1">
-        <div className="font-medium truncate group-hover:text-primary transition-colors">
-          {email.address}
-        </div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          {isPermanent ? (
-            <span className="px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 font-medium">
-              {tc("permanent")}
-            </span>
-          ) : (
-            <>
-              {isExpiringSoon && (
-                <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium animate-pulse">
-                  {tc("expiringSoon")}
-                </span>
-              )}
-              <span>{tc("expiresAt", { time: formattedExpiry })}</span>
-            </>
-          )}
-        </div>
-      </div>
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <ShareDialog emailId={email.id} emailAddress={email.address} />
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={handleDelete}
-        >
-          <Trash2 className="h-4 w-4 text-destructive" />
-        </Button>
-      </div>
-    </div>
-  );
-});
-
-export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
-  const { data: session } = useSession();
-  const { config } = useConfig();
-  const [role, setRole] = useState<Role | null>(null);
-  const [emails, setEmails] = useState<Email[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [total, setTotal] = useState(0);
-  const [emailToDelete, setEmailToDelete] = useState<Email | null>(null);
-  const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
-  const [batchDeleteDialogOpen, setBatchDeleteDialogOpen] = useState(false);
-  const { toast } = useToast();
-  const t = useTranslations("email");
-  const tc = useTranslations("common");
-
-  const isTempUser = role === ROLES.TEMP_USER;
-  const canCreateEmail = !isTempUser;
-
-  const fetchEmails = useCallback(
-    async (cursor?: string, isManualRefresh = false) => {
-      try {
-        const url = new URL("/api/emails", window.location.origin);
-        if (cursor) {
-          url.searchParams.set("cursor", cursor);
-        }
-        const response = await fetch(url);
-        if (!response.ok) {
-          const responseText = await response.text().catch(() => "");
-          console.error(
-            "Failed to fetch emails:",
-            response.status,
-            responseText.slice(0, 200)
-          );
-          throw new Error(
-            `Failed to fetch emails: ${response.status} ${response.statusText}`
-          );
-        }
-        const data = (await response.json()) as EmailResponse;
-
-        if (!cursor) {
-          const newEmails = data.emails;
-          const oldEmails = emails;
-
-          // 创建新邮件的 ID 集合,用于快速查找
-          const newEmailIds = new Set(newEmails.map((e) => e.id));
-
-          // 过滤掉已被删除的旧邮件(服务器返回的新数据中不存在的)
-          const validOldEmails = oldEmails.filter((e) => newEmailIds.has(e.id));
-
-          const lastDuplicateIndex = newEmails.findIndex((newEmail) =>
-            validOldEmails.some((oldEmail) => oldEmail.id === newEmail.id)
-          );
-
-          if (lastDuplicateIndex === -1) {
-            setEmails(newEmails);
-            setNextCursor(data.nextCursor);
-            setTotal(newEmails.length);
-            return;
-          }
-          const uniqueNewEmails = newEmails.slice(0, lastDuplicateIndex);
-          const updatedEmails = [...uniqueNewEmails, ...validOldEmails];
-          setEmails(updatedEmails);
-          setTotal(updatedEmails.length);
-          return;
-        }
-        setEmails((prev) => {
-          const updated = [...prev, ...data.emails];
-          setTotal(updated.length);
-          return updated;
-        });
-        setNextCursor(data.nextCursor);
-      } catch (error) {
-        console.error("Failed to fetch emails:", error);
-        if (isManualRefresh) {
-          toast({
-            title: tc("error"),
-            description: tc("networkError"),
-            variant: "destructive",
-          });
-        }
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
-        setLoadingMore(false);
-      }
-    },
-    [emails, toast, tc]
-  );
-
-  const handleRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await fetchEmails(undefined, true);
-  }, [fetchEmails]);
-
-  const handleScroll = useThrottle((e: React.UIEvent<HTMLDivElement>) => {
-    if (loadingMore) return;
-
-    const { scrollHeight, scrollTop, clientHeight } = e.currentTarget;
-    const threshold = clientHeight * 1.5;
-    const remainingScroll = scrollHeight - scrollTop;
-
-    if (remainingScroll <= threshold && nextCursor) {
-      setLoadingMore(true);
-      fetchEmails(nextCursor);
-    }
-  }, 200);
-
-  useEffect(() => {
-    if (session) fetchEmails();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session]);
-
-  useEffect(() => {
-    if (session?.user?.roles?.[0]?.name) {
-      setRole(session.user.roles[0].name as Role);
-    }
-  }, [session]);
-
-  const handleDelete = async (email: Email) => {
-    try {
-      const response = await fetch(`/api/emails/${email.id}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        toast({
-          title: tc("error"),
-          description: (data as { error: string }).error,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // 如果删除的是当前选中的邮箱,清除选择
-      if (selectedEmailId === email.id) {
-        onEmailSelect(null);
-      }
-
-      // 立即从列表中移除已删除的邮箱
-      setEmails((prev) => {
-        const updated = prev.filter((e) => e.id !== email.id);
-        setTotal(updated.length);
-        return updated;
-      });
-
-      // 从选中列表中移除
-      setSelectedEmails((prev) => prev.filter((id) => id !== email.id));
-
-      toast({
-        title: tc("success"),
-        description: t("delete.success"),
-      });
-    } catch {
-      toast({
-        title: tc("error"),
-        description: t("delete.failed"),
-        variant: "destructive",
-      });
-    } finally {
-      setEmailToDelete(null);
-    }
-  };
-
-  const toggleSelectEmail = (emailId: string) => {
-    setSelectedEmails((prev) =>
-      prev.includes(emailId)
-        ? prev.filter((id) => id !== emailId)
-        : [...prev, emailId]
-    );
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedEmails.length === emails.length) {
-      setSelectedEmails([]);
-    } else {
-      setSelectedEmails(emails.map((e) => e.id));
-    }
-  };
-
-  const handleBatchDelete = async () => {
-    try {
-      const deletePromises = selectedEmails.map(async (emailId) => {
-        const response = await fetch(`/api/emails/${emailId}`, { method: "DELETE" });
-        if (!response.ok) {
-          throw new Error(`删除失败: ${response.status}`);
-        }
-        return emailId;
-      });
-
-      const results = await Promise.allSettled(deletePromises);
-      const successCount = results.filter(
-        (r) => r.status === "fulfilled"
-      ).length;
-      const failCount = results.filter((r) => r.status === "rejected").length;
-
-      // 获取成功删除的邮箱ID列表 (只有 fulfilled 且 response.ok 才是真正成功)
-      const successfullyDeletedIds = results
-        .filter((r): r is PromiseFulfilledResult<string> => r.status === "fulfilled")
-        .map((r) => r.value);
-
-      // 立即从列表中移除成功删除的邮箱
-      setEmails((prev) => {
-        const updated = prev.filter((e) => !successfullyDeletedIds.includes(e.id));
-        setTotal(updated.length);
-        return updated;
-      });
-
-      // 如果当前选中的邮箱被删除了,清除选择
-      if (selectedEmailId && successfullyDeletedIds.includes(selectedEmailId)) {
-        onEmailSelect(null);
-      }
-
-      toast({
-        title: t("delete.batchComplete"),
-        description: failCount > 0
-          ? t("delete.batchResultWithFail", { success: successCount, fail: failCount })
-          : t("delete.batchResult", { success: successCount }),
-      });
-
-      setSelectedEmails([]);
-    } catch {
-      toast({
-        title: tc("error"),
-        description: t("delete.batchFailed"),
-        variant: "destructive",
-      });
-    } finally {
-      setBatchDeleteDialogOpen(false);
-    }
-  };
-
-  if (!session) return null;
-
-  return (
-    <>
-      <div className="flex flex-col h-full">
-        <div className="border-b border-primary/16 bg-[hsl(var(--background)/0.08)] px-4 py-3">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-1.5">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleRefresh}
-                disabled={refreshing}
-                className={cn("h-8 w-8", refreshing && "animate-spin")}
-                title={tc("manualRefresh")}
-              >
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-              {emails.length > 0 && (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={toggleSelectAll}
-                    className="h-8 w-8"
-                    title={
-                      selectedEmails.length === emails.length
-                        ? t("deselectAll")
-                        : t("selectAll")
-                    }
-                  >
-                    {selectedEmails.length === emails.length ? (
-                      <CheckSquare className="h-4 w-4 text-primary" />
-                    ) : (
-                      <Square className="h-4 w-4" />
-                    )}
-                  </Button>
-                  {selectedEmails.length > 0 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setBatchDeleteDialogOpen(true)}
-                      className="h-8 text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4 mr-1" />
-                      {t("deleteCount", { count: selectedEmails.length })}
-                    </Button>
-                  )}
-                </>
-              )}
-              <span className="truncate text-[11px] tracking-[0.04em] text-muted-foreground">
-                {role === ROLES.EMPEROR
-                  ? t("mailCountUnlimited", { count: total })
-                  : t("mailCount", {
-                      count: total,
-                      max: config?.maxEmails || EMAIL_CONFIG.MAX_ACTIVE_EMAILS,
-                    })}
-              </span>
-            </div>
-            {canCreateEmail && <CreateDialog onEmailCreated={handleRefresh} />}
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-auto px-3 py-3" onScroll={handleScroll}>
-          {loading ? (
-            <EmailListSkeleton />
-          ) : emails.length > 0 ? (
-            <div className="space-y-2">
-              {emails.map((email, index) => (
-                <EmailItem
-                  key={email.id}
-                  email={email}
-                  index={index}
-                  isSelected={selectedEmailId === email.id}
-                  isChecked={selectedEmails.includes(email.id)}
-                  onSelect={onEmailSelect}
-                  onDelete={setEmailToDelete}
-                  onToggleCheck={toggleSelectEmail}
-                />
-              ))}
-              {loadingMore && (
-                <div className="text-center text-sm text-muted-foreground py-2 animate-pulse">
-                  {tc("loadingMore")}
-                </div>
-              )}
-            </div>
-          ) : (
-            <EmptyState
-              icon={Mail}
-              title={t("create.noMailbox")}
-              description={t("create.noMailboxHint")}
-            />
-          )}
-        </div>
-      </div>
-
-      <AlertDialog
-        open={!!emailToDelete}
-        onOpenChange={() => setEmailToDelete(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("delete.confirmTitle")}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t("delete.confirmEmail", { address: emailToDelete?.address ?? "" })}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{tc("cancel")}</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive hover:bg-destructive/90"
-              onClick={() => emailToDelete && handleDelete(emailToDelete)}
-            >
-              {tc("delete")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-      <AlertDialog
-        open={batchDeleteDialogOpen}
-        onOpenChange={setBatchDeleteDialogOpen}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("delete.confirmBatchTitle")}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t("delete.confirmBatch", { count: selectedEmails.length })}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{tc("cancel")}</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive hover:bg-destructive/90"
-              onClick={handleBatchDelete}
-            >
-              {tc("delete")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
-  );
-}
+"use client";
+
+
+
+import { useEffect, useState, useCallback, useMemo, memo } from "react";
+
+import { useSession } from "next-auth/react";
+
+import { CreateDialog } from "./create-dialog";
+
+import { ShareDialog } from "./share-dialog";
+
+import { Mail, RefreshCw, Trash2, CheckSquare, Square } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+
+import { Button } from "@/components/ui/button";
+
+import { useThrottle } from "@/hooks/use-throttle";
+
+import { EMAIL_CONFIG } from "@/config";
+
+import { useToast } from "@/components/ui/use-toast";
+
+import {
+
+  AlertDialog,
+
+  AlertDialogAction,
+
+  AlertDialogCancel,
+
+  AlertDialogContent,
+
+  AlertDialogDescription,
+
+  AlertDialogFooter,
+
+  AlertDialogHeader,
+
+  AlertDialogTitle,
+
+} from "@/components/ui/alert-dialog";
+
+import { ROLES, Role } from "@/lib/permissions";
+
+import { useConfig } from "@/hooks/use-config";
+
+import { EmailListSkeleton } from "@/components/ui/loading-skeletons";
+
+import { EmptyState } from "@/components/ui/empty-state";
+
+import { useTranslations } from "next-intl";
+
+
+
+interface Email {
+
+  id: string;
+
+  address: string;
+
+  createdAt: number;
+
+  expiresAt: number;
+
+}
+
+
+
+interface EmailListProps {
+
+  onEmailSelect: (email: Email | null) => void;
+
+  selectedEmailId?: string;
+
+}
+
+
+
+interface EmailResponse {
+
+  emails: Email[];
+
+  nextCursor: string | null;
+
+  total: number;
+
+}
+
+
+
+// 优化的邮箱列表项组件
+
+const EmailItem = memo(function EmailItem({
+
+  email,
+
+  index,
+
+  isSelected,
+
+  isChecked,
+
+  onSelect,
+
+  onDelete,
+
+  onToggleCheck,
+
+}: {
+
+  email: Email;
+
+  index: number;
+
+  isSelected: boolean;
+
+  isChecked: boolean;
+
+  onSelect: (email: Email) => void;
+
+  onDelete: (email: Email) => void;
+
+  onToggleCheck: (emailId: string) => void;
+
+}) {
+
+  const tc = useTranslations("common");
+
+
+
+  const { isExpiringSoon, isPermanent, formattedExpiry } = useMemo(() => {
+
+    const expiryTime = new Date(email.expiresAt).getTime();
+
+    const now = Date.now();
+
+    const isPerm = new Date(email.expiresAt).getFullYear() === 9999;
+
+    const isExpiring = expiryTime - now < 24 * 60 * 60 * 1000 && !isPerm;
+
+    const formatted = isPerm
+
+      ? ""
+
+      : new Date(email.expiresAt).toLocaleString("zh-CN", {
+
+          month: "2-digit",
+
+          day: "2-digit",
+
+          hour: "2-digit",
+
+          minute: "2-digit",
+
+        });
+
+    return {
+
+      isExpiringSoon: isExpiring,
+
+      isPermanent: isPerm,
+
+      formattedExpiry: formatted,
+
+    };
+
+  }, [email.expiresAt]);
+
+
+
+  const handleClick = useCallback(() => {
+
+    onSelect(email);
+
+  }, [email, onSelect]);
+
+
+
+  const handleDelete = useCallback(
+
+    (e: React.MouseEvent) => {
+
+      e.stopPropagation();
+
+      onDelete(email);
+
+    },
+
+    [email, onDelete]
+
+  );
+
+
+
+  const handleCheckboxClick = useCallback(
+
+    (e: React.MouseEvent) => {
+
+      e.stopPropagation();
+
+      onToggleCheck(email.id);
+
+    },
+
+    [email.id, onToggleCheck]
+
+  );
+
+
+
+  return (
+
+    <div
+
+      className={cn(
+
+        "flex items-center gap-2 p-3 rounded-lg cursor-pointer text-sm group transition-all duration-200",
+
+        "hover:bg-primary/10 hover:shadow-md hover:scale-[1.02]",
+
+        "border border-transparent hover:border-primary/20",
+
+        isSelected && "bg-primary/15 border-primary/30 shadow-md",
+
+        "animate-fade-in"
+
+      )}
+
+      style={{ animationDelay: `${index * 50}ms` }}
+
+      onClick={handleClick}
+
+    >
+
+      <button onClick={handleCheckboxClick} className="flex-shrink-0">
+
+        {isChecked ? (
+
+          <CheckSquare className="h-4 w-4 text-primary" />
+
+        ) : (
+
+          <Square className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+
+        )}
+
+      </button>
+
+      <Mail className="h-5 w-5 text-primary/70 group-hover:text-primary transition-colors flex-shrink-0" />
+
+      <div className="truncate flex-1 space-y-1">
+
+        <div className="font-medium truncate group-hover:text-primary transition-colors">
+
+          {email.address}
+
+        </div>
+
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+
+          {isPermanent ? (
+
+            <span className="px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 font-medium">
+
+              {tc("permanent")}
+
+            </span>
+
+          ) : (
+
+            <>
+
+              {isExpiringSoon && (
+
+                <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium animate-pulse">
+
+                  {tc("expiringSoon")}
+
+                </span>
+
+              )}
+
+              <span>{tc("expiresAt", { time: formattedExpiry })}</span>
+
+            </>
+
+          )}
+
+        </div>
+
+      </div>
+
+      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+
+        <ShareDialog emailId={email.id} emailAddress={email.address} />
+
+        <Button
+
+          variant="ghost"
+
+          size="icon"
+
+          className="h-8 w-8"
+
+          onClick={handleDelete}
+
+        >
+
+          <Trash2 className="h-4 w-4 text-destructive" />
+
+        </Button>
+
+      </div>
+
+    </div>
+
+  );
+
+});
+
+
+
+export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
+
+  const { data: session } = useSession();
+
+  const { config } = useConfig();
+
+  const [role, setRole] = useState<Role | null>(null);
+
+  const [emails, setEmails] = useState<Email[]>([]);
+
+  const [loading, setLoading] = useState(true);
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const [total, setTotal] = useState(0);
+
+  const [emailToDelete, setEmailToDelete] = useState<Email | null>(null);
+
+  const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
+
+  const [batchDeleteDialogOpen, setBatchDeleteDialogOpen] = useState(false);
+
+  const { toast } = useToast();
+
+  const t = useTranslations("email");
+
+  const tc = useTranslations("common");
+
+
+
+  const isTempUser = role === ROLES.TEMP_USER;
+
+  const canCreateEmail = !isTempUser;
+
+
+
+  const fetchEmails = useCallback(
+
+    async (cursor?: string, isManualRefresh = false) => {
+
+      try {
+
+        const url = new URL("/api/emails", window.location.origin);
+
+        if (cursor) {
+
+          url.searchParams.set("cursor", cursor);
+
+        }
+
+        const response = await fetch(url);
+
+        if (!response.ok) {
+
+          const responseText = await response.text().catch(() => "");
+
+          console.error(
+
+            "Failed to fetch emails:",
+
+            response.status,
+
+            responseText.slice(0, 200)
+
+          );
+
+          throw new Error(
+
+            `Failed to fetch emails: ${response.status} ${response.statusText}`
+
+          );
+
+        }
+
+        const data = (await response.json()) as EmailResponse;
+
+
+
+        if (!cursor) {
+
+          const newEmails = data.emails;
+
+          const oldEmails = emails;
+
+
+
+          // 创建新邮件的 ID 集合,用于快速查找
+
+          const newEmailIds = new Set(newEmails.map((e) => e.id));
+
+
+
+          // 过滤掉已被删除的旧邮件(服务器返回的新数据中不存在的)
+
+          const validOldEmails = oldEmails.filter((e) => newEmailIds.has(e.id));
+
+
+
+          const lastDuplicateIndex = newEmails.findIndex((newEmail) =>
+
+            validOldEmails.some((oldEmail) => oldEmail.id === newEmail.id)
+
+          );
+
+
+
+          if (lastDuplicateIndex === -1) {
+
+            setEmails(newEmails);
+
+            setNextCursor(data.nextCursor);
+
+            setTotal(newEmails.length);
+
+            return;
+
+          }
+
+          const uniqueNewEmails = newEmails.slice(0, lastDuplicateIndex);
+
+          const updatedEmails = [...uniqueNewEmails, ...validOldEmails];
+
+          setEmails(updatedEmails);
+
+          setTotal(updatedEmails.length);
+
+          return;
+
+        }
+
+        setEmails((prev) => {
+
+          const updated = [...prev, ...data.emails];
+
+          setTotal(updated.length);
+
+          return updated;
+
+        });
+
+        setNextCursor(data.nextCursor);
+
+      } catch (error) {
+
+        console.error("Failed to fetch emails:", error);
+
+        if (isManualRefresh) {
+
+          toast({
+
+            title: tc("error"),
+
+            description: tc("networkError"),
+
+            variant: "destructive",
+
+          });
+
+        }
+
+      } finally {
+
+        setLoading(false);
+
+        setRefreshing(false);
+
+        setLoadingMore(false);
+
+      }
+
+    },
+
+    [emails, toast, tc]
+
+  );
+
+
+
+  const handleRefresh = useCallback(async () => {
+
+    setRefreshing(true);
+
+    await fetchEmails(undefined, true);
+
+  }, [fetchEmails]);
+
+
+
+  const handleScroll = useThrottle((e: React.UIEvent<HTMLDivElement>) => {
+
+    if (loadingMore) return;
+
+
+
+    const { scrollHeight, scrollTop, clientHeight } = e.currentTarget;
+
+    const threshold = clientHeight * 1.5;
+
+    const remainingScroll = scrollHeight - scrollTop;
+
+
+
+    if (remainingScroll <= threshold && nextCursor) {
+
+      setLoadingMore(true);
+
+      fetchEmails(nextCursor);
+
+    }
+
+  }, 200);
+
+
+
+  useEffect(() => {
+
+    if (session) fetchEmails();
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+
+  }, [session]);
+
+
+
+  useEffect(() => {
+
+    if (session?.user?.roles?.[0]?.name) {
+
+      setRole(session.user.roles[0].name as Role);
+
+    }
+
+  }, [session]);
+
+
+
+  const handleDelete = async (email: Email) => {
+
+    try {
+
+      const response = await fetch(`/api/emails/${email.id}`, {
+
+        method: "DELETE",
+
+      });
+
+
+
+      if (!response.ok) {
+
+        const data = await response.json();
+
+        toast({
+
+          title: tc("error"),
+
+          description: (data as { error: string }).error,
+
+          variant: "destructive",
+
+        });
+
+        return;
+
+      }
+
+
+
+      // 如果删除的是当前选中的邮箱,清除选择
+
+      if (selectedEmailId === email.id) {
+
+        onEmailSelect(null);
+
+      }
+
+
+
+      // 立即从列表中移除已删除的邮箱
+
+      setEmails((prev) => {
+
+        const updated = prev.filter((e) => e.id !== email.id);
+
+        setTotal(updated.length);
+
+        return updated;
+
+      });
+
+
+
+      // 从选中列表中移除
+
+      setSelectedEmails((prev) => prev.filter((id) => id !== email.id));
+
+
+
+      toast({
+
+        title: tc("success"),
+
+        description: t("delete.success"),
+
+      });
+
+    } catch {
+
+      toast({
+
+        title: tc("error"),
+
+        description: t("delete.failed"),
+
+        variant: "destructive",
+
+      });
+
+    } finally {
+
+      setEmailToDelete(null);
+
+    }
+
+  };
+
+
+
+  const toggleSelectEmail = (emailId: string) => {
+
+    setSelectedEmails((prev) =>
+
+      prev.includes(emailId)
+
+        ? prev.filter((id) => id !== emailId)
+
+        : [...prev, emailId]
+
+    );
+
+  };
+
+
+
+  const toggleSelectAll = () => {
+
+    if (selectedEmails.length === emails.length) {
+
+      setSelectedEmails([]);
+
+    } else {
+
+      setSelectedEmails(emails.map((e) => e.id));
+
+    }
+
+  };
+
+
+
+  const handleBatchDelete = async () => {
+
+    try {
+
+      const deletePromises = selectedEmails.map(async (emailId) => {
+
+        const response = await fetch(`/api/emails/${emailId}`, { method: "DELETE" });
+
+        if (!response.ok) {
+
+          throw new Error(`删除失败: ${response.status}`);
+
+        }
+
+        return emailId;
+
+      });
+
+
+
+      const results = await Promise.allSettled(deletePromises);
+
+      const successCount = results.filter(
+
+        (r) => r.status === "fulfilled"
+
+      ).length;
+
+      const failCount = results.filter((r) => r.status === "rejected").length;
+
+
+
+      // 获取成功删除的邮箱ID列表 (只有 fulfilled 且 response.ok 才是真正成功)
+
+      const successfullyDeletedIds = results
+
+        .filter((r): r is PromiseFulfilledResult<string> => r.status === "fulfilled")
+
+        .map((r) => r.value);
+
+
+
+      // 立即从列表中移除成功删除的邮箱
+
+      setEmails((prev) => {
+
+        const updated = prev.filter((e) => !successfullyDeletedIds.includes(e.id));
+
+        setTotal(updated.length);
+
+        return updated;
+
+      });
+
+
+
+      // 如果当前选中的邮箱被删除了,清除选择
+
+      if (selectedEmailId && successfullyDeletedIds.includes(selectedEmailId)) {
+
+        onEmailSelect(null);
+
+      }
+
+
+
+      toast({
+
+        title: t("delete.batchComplete"),
+
+        description: failCount > 0
+
+          ? t("delete.batchResultWithFail", { success: successCount, fail: failCount })
+
+          : t("delete.batchResult", { success: successCount }),
+
+      });
+
+
+
+      setSelectedEmails([]);
+
+    } catch {
+
+      toast({
+
+        title: tc("error"),
+
+        description: t("delete.batchFailed"),
+
+        variant: "destructive",
+
+      });
+
+    } finally {
+
+      setBatchDeleteDialogOpen(false);
+
+    }
+
+  };
+
+
+
+  if (!session) return null;
+
+
+
+  return (
+
+    <>
+
+      <div className="flex flex-col h-full">
+
+        <div className="border-b border-primary/16 bg-[hsl(var(--background)/0.08)] px-4 py-3">
+
+          <div className="flex flex-wrap items-center justify-between gap-3">
+
+            <div className="flex min-w-0 items-center gap-1.5">
+
+              <Button
+
+                variant="ghost"
+
+                size="icon"
+
+                onClick={handleRefresh}
+
+                disabled={refreshing}
+
+                className={cn("h-8 w-8", refreshing && "animate-spin")}
+
+                title={tc("manualRefresh")}
+
+              >
+
+                <RefreshCw className="h-4 w-4" />
+
+              </Button>
+
+              {emails.length > 0 && (
+
+                <>
+
+                  <Button
+
+                    variant="ghost"
+
+                    size="icon"
+
+                    onClick={toggleSelectAll}
+
+                    className="h-8 w-8"
+
+                    title={
+
+                      selectedEmails.length === emails.length
+
+                        ? t("deselectAll")
+
+                        : t("selectAll")
+
+                    }
+
+                  >
+
+                    {selectedEmails.length === emails.length ? (
+
+                      <CheckSquare className="h-4 w-4 text-primary" />
+
+                    ) : (
+
+                      <Square className="h-4 w-4" />
+
+                    )}
+
+                  </Button>
+
+                  {selectedEmails.length > 0 && (
+
+                    <Button
+
+                      variant="ghost"
+
+                      size="sm"
+
+                      onClick={() => setBatchDeleteDialogOpen(true)}
+
+                      className="h-8 text-destructive hover:text-destructive"
+
+                    >
+
+                      <Trash2 className="h-4 w-4 mr-1" />
+
+                      {t("deleteCount", { count: selectedEmails.length })}
+
+                    </Button>
+
+                  )}
+
+                </>
+
+              )}
+
+              <span className="truncate text-[11px] tracking-[0.04em] text-muted-foreground">
+
+                {role === ROLES.EMPEROR
+
+                  ? t("mailCountUnlimited", { count: total })
+
+                  : t("mailCount", {
+
+                      count: total,
+
+                      max: config?.maxEmails || EMAIL_CONFIG.MAX_ACTIVE_EMAILS,
+
+                    })}
+
+              </span>
+
+            </div>
+
+            {canCreateEmail && <CreateDialog onEmailCreated={handleRefresh} />}
+
+          </div>
+
+        </div>
+
+
+
+        <div className="flex-1 overflow-auto px-3 py-3" onScroll={handleScroll}>
+
+          {loading ? (
+
+            <EmailListSkeleton />
+
+          ) : emails.length > 0 ? (
+
+            <div className="space-y-2">
+
+              {emails.map((email, index) => (
+
+                <EmailItem
+
+                  key={email.id}
+
+                  email={email}
+
+                  index={index}
+
+                  isSelected={selectedEmailId === email.id}
+
+                  isChecked={selectedEmails.includes(email.id)}
+
+                  onSelect={onEmailSelect}
+
+                  onDelete={setEmailToDelete}
+
+                  onToggleCheck={toggleSelectEmail}
+
+                />
+
+              ))}
+
+              {loadingMore && (
+
+                <div className="text-center text-sm text-muted-foreground py-2 animate-pulse">
+
+                  {tc("loadingMore")}
+
+                </div>
+
+              )}
+
+            </div>
+
+          ) : (
+
+            <EmptyState
+
+              icon={Mail}
+
+              title={t("create.noMailbox")}
+
+              description={t("create.noMailboxHint")}
+
+            />
+
+          )}
+
+        </div>
+
+      </div>
+
+
+
+      <AlertDialog
+
+        open={!!emailToDelete}
+
+        onOpenChange={() => setEmailToDelete(null)}
+
+      >
+
+        <AlertDialogContent>
+
+          <AlertDialogHeader>
+
+            <AlertDialogTitle>{t("delete.confirmTitle")}</AlertDialogTitle>
+
+            <AlertDialogDescription>
+
+              {t("delete.confirmEmail", { address: emailToDelete?.address ?? "" })}
+
+            </AlertDialogDescription>
+
+          </AlertDialogHeader>
+
+          <AlertDialogFooter>
+
+            <AlertDialogCancel>{tc("cancel")}</AlertDialogCancel>
+
+            <AlertDialogAction
+
+              className="bg-destructive hover:bg-destructive/90"
+
+              onClick={() => emailToDelete && handleDelete(emailToDelete)}
+
+            >
+
+              {tc("delete")}
+
+            </AlertDialogAction>
+
+          </AlertDialogFooter>
+
+        </AlertDialogContent>
+
+      </AlertDialog>
+
+      <AlertDialog
+
+        open={batchDeleteDialogOpen}
+
+        onOpenChange={setBatchDeleteDialogOpen}
+
+      >
+
+        <AlertDialogContent>
+
+          <AlertDialogHeader>
+
+            <AlertDialogTitle>{t("delete.confirmBatchTitle")}</AlertDialogTitle>
+
+            <AlertDialogDescription>
+
+              {t("delete.confirmBatch", { count: selectedEmails.length })}
+
+            </AlertDialogDescription>
+
+          </AlertDialogHeader>
+
+          <AlertDialogFooter>
+
+            <AlertDialogCancel>{tc("cancel")}</AlertDialogCancel>
+
+            <AlertDialogAction
+
+              className="bg-destructive hover:bg-destructive/90"
+
+              onClick={handleBatchDelete}
+
+            >
+
+              {tc("delete")}
+
+            </AlertDialogAction>
+
+          </AlertDialogFooter>
+
+        </AlertDialogContent>
+
+      </AlertDialog>
+
+    </>
+
+  );
+
+}
+

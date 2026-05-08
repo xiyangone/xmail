@@ -1,6 +1,5 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import type { LucideIcon } from "lucide-react";
 import {
   Activity,
@@ -26,6 +25,18 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useRolePermission } from "@/hooks/use-role-permission";
 import { PERMISSIONS } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
+import { CardKeysContent } from "./card-keys/card-keys-content";
+import { UsersContent } from "./users/users-content";
+import { CleanupSettingsContent } from "./settings/cleanup-settings-content";
+import { GlobalBackgroundSettingsContent } from "../background/global-background-settings-content";
+import { PermissionsContent } from "./permissions/permissions-content";
+import { OperationsOverviewContent } from "./operations/operations-overview-content";
+import { WorkerRunsContent } from "./operations/worker-runs-content";
+import { CleanupRunsContent } from "./operations/cleanup-runs-content";
+import { WebhookLogsContent } from "./operations/webhook-logs-content";
+import { EmailReceiverLogsContent } from "./operations/email-receiver-logs-content";
+import { AuditLogsContent } from "./operations/audit-logs-content";
+import { DiagnosticsContent } from "./operations/diagnostics-content";
 
 type AdminTabId =
   | "card-keys"
@@ -40,62 +51,6 @@ type AdminTabId =
   | "mail-logs"
   | "audit"
   | "diagnostics";
-
-function lazyAdminContent<T extends ComponentType>(
-  loader: () => Promise<{ default: T }>
-) {
-  return dynamic(loader, { loading: () => <AdminModuleLoadingState /> });
-}
-
-const CardKeysContent = lazyAdminContent(() =>
-  import("./card-keys/card-keys-content").then((mod) => ({ default: mod.CardKeysContent }))
-);
-
-const UsersContent = lazyAdminContent(() =>
-  import("./users/users-content").then((mod) => ({ default: mod.UsersContent }))
-);
-
-const CleanupSettingsContent = lazyAdminContent(() =>
-  import("./settings/cleanup-settings-content").then((mod) => ({ default: mod.CleanupSettingsContent }))
-);
-
-const GlobalBackgroundSettingsContent = lazyAdminContent(() =>
-  import("../background/global-background-settings-content").then((mod) => ({
-    default: mod.GlobalBackgroundSettingsContent,
-  }))
-);
-
-const PermissionsContent = lazyAdminContent(() =>
-  import("./permissions/permissions-content").then((mod) => ({ default: mod.PermissionsContent }))
-);
-
-const OperationsOverviewContent = lazyAdminContent(() =>
-  import("./operations/operations-overview-content").then((mod) => ({ default: mod.OperationsOverviewContent }))
-);
-
-const WorkerRunsContent = lazyAdminContent(() =>
-  import("./operations/worker-runs-content").then((mod) => ({ default: mod.WorkerRunsContent }))
-);
-
-const CleanupRunsContent = lazyAdminContent(() =>
-  import("./operations/cleanup-runs-content").then((mod) => ({ default: mod.CleanupRunsContent }))
-);
-
-const WebhookLogsContent = lazyAdminContent(() =>
-  import("./operations/webhook-logs-content").then((mod) => ({ default: mod.WebhookLogsContent }))
-);
-
-const EmailReceiverLogsContent = lazyAdminContent(() =>
-  import("./operations/email-receiver-logs-content").then((mod) => ({ default: mod.EmailReceiverLogsContent }))
-);
-
-const AuditLogsContent = lazyAdminContent(() =>
-  import("./operations/audit-logs-content").then((mod) => ({ default: mod.AuditLogsContent }))
-);
-
-const DiagnosticsContent = lazyAdminContent(() =>
-  import("./operations/diagnostics-content").then((mod) => ({ default: mod.DiagnosticsContent }))
-);
 
 interface AdminTabConfig {
   id: AdminTabId;
@@ -362,7 +317,15 @@ export function AdminDashboard() {
 
     const params = new URLSearchParams(searchParamsString);
     params.set("tab", nextTab);
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    const url = `${pathname}?${params.toString()}`;
+
+    if (document.startViewTransition) {
+      document.startViewTransition(() => {
+        router.replace(url, { scroll: false });
+      });
+    } else {
+      router.replace(url, { scroll: false });
+    }
   };
 
   if (!isReady) {

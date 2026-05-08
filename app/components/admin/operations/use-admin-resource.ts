@@ -25,7 +25,7 @@ export function useAdminResource<TData>({
   parse = (response) => response.json() as Promise<TData>,
 }: UseAdminResourceOptions<TData>) {
   const [data, setData] = useState<TData | null>(null);
-  const [loading, setLoading] = useState(enabled);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
