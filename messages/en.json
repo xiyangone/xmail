@@ -498,7 +498,6 @@
     "cleanupSettingsDesc": "Control expiry cleanup rules for card keys and mailboxes from the same admin workspace.",
     "globalBackgroundSettings": "Global Background Settings",
     "permissions": "Permission Policies",
-    "operations": "Operations Overview",
     "workers": "Worker Runs",
     "cleanupRuns": "Cleanup History",
     "webhookLogs": "Webhook Logs",

@@ -2,7 +2,6 @@
 
 import type { LucideIcon } from "lucide-react";
 import {
-  Activity,
   ArrowLeft,
   ChevronRight,
   CreditCard,
@@ -30,7 +29,6 @@ import { UsersContent } from "./users/users-content";
 import { CleanupSettingsContent } from "./settings/cleanup-settings-content";
 import { GlobalBackgroundSettingsContent } from "../background/global-background-settings-content";
 import { PermissionsContent } from "./permissions/permissions-content";
-import { OperationsOverviewContent } from "./operations/operations-overview-content";
 import { WorkerRunsContent } from "./operations/worker-runs-content";
 import { CleanupRunsContent } from "./operations/cleanup-runs-content";
 import { WebhookLogsContent } from "./operations/webhook-logs-content";
@@ -44,7 +42,6 @@ type AdminTabId =
   | "cleanup"
   | "background"
   | "permissions"
-  | "operations"
   | "workers"
   | "cleanup-runs"
   | "webhooks"
@@ -67,7 +64,6 @@ function isAdminTabId(value: string | null): value is AdminTabId {
     value === "cleanup" ||
     value === "background" ||
     value === "permissions" ||
-    value === "operations" ||
     value === "workers" ||
     value === "cleanup-runs" ||
     value === "webhooks" ||
@@ -231,13 +227,6 @@ export function AdminDashboard() {
           icon: ShieldCheck,
           enabled: adminPermissions.canViewPermissions,
           component: PermissionsContent,
-        },
-        {
-          id: "operations",
-          title: t("operations"),
-          icon: Activity,
-          enabled: adminPermissions.canViewOperations,
-          component: OperationsOverviewContent,
         },
         {
           id: "workers",

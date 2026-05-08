@@ -498,7 +498,6 @@
     "cleanupSettingsDesc": "统一配置卡密与邮箱的过期清理策略，避免后台任务失控。",
     "globalBackgroundSettings": "全局背景图片设置",
     "permissions": "权限策略",
-    "operations": "运维概览",
     "workers": "Worker 运行",
     "cleanupRuns": "清理历史",
     "webhookLogs": "Webhook 日志",
