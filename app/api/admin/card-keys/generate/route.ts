@@ -37,7 +37,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "未授权" }, { status: 401 });
     }
 
-    // 检查权限 - 只有皇帝可以生成卡密
     const hasPermission = await checkPermission(PERMISSIONS.MANAGE_CARD_KEYS);
     if (!hasPermission) {
       return NextResponse.json(

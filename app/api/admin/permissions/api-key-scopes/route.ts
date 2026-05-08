@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq, inArray } from "drizzle-orm";
 import { z } from "zod";
-import { auth, checkPermission } from "@/lib/auth";
 import { recordAdminMutationAudit } from "@/lib/admin-audit";
 import { createDb } from "@/lib/db";
+import { jsonError, parseJsonBody, requireAdminPermission } from "@/lib/admin-api";
 import { apiKeyScopes, apiKeys, permissions } from "@/lib/schema";
 import { PERMISSIONS } from "@/lib/permissions";
 
@@ -14,25 +14,17 @@ const updateApiKeyScopesSchema = z.object({
 
 export async function PATCH(request: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "未授权" }, { status: 401 });
-    }
+    const guard = await requireAdminPermission(PERMISSIONS.MANAGE_PERMISSIONS);
+    if (!guard.ok) return guard.response;
 
-    if (!(await checkPermission(PERMISSIONS.MANAGE_PERMISSIONS))) {
-      return NextResponse.json({ error: "权限不足" }, { status: 403 });
-    }
+    const parsed = await parseJsonBody(request, updateApiKeyScopesSchema);
+    if (!parsed.ok) return parsed.response;
 
-    const validation = updateApiKeyScopesSchema.safeParse(await request.json());
-    if (!validation.success) {
-      return NextResponse.json({ error: validation.error.errors[0].message }, { status: 400 });
-    }
-
-    const { apiKeyId, permissionKeys } = validation.data;
+    const { apiKeyId, permissionKeys } = parsed.data;
     const db = await createDb();
     const apiKey = await db.query.apiKeys.findFirst({ where: eq(apiKeys.id, apiKeyId) });
     if (!apiKey) {
-      return NextResponse.json({ error: "API Key 不存在" }, { status: 404 });
+      return jsonError("API Key 不存在", 404);
     }
 
     const uniquePermissionKeys = Array.from(new Set(permissionKeys));
@@ -44,7 +36,7 @@ export async function PATCH(request: NextRequest) {
       const knownKeys = new Set(knownPermissions.map((permission) => permission.key));
       const unknownKey = uniquePermissionKeys.find((key) => !knownKeys.has(key));
       if (unknownKey) {
-        return NextResponse.json({ error: `未知权限：${unknownKey}` }, { status: 400 });
+        return jsonError(`未知权限：${unknownKey}`, 400);
       }
     }
 
@@ -61,7 +53,7 @@ export async function PATCH(request: NextRequest) {
 
     await recordAdminMutationAudit({
       request,
-      actorUserId: session.user.id,
+      actorUserId: guard.userId,
       action: "permissions.api_key_scope.update",
       targetType: "api_key",
       targetId: apiKeyId,
@@ -76,6 +68,6 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("更新 API Key Scope 失败:", error);
-    return NextResponse.json({ error: "更新 API Key Scope 失败" }, { status: 500 });
+    return jsonError("更新 API Key Scope 失败", 500);
   }
 }

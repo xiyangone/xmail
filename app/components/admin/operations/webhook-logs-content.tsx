@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { RefreshCw, Webhook } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useAdminResource } from "./use-admin-resource";
 import type { Pagination, WebhookLogRecord } from "./types";
 import { formatDateTime, statusBadgeVariant } from "./types";
 
@@ -15,43 +16,22 @@ interface WebhookLogsResponse {
   pagination: Pagination;
 }
 
-async function readJsonError(response: Response) {
-  try {
-    const body = (await response.json()) as { error?: string };
-    return body.error ?? `HTTP ${response.status}`;
-  } catch {
-    return `HTTP ${response.status}`;
-  }
-}
-
 export function WebhookLogsContent() {
-  const [data, setData] = useState<WebhookLogsResponse | null>(null);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const params = new URLSearchParams({ page: String(page) });
-      if (search.trim()) params.set("search", search.trim());
-      if (status !== "all") params.set("status", status);
-      const response = await fetch(`/api/admin/operations/webhook-logs?${params.toString()}`, { cache: "no-store" });
-      if (!response.ok) throw new Error(await readJsonError(response));
-      setData((await response.json()) as WebhookLogsResponse);
-    } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "加载 Webhook 日志失败");
-    } finally {
-      setLoading(false);
-    }
+  const loadWebhookLogs = useCallback(() => {
+    const params = new URLSearchParams({ page: String(page) });
+    if (search.trim()) params.set("search", search.trim());
+    if (status !== "all") params.set("status", status);
+    return fetch(`/api/admin/operations/webhook-logs?${params.toString()}`, { cache: "no-store" });
   }, [page, search, status]);
 
-  useEffect(() => {
-    void loadData();
-  }, [loadData]);
+  const { data, loading, error, reload } = useAdminResource<WebhookLogsResponse>({
+    load: loadWebhookLogs,
+    failureMessage: "加载 Webhook 日志失败",
+  });
 
   const pagination = data?.pagination;
 
@@ -69,7 +49,7 @@ export function WebhookLogsContent() {
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <Input value={search} onChange={(event) => { setPage(1); setSearch(event.target.value); }} placeholder="URL / event / error" className="rounded-xl sm:w-56" />
             <Input value={status} onChange={(event) => { setPage(1); setStatus(event.target.value || "all"); }} placeholder="status or all" className="rounded-xl sm:w-36" />
-            <Button variant="outline" size="sm" onClick={() => void loadData()} className="rounded-full">
+            <Button variant="outline" size="sm" onClick={() => void reload()} className="rounded-full">
               <RefreshCw className="mr-2 h-4 w-4" />
               刷新
             </Button>

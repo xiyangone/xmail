@@ -25,6 +25,24 @@ export interface AuthorizationDecision {
   requestHeaders?: Headers;
 }
 
+function allowDecision(
+  identity: AuthIdentity,
+  policy: RoutePolicyDefinition,
+  requestHeaders: Headers
+): AuthorizationDecision {
+  return { allowed: true, status: 200, identity, policy, requestHeaders };
+}
+
+function denyDecision(
+  status: number,
+  error: string,
+  identity: AuthIdentity,
+  requestHeaders: Headers,
+  policy?: RoutePolicyDefinition
+): AuthorizationDecision {
+  return { allowed: false, status, error, identity, policy, requestHeaders };
+}
+
 function parsePermissions(value: string | null | undefined): Permission[] {
   if (!value) return [];
   return value
@@ -87,6 +105,7 @@ async function getRoutePolicies(): Promise<RoutePolicyDefinition[]> {
     if (!rows.length) return DEFAULT_ROUTE_POLICIES;
     return rows.map(normalizePolicy);
   } catch (error) {
+    // 数据库策略不可用时使用内置默认策略，避免迁移前阻断公开配置接口和内部清理链路。
     console.error("Falling back to default route policies:", error);
     return DEFAULT_ROUTE_POLICIES;
   }
@@ -103,6 +122,7 @@ async function getInternalWorkerSecret() {
 
 async function resolveAuthIdentity(request: Request): Promise<{ identity: AuthIdentity; requestHeaders: Headers }> {
   const requestHeaders = new Headers(request.headers);
+  // 客户端传入的身份头不可信，必须先移除，再由服务端鉴权流程重新写入。
   requestHeaders.delete("X-User-Id");
   requestHeaders.delete("X-Auth-Source");
   requestHeaders.delete("X-Api-Key-Id");
@@ -163,48 +183,47 @@ export async function authorizeRequest(request: Request): Promise<AuthorizationD
   const { identity, requestHeaders } = await resolveAuthIdentity(request);
 
   if (!policy) {
-    return { allowed: false, status: 403, error: "未配置访问策略", identity, requestHeaders };
+    return denyDecision(403, "未配置访问策略", identity, requestHeaders);
   }
 
   if (policy.access === POLICY_ACCESS.PUBLIC) {
-    return { allowed: true, status: 200, identity, policy, requestHeaders };
+    return allowDecision(identity, policy, requestHeaders);
   }
 
   if (identity.source === "anonymous") {
-    return { allowed: false, status: 401, error: "未授权", identity, policy, requestHeaders };
+    return denyDecision(401, "未授权", identity, requestHeaders, policy);
   }
 
   if (identity.source === "internal") {
     if (policy.access === POLICY_ACCESS.INTERNAL || policy.allowInternal) {
-      return { allowed: true, status: 200, identity, policy, requestHeaders };
+      return allowDecision(identity, policy, requestHeaders);
     }
-
-    return { allowed: false, status: 403, error: "内部服务无权访问该接口", identity, policy, requestHeaders };
+    return denyDecision(403, "内部服务无权访问该接口", identity, requestHeaders, policy);
   }
 
   if (identity.source === "api_key" && !policy.allowApiKey) {
-    return { allowed: false, status: 403, error: "API Key 无权访问该接口", identity, policy, requestHeaders };
+    return denyDecision(403, "API Key 无权访问该接口", identity, requestHeaders, policy);
   }
 
   if (policy.access === POLICY_ACCESS.AUTHENTICATED) {
-    return { allowed: true, status: 200, identity, policy, requestHeaders };
+    return allowDecision(identity, policy, requestHeaders);
   }
 
   if (!identity.userId) {
-    return { allowed: false, status: 401, error: "未授权", identity, policy, requestHeaders };
+    return denyDecision(401, "未授权", identity, requestHeaders, policy);
   }
 
   const hasPermission = await userHasAnyPermission(identity.userId, policy.requiredPermissions);
   if (!hasPermission) {
-    return { allowed: false, status: 403, error: "权限不足", identity, policy, requestHeaders };
+    return denyDecision(403, "权限不足", identity, requestHeaders, policy);
   }
 
   if (identity.source === "api_key" && identity.apiKeyId) {
     const hasScope = await apiKeyHasRequiredScope(identity.apiKeyId, policy.requiredPermissions);
     if (!hasScope) {
-      return { allowed: false, status: 403, error: "API Key Scope 权限不足", identity, policy, requestHeaders };
+      return denyDecision(403, "API Key Scope 权限不足", identity, requestHeaders, policy);
     }
   }
 
-  return { allowed: true, status: 200, identity, policy, requestHeaders };
+  return allowDecision(identity, policy, requestHeaders);
 }

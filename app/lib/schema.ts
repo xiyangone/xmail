@@ -17,9 +17,9 @@ import {
 import type { AdapterAccountType } from "next-auth/adapters";
 
 import { relations, sql } from "drizzle-orm";
-
-
-
+
+// Auth.js tables
+
 // https://authjs.dev/getting-started/adapters/drizzle
 
 export const users = sqliteTable("user", {
@@ -89,9 +89,9 @@ export const accounts = sqliteTable(
   })
 
 );
-
-
-
+
+// Mail tables
+
 export const emails = sqliteTable(
 
   "email",
@@ -131,9 +131,7 @@ export const emails = sqliteTable(
   })
 
 );
-
-
-
+
 export const messages = sqliteTable(
 
   "message",
@@ -189,9 +187,9 @@ export const messages = sqliteTable(
   })
 
 );
-
-
-
+
+// Webhook tables
+
 export const webhooks = sqliteTable("webhook", {
 
   id: text("id")
@@ -223,9 +221,7 @@ export const webhooks = sqliteTable("webhook", {
     .$defaultFn(() => new Date()),
 
 });
-
-
-
+
 // Webhook 失败日志表
 
 export const webhookLogs = sqliteTable("webhook_log", {
@@ -259,9 +255,9 @@ export const webhookLogs = sqliteTable("webhook_log", {
     .$defaultFn(() => new Date()),
 
 });
-
-
-
+
+// Role and permission tables
+
 export const roles = sqliteTable("role", {
 
   id: text("id")
@@ -287,9 +283,7 @@ export const roles = sqliteTable("role", {
   ),
 
 });
-
-
-
+
 export const userRoles = sqliteTable(
 
   "user_role",
@@ -323,9 +317,7 @@ export const userRoles = sqliteTable(
   })
 
 );
-
-
-
+
 export const permissions = sqliteTable(
 
   "permission",
@@ -367,9 +359,7 @@ export const permissions = sqliteTable(
   })
 
 );
-
-
-
+
 export const rolePermissions = sqliteTable(
 
   "role_permission",
@@ -405,9 +395,7 @@ export const rolePermissions = sqliteTable(
   })
 
 );
-
-
-
+
 export const routePolicies = sqliteTable(
 
   "route_policy",
@@ -461,9 +449,9 @@ export const routePolicies = sqliteTable(
   })
 
 );
-
-
-
+
+// Operations log tables
+
 export const workerRuns = sqliteTable(
 
   "worker_run",
@@ -511,9 +499,7 @@ export const workerRuns = sqliteTable(
   })
 
 );
-
-
-
+
 export const emailReceiverLogs = sqliteTable(
 
   "email_receiver_log",
@@ -563,9 +549,7 @@ export const emailReceiverLogs = sqliteTable(
   })
 
 );
-
-
-
+
 export const adminAuditLogs = sqliteTable(
 
   "admin_audit_log",
@@ -613,9 +597,9 @@ export const adminAuditLogs = sqliteTable(
   })
 
 );
-
-
-
+
+// Card key and temporary account tables
+
 // 卡密表
 
 export const cardKeys = sqliteTable("card_keys", {
@@ -657,9 +641,7 @@ export const cardKeys = sqliteTable("card_keys", {
   expiresAtIdx: index("card_keys_expires_at_idx").on(table.expiresAt),
 
 }));
-
-
-
+
 // 临时账号表
 
 export const tempAccounts = sqliteTable("temp_accounts", {
@@ -703,9 +685,7 @@ export const tempAccounts = sqliteTable("temp_accounts", {
   isActiveExpiresIdx: index("temp_accounts_is_active_expires_idx").on(table.isActive, table.expiresAt),
 
 }));
-
-
-
+
 export const apiKeys = sqliteTable(
 
   "api_keys",
@@ -765,9 +745,7 @@ export const apiKeys = sqliteTable(
   })
 
 );
-
-
-
+
 export const apiKeyScopes = sqliteTable(
   "api_key_scope",
   {
@@ -828,9 +806,7 @@ export const emailShares = sqliteTable(
   })
 
 );
-
-
-
+
 // 用户个性化设置表
 
 export const userSettings = sqliteTable("user_settings", {
@@ -874,9 +850,7 @@ export const userSettings = sqliteTable("user_settings", {
     .$defaultFn(() => new Date()),
 
 });
-
-
-
+
 export const apiKeysRelations = relations(apiKeys, ({ one }) => ({
 
   user: one(users, {
@@ -888,9 +862,7 @@ export const apiKeysRelations = relations(apiKeys, ({ one }) => ({
   }),
 
 }));
-
-
-
+
 export const cardKeysRelations = relations(cardKeys, ({ one }) => ({
 
   usedByUser: one(users, {
@@ -902,9 +874,7 @@ export const cardKeysRelations = relations(cardKeys, ({ one }) => ({
   }),
 
 }));
-
-
-
+
 export const tempAccountsRelations = relations(tempAccounts, ({ one }) => ({
 
   user: one(users, {
@@ -924,9 +894,7 @@ export const tempAccountsRelations = relations(tempAccounts, ({ one }) => ({
   }),
 
 }));
-
-
-
+
 export const userRolesRelations = relations(userRoles, ({ one }) => ({
 
   user: one(users, {
@@ -946,9 +914,9 @@ export const userRolesRelations = relations(userRoles, ({ one }) => ({
   }),
 
 }));
-
-
-
+
+// Relations
+
 export const usersRelations = relations(users, ({ many, one }) => ({
 
   userRoles: many(userRoles),
@@ -966,17 +934,13 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   }),
 
 }));
-
-
-
+
 export const rolesRelations = relations(roles, ({ many }) => ({
 
   userRoles: many(userRoles),
 
 }));
-
-
-
+
 export const emailSharesRelations = relations(emailShares, ({ one }) => ({
 
   email: one(emails, {
@@ -988,9 +952,7 @@ export const emailSharesRelations = relations(emailShares, ({ one }) => ({
   }),
 
 }));
-
-
-
+
 export const userSettingsRelations = relations(userSettings, ({ one }) => ({
 
   user: one(users, {

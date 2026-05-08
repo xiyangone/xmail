@@ -4,6 +4,7 @@ import { and, count, desc, eq, gt, lte, or, sql } from "drizzle-orm";
 import { auth, checkPermission } from "@/lib/auth";
 import { recordAdminMutationAudit } from "@/lib/admin-audit";
 import { createDb } from "@/lib/db";
+import { clampPageSize, parsePositiveInt } from "@/lib/admin-api";
 import { cardKeys, tempAccounts, users } from "@/lib/schema";
 import { PERMISSIONS } from "@/lib/permissions";
 
@@ -11,11 +12,6 @@ type CardKeyStatus = "all" | "unused" | "used" | "expiring-soon";
 
 const DEFAULT_PAGE_SIZE = 8;
 const MAX_PAGE_SIZE = 50;
-
-function parsePositiveInt(value: string | null, fallback: number) {
-  const parsed = Number.parseInt(value ?? "", 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-}
 
 function isCardKeyStatus(value: string | null): value is CardKeyStatus {
   return value === "all" || value === "unused" || value === "used" || value === "expiring-soon";
@@ -134,10 +130,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const pageSize = Math.min(
-      parsePositiveInt(searchParams.get("pageSize") ?? searchParams.get("limit"), DEFAULT_PAGE_SIZE),
-      MAX_PAGE_SIZE
-    );
+    const pageSize = clampPageSize(searchParams.get("pageSize") ?? searchParams.get("limit"), DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
     const requestedPage = parsePositiveInt(searchParams.get("page"), 1);
     const search = searchParams.get("search")?.trim() ?? "";
     const statusParam = searchParams.get("status");

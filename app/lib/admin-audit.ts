@@ -36,6 +36,7 @@ export async function recordAdminMutationAudit(input: AdminMutationAuditInput) {
   try {
     return await recordAdminAuditLog(auditInput, db);
   } catch (error) {
+    // 审计失败不能回滚已经授权成功的管理操作，因此这里只记录错误并返回 null。
     console.error("Failed to record admin audit log:", error);
     return null;
   }

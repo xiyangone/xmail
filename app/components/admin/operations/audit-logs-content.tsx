@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { FileClock, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useAdminResource } from "./use-admin-resource";
 import type { AuditLogRecord, Pagination } from "./types";
 import { formatDateTime, formatJsonSummary } from "./types";
 
@@ -15,45 +16,24 @@ interface AuditLogsResponse {
   pagination: Pagination;
 }
 
-async function readJsonError(response: Response) {
-  try {
-    const body = (await response.json()) as { error?: string };
-    return body.error ?? `HTTP ${response.status}`;
-  } catch {
-    return `HTTP ${response.status}`;
-  }
-}
-
 export function AuditLogsContent() {
-  const [data, setData] = useState<AuditLogsResponse | null>(null);
   const [search, setSearch] = useState("");
   const [action, setAction] = useState("all");
   const [targetType, setTargetType] = useState("all");
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const params = new URLSearchParams({ page: String(page) });
-      if (search.trim()) params.set("search", search.trim());
-      if (action !== "all") params.set("action", action);
-      if (targetType !== "all") params.set("targetType", targetType);
-      const response = await fetch(`/api/admin/operations/audit-logs?${params.toString()}`, { cache: "no-store" });
-      if (!response.ok) throw new Error(await readJsonError(response));
-      setData((await response.json()) as AuditLogsResponse);
-    } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "加载审计日志失败");
-    } finally {
-      setLoading(false);
-    }
+  const loadAuditLogs = useCallback(() => {
+    const params = new URLSearchParams({ page: String(page) });
+    if (search.trim()) params.set("search", search.trim());
+    if (action !== "all") params.set("action", action);
+    if (targetType !== "all") params.set("targetType", targetType);
+    return fetch(`/api/admin/operations/audit-logs?${params.toString()}`, { cache: "no-store" });
   }, [action, page, search, targetType]);
 
-  useEffect(() => {
-    void loadData();
-  }, [loadData]);
+  const { data, loading, error, reload } = useAdminResource<AuditLogsResponse>({
+    load: loadAuditLogs,
+    failureMessage: "加载审计日志失败",
+  });
 
   const pagination = data?.pagination;
 
@@ -72,7 +52,7 @@ export function AuditLogsContent() {
             <Input value={search} onChange={(event) => { setPage(1); setSearch(event.target.value); }} placeholder="search" className="rounded-xl sm:w-44" />
             <Input value={action} onChange={(event) => { setPage(1); setAction(event.target.value || "all"); }} placeholder="action or all" className="rounded-xl sm:w-40" />
             <Input value={targetType} onChange={(event) => { setPage(1); setTargetType(event.target.value || "all"); }} placeholder="target or all" className="rounded-xl sm:w-40" />
-            <Button variant="outline" size="sm" onClick={() => void loadData()} className="rounded-full">
+            <Button variant="outline" size="sm" onClick={() => void reload()} className="rounded-full">
               <RefreshCw className="mr-2 h-4 w-4" />
               刷新
             </Button>

@@ -4,16 +4,12 @@ import { and, desc, eq, inArray, or, sql } from "drizzle-orm";
 import { auth, checkPermission, getUserRole } from "@/lib/auth";
 import { recordAdminMutationAudit } from "@/lib/admin-audit";
 import { createDb } from "@/lib/db";
+import { clampPageSize, parsePositiveInt } from "@/lib/admin-api";
 import { roles, tempAccounts, userRoles, users } from "@/lib/schema";
 import { PERMISSIONS, ROLES } from "@/lib/permissions";
 
 const DEFAULT_PAGE_SIZE = 10;
 const MAX_PAGE_SIZE = 50;
-
-function parsePositiveInt(value: string | null, fallback: number) {
-  const parsed = Number.parseInt(value ?? "", 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-}
 
 function buildUserFilters(search: string, roleFilter: string | null) {
   const filters: SQL<unknown>[] = [];
@@ -51,10 +47,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const pageSize = Math.min(
-      parsePositiveInt(searchParams.get("pageSize"), DEFAULT_PAGE_SIZE),
-      MAX_PAGE_SIZE
-    );
+    const pageSize = clampPageSize(searchParams.get("pageSize"), DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
     const requestedPage = parsePositiveInt(searchParams.get("page"), 1);
     const roleFilter = searchParams.get("role");
     const search = searchParams.get("search")?.trim() ?? "";

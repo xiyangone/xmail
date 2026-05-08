@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 import { Activity, AlertTriangle, Mail, RefreshCw, ScrollText, Webhook } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useAdminResource } from "./use-admin-resource";
 import type { WorkerRunRecord } from "./types";
 import { formatDateTime, formatJsonSummary, statusBadgeVariant } from "./types";
 
@@ -32,37 +33,16 @@ function OverviewSkeleton() {
   );
 }
 
-async function readJsonError(response: Response) {
-  try {
-    const body = (await response.json()) as { error?: string };
-    return body.error ?? `HTTP ${response.status}`;
-  } catch {
-    return `HTTP ${response.status}`;
-  }
-}
-
 export function OperationsOverviewContent() {
-  const [data, setData] = useState<SummaryResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const loadSummary = useCallback(
+    () => fetch("/api/admin/operations/summary", { cache: "no-store" }),
+    []
+  );
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch("/api/admin/operations/summary", { cache: "no-store" });
-      if (!response.ok) throw new Error(await readJsonError(response));
-      setData((await response.json()) as SummaryResponse);
-    } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "加载运维概览失败");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadData();
-  }, [loadData]);
+  const { data, loading, error, reload } = useAdminResource<SummaryResponse>({
+    load: loadSummary,
+    failureMessage: "加载运维概览失败",
+  });
 
   if (loading) return <OverviewSkeleton />;
 
@@ -70,7 +50,7 @@ export function OperationsOverviewContent() {
     return (
       <div className="surface-panel rounded-3xl p-8 text-center">
         <p className="text-sm text-muted-foreground">{error ?? "无法加载运维概览"}</p>
-        <Button variant="outline" onClick={() => void loadData()} className="mt-4 rounded-full">
+        <Button variant="outline" onClick={() => void reload()} className="mt-4 rounded-full">
           <RefreshCw className="mr-2 h-4 w-4" />
           重试
         </Button>
@@ -96,7 +76,7 @@ export function OperationsOverviewContent() {
             </p>
             <p className="text-xs text-muted-foreground">汇总 Worker、Webhook、邮件接收和审计数据。</p>
           </div>
-          <Button variant="outline" size="sm" onClick={() => void loadData()} className="rounded-full">
+          <Button variant="outline" size="sm" onClick={() => void reload()} className="rounded-full">
             <RefreshCw className="mr-2 h-4 w-4" />
             刷新
           </Button>

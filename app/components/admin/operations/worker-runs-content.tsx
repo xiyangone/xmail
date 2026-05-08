@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { RefreshCw, ServerCog } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useAdminResource } from "./use-admin-resource";
 import type { Pagination, WorkerRunRecord } from "./types";
 import { formatDateTime, formatJsonSummary, statusBadgeVariant } from "./types";
 
@@ -22,48 +23,27 @@ interface WorkerRunsContentProps {
   showWorkerFilter?: boolean;
 }
 
-async function readJsonError(response: Response) {
-  try {
-    const body = (await response.json()) as { error?: string };
-    return body.error ?? `HTTP ${response.status}`;
-  } catch {
-    return `HTTP ${response.status}`;
-  }
-}
-
 export function WorkerRunsContent({
   endpoint = "/api/admin/operations/workers",
   title = "Worker 运行历史",
   description = "查看最近的 Worker 定时任务和手动任务执行结果。",
   showWorkerFilter = true,
 }: WorkerRunsContentProps) {
-  const [data, setData] = useState<WorkerRunsResponse | null>(null);
   const [workerName, setWorkerName] = useState("");
   const [status, setStatus] = useState("all");
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const params = new URLSearchParams({ page: String(page) });
-      if (showWorkerFilter && workerName.trim()) params.set("workerName", workerName.trim());
-      if (status !== "all") params.set("status", status);
-      const response = await fetch(`${endpoint}?${params.toString()}`, { cache: "no-store" });
-      if (!response.ok) throw new Error(await readJsonError(response));
-      setData((await response.json()) as WorkerRunsResponse);
-    } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "加载 Worker 运行历史失败");
-    } finally {
-      setLoading(false);
-    }
+  const loadWorkerRuns = useCallback(() => {
+    const params = new URLSearchParams({ page: String(page) });
+    if (showWorkerFilter && workerName.trim()) params.set("workerName", workerName.trim());
+    if (status !== "all") params.set("status", status);
+    return fetch(`${endpoint}?${params.toString()}`, { cache: "no-store" });
   }, [endpoint, page, showWorkerFilter, status, workerName]);
 
-  useEffect(() => {
-    void loadData();
-  }, [loadData]);
+  const { data, loading, error, reload } = useAdminResource<WorkerRunsResponse>({
+    load: loadWorkerRuns,
+    failureMessage: "加载 Worker 运行历史失败",
+  });
 
   const pagination = data?.pagination;
 
@@ -99,7 +79,7 @@ export function WorkerRunsContent({
               placeholder="status or all"
               className="rounded-xl sm:w-36"
             />
-            <Button variant="outline" size="sm" onClick={() => void loadData()} className="rounded-full">
+            <Button variant="outline" size="sm" onClick={() => void reload()} className="rounded-full">
               <RefreshCw className="mr-2 h-4 w-4" />
               刷新
             </Button>

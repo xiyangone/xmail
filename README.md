@@ -209,6 +209,12 @@ pnpm build
 pnpm test:verification-code
 ```
 
+4. **维护性检查**：
+
+```bash
+pnpm test:maintainability
+```
+
 > `pnpm build:worker` 仍保留用于 GitHub Actions / Linux / WSL 环境下的 OpenNext Worker 打包校验，不再作为 Windows 本机日常必跑项。
 
 ## 部署

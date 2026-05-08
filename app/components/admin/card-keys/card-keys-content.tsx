@@ -1,13 +1,23 @@
 "use client";
 
 import { CreditCard, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCardKeys } from "@/hooks/use-card-keys";
 import { CardKeyCard } from "./card-key-card";
-import { CardKeyDeleteDialog } from "./card-key-delete-dialog";
 import { CardKeyFilterBar } from "./card-key-filter-bar";
 import { CardKeyGenerateDialog } from "./card-key-generate-dialog";
+import { useTranslations } from "next-intl";
 
 function CardKeysSkeleton() {
   return (
@@ -55,6 +65,8 @@ function CardKeysSkeleton() {
 
 export function CardKeysContent() {
   const hook = useCardKeys();
+  const t = useTranslations("cardKey");
+  const tc = useTranslations("common");
 
   if (!hook.permissionReady) {
     return <CardKeysSkeleton />;
@@ -70,6 +82,29 @@ export function CardKeysContent() {
     hook.filterStatus !== "all"
       ? hook.filterOptions.find((option) => option.value === hook.filterStatus)?.label ?? ""
       : "";
+
+  const deleteDialog = hook.deleteTarget && (
+    <AlertDialog open={hook.deleteDialogOpen} onOpenChange={hook.setDeleteDialogOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{t("confirmDeleteTitle")}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {hook.deleteTarget.type === "batch"
+              ? t("confirmDeleteBatch", { count: hook.deleteTarget.count ?? 0 })
+              : t("confirmDeleteSingle")}
+            <br />
+            <span className="text-destructive font-medium">{t("confirmDeleteWarning")}</span>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>{tc("cancel")}</AlertDialogCancel>
+          <AlertDialogAction onClick={hook.confirmDelete} className="bg-destructive hover:bg-destructive/90">
+            {t("confirmDelete")}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
 
   return (
     <div className="space-y-5">
@@ -199,12 +234,7 @@ export function CardKeysContent() {
         </>
       )}
 
-      <CardKeyDeleteDialog
-        open={hook.deleteDialogOpen}
-        onOpenChange={hook.setDeleteDialogOpen}
-        deleteTarget={hook.deleteTarget}
-        onConfirm={hook.confirmDelete}
-      />
+      {deleteDialog}
     </div>
   );
 }

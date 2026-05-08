@@ -44,7 +44,6 @@ export async function POST(request: Request) {
 
   const config = (await request.json()) as CleanupConfig
 
-  // 验证输入
   if (config.cardKeyDefaultDays < 1 || config.cardKeyDefaultDays > 365) {
     return NextResponse.json(
       { error: "卡密有效期必须在 1-365 天之间" },

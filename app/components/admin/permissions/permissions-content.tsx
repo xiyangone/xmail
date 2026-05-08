@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ApiKeyScopesEditor } from "./api-key-scopes-editor";
 import { RolePermissionsEditor } from "./role-permissions-editor";
 import { RoutePoliciesEditor } from "./route-policies-editor";
+import { readJsonError } from "../operations/use-admin-resource";
 import type { PermissionAdminData, PolicyAccess } from "./types";
 
 interface RoutePolicyDraft {
@@ -39,15 +40,6 @@ function PermissionsLoadingState() {
       ))}
     </div>
   );
-}
-
-async function readJsonError(response: Response) {
-  try {
-    const body = (await response.json()) as { error?: string };
-    return body.error ?? `HTTP ${response.status}`;
-  } catch {
-    return `HTTP ${response.status}`;
-  }
 }
 
 export function PermissionsContent() {

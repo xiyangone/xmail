@@ -18,10 +18,9 @@ import {
   Webhook,
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import type { ComponentType } from "react";
+import type { ComponentType, ReactNode } from "react";
 import { useEffect, useMemo } from "react";
 import { useTranslations } from "next-intl";
-import { AdminSectionShell } from "./admin-section-shell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRolePermission } from "@/hooks/use-role-permission";
@@ -42,67 +41,60 @@ type AdminTabId =
   | "audit"
   | "diagnostics";
 
-const CardKeysContent = dynamic(
-  () => import("./card-keys/card-keys-content").then((mod) => ({ default: mod.CardKeysContent })),
-  { loading: () => <AdminModuleLoadingState /> }
+function lazyAdminContent<T extends ComponentType>(
+  loader: () => Promise<{ default: T }>
+) {
+  return dynamic(loader, { loading: () => <AdminModuleLoadingState /> });
+}
+
+const CardKeysContent = lazyAdminContent(() =>
+  import("./card-keys/card-keys-content").then((mod) => ({ default: mod.CardKeysContent }))
 );
 
-const UsersContent = dynamic(
-  () => import("./users/users-content").then((mod) => ({ default: mod.UsersContent })),
-  { loading: () => <AdminModuleLoadingState /> }
+const UsersContent = lazyAdminContent(() =>
+  import("./users/users-content").then((mod) => ({ default: mod.UsersContent }))
 );
 
-const CleanupSettingsContent = dynamic(
-  () => import("./settings/cleanup-settings-content").then((mod) => ({ default: mod.CleanupSettingsContent })),
-  { loading: () => <AdminModuleLoadingState /> }
+const CleanupSettingsContent = lazyAdminContent(() =>
+  import("./settings/cleanup-settings-content").then((mod) => ({ default: mod.CleanupSettingsContent }))
 );
 
-const GlobalBackgroundSettingsContent = dynamic(
-  () =>
-    import("../background/global-background-settings-content").then((mod) => ({
-      default: mod.GlobalBackgroundSettingsContent,
-    })),
-  { loading: () => <AdminModuleLoadingState /> }
+const GlobalBackgroundSettingsContent = lazyAdminContent(() =>
+  import("../background/global-background-settings-content").then((mod) => ({
+    default: mod.GlobalBackgroundSettingsContent,
+  }))
 );
 
-const PermissionsContent = dynamic(
-  () => import("./permissions/permissions-content").then((mod) => ({ default: mod.PermissionsContent })),
-  { loading: () => <AdminModuleLoadingState /> }
+const PermissionsContent = lazyAdminContent(() =>
+  import("./permissions/permissions-content").then((mod) => ({ default: mod.PermissionsContent }))
 );
 
-const OperationsOverviewContent = dynamic(
-  () => import("./operations/operations-overview-content").then((mod) => ({ default: mod.OperationsOverviewContent })),
-  { loading: () => <AdminModuleLoadingState /> }
+const OperationsOverviewContent = lazyAdminContent(() =>
+  import("./operations/operations-overview-content").then((mod) => ({ default: mod.OperationsOverviewContent }))
 );
 
-const WorkerRunsContent = dynamic(
-  () => import("./operations/worker-runs-content").then((mod) => ({ default: mod.WorkerRunsContent })),
-  { loading: () => <AdminModuleLoadingState /> }
+const WorkerRunsContent = lazyAdminContent(() =>
+  import("./operations/worker-runs-content").then((mod) => ({ default: mod.WorkerRunsContent }))
 );
 
-const CleanupRunsContent = dynamic(
-  () => import("./operations/cleanup-runs-content").then((mod) => ({ default: mod.CleanupRunsContent })),
-  { loading: () => <AdminModuleLoadingState /> }
+const CleanupRunsContent = lazyAdminContent(() =>
+  import("./operations/cleanup-runs-content").then((mod) => ({ default: mod.CleanupRunsContent }))
 );
 
-const WebhookLogsContent = dynamic(
-  () => import("./operations/webhook-logs-content").then((mod) => ({ default: mod.WebhookLogsContent })),
-  { loading: () => <AdminModuleLoadingState /> }
+const WebhookLogsContent = lazyAdminContent(() =>
+  import("./operations/webhook-logs-content").then((mod) => ({ default: mod.WebhookLogsContent }))
 );
 
-const EmailReceiverLogsContent = dynamic(
-  () => import("./operations/email-receiver-logs-content").then((mod) => ({ default: mod.EmailReceiverLogsContent })),
-  { loading: () => <AdminModuleLoadingState /> }
+const EmailReceiverLogsContent = lazyAdminContent(() =>
+  import("./operations/email-receiver-logs-content").then((mod) => ({ default: mod.EmailReceiverLogsContent }))
 );
 
-const AuditLogsContent = dynamic(
-  () => import("./operations/audit-logs-content").then((mod) => ({ default: mod.AuditLogsContent })),
-  { loading: () => <AdminModuleLoadingState /> }
+const AuditLogsContent = lazyAdminContent(() =>
+  import("./operations/audit-logs-content").then((mod) => ({ default: mod.AuditLogsContent }))
 );
 
-const DiagnosticsContent = dynamic(
-  () => import("./operations/diagnostics-content").then((mod) => ({ default: mod.DiagnosticsContent })),
-  { loading: () => <AdminModuleLoadingState /> }
+const DiagnosticsContent = lazyAdminContent(() =>
+  import("./operations/diagnostics-content").then((mod) => ({ default: mod.DiagnosticsContent }))
 );
 
 interface AdminTabConfig {
@@ -163,6 +155,37 @@ function AdminModuleLoadingState() {
   );
 }
 
+function AdminSectionShell({
+  title,
+  description,
+  action,
+  children,
+  className,
+  contentClassName,
+}: {
+  title: string;
+  description?: string;
+  action?: ReactNode;
+  children: ReactNode;
+  className?: string;
+  contentClassName?: string;
+}) {
+  return (
+    <section className={cn("theme-surface-admin-shell surface-panel overflow-hidden", className)}>
+      <div className="theme-surface-admin-shell-header border-b border-border/60 px-5 py-5 sm:px-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="space-y-1">
+            <h2 className="text-xl font-semibold tracking-tight text-foreground">{title}</h2>
+            {description ? <p className="max-w-3xl text-sm text-muted-foreground">{description}</p> : null}
+          </div>
+          {action ? <div className="shrink-0">{action}</div> : null}
+        </div>
+      </div>
+      <div className={cn("p-5 sm:p-6", contentClassName)}>{children}</div>
+    </section>
+  );
+}
+
 function AdminDashboardSkeleton() {
   return (
     <div className="mx-auto grid max-w-7xl gap-6 animate-fade-in-up xl:grid-cols-[280px_minmax(0,1fr)]">
@@ -195,16 +218,26 @@ export function AdminDashboard() {
   const t = useTranslations("admin");
   const { checkPermission, isReady } = useRolePermission();
 
-  const canManageCardKeys = checkPermission(PERMISSIONS.MANAGE_CARD_KEYS);
-  const canPromote = checkPermission(PERMISSIONS.PROMOTE_USER);
-  const canManageConfig = checkPermission(PERMISSIONS.MANAGE_CONFIG);
-  const canViewPermissions =
-    checkPermission(PERMISSIONS.VIEW_PERMISSIONS) || checkPermission(PERMISSIONS.MANAGE_PERMISSIONS);
-  const canViewOperations =
-    checkPermission(PERMISSIONS.VIEW_OPERATIONS) || checkPermission(PERMISSIONS.MANAGE_OPERATIONS);
-  const canViewWebhookLogs = canViewOperations || checkPermission(PERMISSIONS.VIEW_WEBHOOK_LOGS);
-  const canViewEmailReceiverLogs = canViewOperations || checkPermission(PERMISSIONS.VIEW_EMAIL_RECEIVER_LOGS);
-  const canViewAuditLogs = checkPermission(PERMISSIONS.VIEW_AUDIT_LOGS) || checkPermission(PERMISSIONS.MANAGE_OPERATIONS);
+  const adminPermissions = useMemo(() => {
+    const canManageCardKeys = checkPermission(PERMISSIONS.MANAGE_CARD_KEYS);
+    const canPromote = checkPermission(PERMISSIONS.PROMOTE_USER);
+    const canManageConfig = checkPermission(PERMISSIONS.MANAGE_CONFIG);
+    const canViewPermissions =
+      checkPermission(PERMISSIONS.VIEW_PERMISSIONS) || checkPermission(PERMISSIONS.MANAGE_PERMISSIONS);
+    const canViewOperations =
+      checkPermission(PERMISSIONS.VIEW_OPERATIONS) || checkPermission(PERMISSIONS.MANAGE_OPERATIONS);
+
+    return {
+      canManageCardKeys,
+      canPromote,
+      canManageConfig,
+      canViewPermissions,
+      canViewOperations,
+      canViewWebhookLogs: canViewOperations || checkPermission(PERMISSIONS.VIEW_WEBHOOK_LOGS),
+      canViewEmailReceiverLogs: canViewOperations || checkPermission(PERMISSIONS.VIEW_EMAIL_RECEIVER_LOGS),
+      canViewAuditLogs: checkPermission(PERMISSIONS.VIEW_AUDIT_LOGS) || checkPermission(PERMISSIONS.MANAGE_OPERATIONS),
+    };
+  }, [checkPermission]);
 
   const tabs = useMemo(
     (): AdminTabConfig[] => {
@@ -213,101 +246,91 @@ export function AdminDashboard() {
           id: "card-keys",
           title: t("cardKeyManagement"),
           icon: CreditCard,
-          enabled: canManageCardKeys,
+          enabled: adminPermissions.canManageCardKeys,
           component: CardKeysContent,
         },
         {
           id: "users",
           title: t("userManagement"),
           icon: Users,
-          enabled: canPromote,
+          enabled: adminPermissions.canPromote,
           component: UsersContent,
         },
         {
           id: "cleanup",
           title: t("cleanupSettings"),
           icon: Settings,
-          enabled: canManageConfig,
+          enabled: adminPermissions.canManageConfig,
           component: CleanupSettingsContent,
         },
         {
           id: "background",
           title: t("globalBackgroundSettings"),
           icon: ImageIcon,
-          enabled: canManageConfig,
+          enabled: adminPermissions.canManageConfig,
           component: GlobalBackgroundSettingsContent,
         },
         {
           id: "permissions",
           title: t("permissions"),
           icon: ShieldCheck,
-          enabled: canViewPermissions,
+          enabled: adminPermissions.canViewPermissions,
           component: PermissionsContent,
         },
         {
           id: "operations",
           title: t("operations"),
           icon: Activity,
-          enabled: canViewOperations,
+          enabled: adminPermissions.canViewOperations,
           component: OperationsOverviewContent,
         },
         {
           id: "workers",
           title: t("workers"),
           icon: ServerCog,
-          enabled: canViewOperations,
+          enabled: adminPermissions.canViewOperations,
           component: WorkerRunsContent,
         },
         {
           id: "cleanup-runs",
           title: t("cleanupRuns"),
           icon: Settings,
-          enabled: canViewOperations || canManageConfig,
+          enabled: adminPermissions.canViewOperations || adminPermissions.canManageConfig,
           component: CleanupRunsContent,
         },
         {
           id: "webhooks",
           title: t("webhookLogs"),
           icon: Webhook,
-          enabled: canViewWebhookLogs,
+          enabled: adminPermissions.canViewWebhookLogs,
           component: WebhookLogsContent,
         },
         {
           id: "mail-logs",
           title: t("mailLogs"),
           icon: Mail,
-          enabled: canViewEmailReceiverLogs,
+          enabled: adminPermissions.canViewEmailReceiverLogs,
           component: EmailReceiverLogsContent,
         },
         {
           id: "audit",
           title: t("auditLogs"),
           icon: FileClock,
-          enabled: canViewAuditLogs,
+          enabled: adminPermissions.canViewAuditLogs,
           component: AuditLogsContent,
         },
         {
           id: "diagnostics",
           title: t("diagnostics"),
           icon: Stethoscope,
-          enabled: canViewOperations,
+          enabled: adminPermissions.canViewOperations,
           component: DiagnosticsContent,
         },
       ];
 
       return tabItems.filter((tab) => tab.enabled);
     },
-    [
-      canManageCardKeys,
-      canManageConfig,
-      canPromote,
-      canViewAuditLogs,
-      canViewEmailReceiverLogs,
-      canViewOperations,
-      canViewPermissions,
-      canViewWebhookLogs,
-      t,
-    ]
+    [adminPermissions, t]
   );
 
   const requestedTab = searchParams.get("tab");

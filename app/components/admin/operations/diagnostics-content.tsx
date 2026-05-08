@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 import { CheckCircle2, RefreshCw, Stethoscope, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAdminResource } from "./use-admin-resource";
 import type { DiagnosticCheck } from "./types";
 
 interface DiagnosticsResponse {
@@ -12,41 +13,20 @@ interface DiagnosticsResponse {
   generatedAt: string;
 }
 
-async function readJsonError(response: Response) {
-  try {
-    const body = (await response.json()) as { error?: string };
-    return body.error ?? `HTTP ${response.status}`;
-  } catch {
-    return `HTTP ${response.status}`;
-  }
-}
-
 function statusVariant(status: DiagnosticCheck["status"]) {
   return status === "ok" ? "default" : "outline";
 }
 
 export function DiagnosticsContent() {
-  const [data, setData] = useState<DiagnosticsResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const loadDiagnostics = useCallback(
+    () => fetch("/api/admin/operations/diagnostics", { cache: "no-store" }),
+    []
+  );
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch("/api/admin/operations/diagnostics", { cache: "no-store" });
-      if (!response.ok) throw new Error(await readJsonError(response));
-      setData((await response.json()) as DiagnosticsResponse);
-    } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "配置诊断失败");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadData();
-  }, [loadData]);
+  const { data, loading, error, reload } = useAdminResource<DiagnosticsResponse>({
+    load: loadDiagnostics,
+    failureMessage: "配置诊断失败",
+  });
 
   if (loading) {
     return (
@@ -65,7 +45,7 @@ export function DiagnosticsContent() {
     return (
       <div className="surface-panel rounded-3xl p-8 text-center">
         <p className="text-sm text-muted-foreground">{error ?? "无法加载配置诊断"}</p>
-        <Button variant="outline" onClick={() => void loadData()} className="mt-4 rounded-full">
+        <Button variant="outline" onClick={() => void reload()} className="mt-4 rounded-full">
           <RefreshCw className="mr-2 h-4 w-4" />
           重试
         </Button>
@@ -84,7 +64,7 @@ export function DiagnosticsContent() {
             </p>
             <p className="text-xs text-muted-foreground">只展示配置状态，不显示密钥原文。生成时间：{data.generatedAt}</p>
           </div>
-          <Button variant="outline" size="sm" onClick={() => void loadData()} className="rounded-full">
+          <Button variant="outline" size="sm" onClick={() => void reload()} className="rounded-full">
             <RefreshCw className="mr-2 h-4 w-4" />
             刷新
           </Button>
