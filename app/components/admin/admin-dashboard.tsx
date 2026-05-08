@@ -143,20 +143,20 @@ function AdminSectionShell({
 
 function AdminDashboardSkeleton() {
   return (
-    <div className="mx-auto grid max-w-7xl gap-6 animate-fade-in-up xl:grid-cols-[280px_minmax(0,1fr)]">
+    <div className="mx-auto grid max-w-[90rem] gap-6 animate-fade-in-up xl:grid-cols-[240px_minmax(0,1fr)]">
       <div className="space-y-4 xl:sticky xl:top-20 xl:self-start">
         <Skeleton className="h-10 w-40 rounded-full" />
 
-        <div className="surface-panel p-3">
+        <div className="surface-panel max-h-[calc(100vh-8rem)] overflow-y-auto p-3">
           <div className="space-y-1">
             {Array.from({ length: 4 }).map((_, index) => (
-              <Skeleton key={index} className="h-16 rounded-2xl" />
+              <Skeleton key={index} className="h-14 rounded-2xl" />
             ))}
           </div>
         </div>
       </div>
 
-      <div className="space-y-6">
+      <div className="min-h-[calc(100vh-12rem)] space-y-6">
         <AdminSectionShell title=" " contentClassName="space-y-4">
           <AdminModuleLoadingState />
         </AdminSectionShell>
@@ -345,7 +345,7 @@ export function AdminDashboard() {
   const ActiveContent = activeTabConfig.component;
 
   return (
-    <div className="mx-auto grid max-w-7xl gap-6 animate-fade-in-up xl:grid-cols-[280px_minmax(0,1fr)]">
+    <div className="mx-auto grid max-w-[90rem] gap-6 animate-fade-in-up xl:grid-cols-[240px_minmax(0,1fr)]">
       <aside className="space-y-4 xl:sticky xl:top-20 xl:self-start">
         <Button
           variant="glass"
@@ -356,7 +356,7 @@ export function AdminDashboard() {
           {t("backToProfile")}
         </Button>
 
-        <nav className="theme-surface-admin-sidebar surface-panel overflow-hidden p-3">
+        <nav className="theme-surface-admin-sidebar surface-panel max-h-[calc(100vh-8rem)] overflow-y-auto p-3">
           <div className="flex flex-col gap-1">
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -368,7 +368,7 @@ export function AdminDashboard() {
                   type="button"
                   onClick={() => handleTabChange(tab.id)}
                   className={cn(
-                    "theme-surface-admin-nav-item group relative flex w-full items-center gap-3 rounded-2xl px-4 py-3.5 text-left transition-all",
+                    "theme-surface-admin-nav-item group relative flex w-full items-center gap-3 rounded-2xl px-4 py-2.5 text-left transition-all",
                     isActive
                       ? "theme-surface-admin-nav-item-active text-foreground shadow-sm ring-1 ring-primary/20"
                       : "text-muted-foreground hover:text-foreground"
@@ -376,14 +376,14 @@ export function AdminDashboard() {
                 >
                   <span
                     className={cn(
-                      "absolute inset-y-3 left-0 w-1 rounded-r-full transition-colors",
+                      "absolute inset-y-2 left-0 w-1 rounded-r-full transition-colors",
                       isActive ? "bg-primary" : "bg-transparent"
                     )}
                   />
 
                   <span
                     className={cn(
-                      "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl transition-all",
+                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all",
                       isActive
                         ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
                         : "bg-primary/10 text-primary"
@@ -407,7 +407,7 @@ export function AdminDashboard() {
         </nav>
       </aside>
 
-      <div className="space-y-6">
+      <div className="min-h-[calc(100vh-12rem)] space-y-6">
         <AdminSectionShell title={activeTabConfig.title}>
           <ActiveContent />
         </AdminSectionShell>

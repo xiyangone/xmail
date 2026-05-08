@@ -70,7 +70,7 @@ export function RolePermissionsEditor({
           </h3>
           <p className="text-sm text-muted-foreground">按角色分配动态权限。emperor 保留全部权限兜底。</p>
         </div>
-        <Badge variant="secondary">{permissions.length} permissions</Badge>
+        <Badge variant="secondary">{permissions.length} 个权限</Badge>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2">
@@ -83,7 +83,7 @@ export function RolePermissionsEditor({
               <div className="mb-3 flex items-start justify-between gap-3">
                 <div>
                   <div className="font-semibold text-foreground">{role.name}</div>
-                  <p className="text-xs text-muted-foreground">{role.description ?? "No description"}</p>
+                  <p className="text-xs text-muted-foreground">{role.description ?? "暂无描述"}</p>
                 </div>
                 <Badge variant={isEmperor ? "default" : "outline"}>{isEmperor ? "all" : selected.length}</Badge>
               </div>

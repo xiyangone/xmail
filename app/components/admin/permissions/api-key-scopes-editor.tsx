@@ -54,11 +54,11 @@ export function ApiKeyScopesEditor({ apiKeys, scopes, permissions, canManage, on
         <div>
           <h3 className="flex items-center gap-2 text-base font-semibold text-foreground">
             <KeyRound className="h-4 w-4 text-primary" />
-            API Key Scopes
+            API Key 权限范围
           </h3>
           <p className="text-sm text-muted-foreground">为空时 API Key 继承用户权限；设置后需要命中 scope 才能访问对应策略。</p>
         </div>
-        <Badge variant="secondary">{apiKeys.length} keys</Badge>
+        <Badge variant="secondary">{apiKeys.length} 个密钥</Badge>
       </div>
 
       {apiKeys.length === 0 ? (
@@ -78,7 +78,7 @@ export function ApiKeyScopesEditor({ apiKeys, scopes, permissions, canManage, on
                     <p className="text-xs text-muted-foreground">owner: {apiKey.userId}</p>
                   </div>
                   <Badge variant={selected.length > 0 ? "default" : "outline"}>
-                    {selected.length > 0 ? `${selected.length} scoped` : "inherit owner"}
+                    {selected.length > 0 ? `${selected.length} 个权限` : "继承用户权限"}
                   </Badge>
                 </div>
 

@@ -88,7 +88,7 @@ export function RoutePoliciesEditor({ policies, permissions, canManage, onSave }
           </h3>
           <p className="text-sm text-muted-foreground">按 path pattern 与 HTTP method 控制接口入口权限。</p>
         </div>
-        <Badge variant="secondary">{policies.length} policies</Badge>
+        <Badge variant="secondary">{policies.length} 条策略</Badge>
       </div>
 
       <div className="space-y-4">
@@ -100,17 +100,17 @@ export function RoutePoliciesEditor({ policies, permissions, canManage, onSave }
               <div className="mb-4 flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
                 <div className="min-w-0">
                   <div className="truncate font-semibold text-foreground">{policy.pathPattern}</div>
-                  <p className="text-xs text-muted-foreground">{policy.description ?? "No description"}</p>
+                  <p className="text-xs text-muted-foreground">{policy.description ?? "暂无描述"}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant={draft.enabled ? "default" : "outline"}>{draft.enabled ? "enabled" : "disabled"}</Badge>
+                  <Badge variant={draft.enabled ? "default" : "outline"}>{draft.enabled ? "已启用" : "已禁用"}</Badge>
                   <Badge variant="secondary">{draft.access}</Badge>
                 </div>
               </div>
 
               <div className="grid gap-3 lg:grid-cols-4">
                 <label className="space-y-1 text-xs text-muted-foreground">
-                  Methods
+                  请求方法
                   <Input
                     value={draft.methods}
                     disabled={!canManage}
@@ -119,7 +119,7 @@ export function RoutePoliciesEditor({ policies, permissions, canManage, onSave }
                   />
                 </label>
                 <label className="space-y-1 text-xs text-muted-foreground">
-                  Access
+                  访问级别
                   <Select
                     value={draft.access}
                     disabled={!canManage}
@@ -137,7 +137,7 @@ export function RoutePoliciesEditor({ policies, permissions, canManage, onSave }
                   </Select>
                 </label>
                 <label className="space-y-1 text-xs text-muted-foreground">
-                  Priority
+                  优先级
                   <Input
                     type="number"
                     value={draft.priority}
@@ -148,7 +148,7 @@ export function RoutePoliciesEditor({ policies, permissions, canManage, onSave }
                 </label>
                 <div className="grid grid-cols-3 gap-3 rounded-xl border border-border/50 bg-background/55 p-3 text-xs">
                   <label className="flex flex-col items-center gap-2 text-muted-foreground">
-                    Enabled
+                    启用
                     <Switch checked={draft.enabled} disabled={!canManage} onCheckedChange={(enabled) => updateDraft(policy.id, { enabled })} />
                   </label>
                   <label className="flex flex-col items-center gap-2 text-muted-foreground">
@@ -156,7 +156,7 @@ export function RoutePoliciesEditor({ policies, permissions, canManage, onSave }
                     <Switch checked={draft.allowApiKey} disabled={!canManage} onCheckedChange={(allowApiKey) => updateDraft(policy.id, { allowApiKey })} />
                   </label>
                   <label className="flex flex-col items-center gap-2 text-muted-foreground">
-                    Internal
+                    内部
                     <Switch checked={draft.allowInternal} disabled={!canManage} onCheckedChange={(allowInternal) => updateDraft(policy.id, { allowInternal })} />
                   </label>
                 </div>
