@@ -5,15 +5,9 @@ import {
   ArrowLeft,
   ChevronRight,
   CreditCard,
-  FileClock,
   ImageIcon,
-  Mail,
-  ServerCog,
   Settings,
-  ShieldCheck,
-  Stethoscope,
   Users,
-  Webhook,
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { ComponentType, ReactNode } from "react";
@@ -28,26 +22,8 @@ import { CardKeysContent } from "./card-keys/card-keys-content";
 import { UsersContent } from "./users/users-content";
 import { CleanupSettingsContent } from "./settings/cleanup-settings-content";
 import { GlobalBackgroundSettingsContent } from "../background/global-background-settings-content";
-import { PermissionsContent } from "./permissions/permissions-content";
-import { WorkerRunsContent } from "./operations/worker-runs-content";
-import { CleanupRunsContent } from "./operations/cleanup-runs-content";
-import { WebhookLogsContent } from "./operations/webhook-logs-content";
-import { EmailReceiverLogsContent } from "./operations/email-receiver-logs-content";
-import { AuditLogsContent } from "./operations/audit-logs-content";
-import { DiagnosticsContent } from "./operations/diagnostics-content";
 
-type AdminTabId =
-  | "card-keys"
-  | "users"
-  | "cleanup"
-  | "background"
-  | "permissions"
-  | "workers"
-  | "cleanup-runs"
-  | "webhooks"
-  | "mail-logs"
-  | "audit"
-  | "diagnostics";
+type AdminTabId = "card-keys" | "users" | "cleanup" | "background";
 
 interface AdminTabConfig {
   id: AdminTabId;
@@ -62,14 +38,7 @@ function isAdminTabId(value: string | null): value is AdminTabId {
     value === "card-keys" ||
     value === "users" ||
     value === "cleanup" ||
-    value === "background" ||
-    value === "permissions" ||
-    value === "workers" ||
-    value === "cleanup-runs" ||
-    value === "webhooks" ||
-    value === "mail-logs" ||
-    value === "audit" ||
-    value === "diagnostics"
+    value === "background"
   );
 }
 
@@ -173,20 +142,11 @@ export function AdminDashboard() {
     const canManageCardKeys = checkPermission(PERMISSIONS.MANAGE_CARD_KEYS);
     const canPromote = checkPermission(PERMISSIONS.PROMOTE_USER);
     const canManageConfig = checkPermission(PERMISSIONS.MANAGE_CONFIG);
-    const canViewPermissions =
-      checkPermission(PERMISSIONS.VIEW_PERMISSIONS) || checkPermission(PERMISSIONS.MANAGE_PERMISSIONS);
-    const canViewOperations =
-      checkPermission(PERMISSIONS.VIEW_OPERATIONS) || checkPermission(PERMISSIONS.MANAGE_OPERATIONS);
 
     return {
       canManageCardKeys,
       canPromote,
       canManageConfig,
-      canViewPermissions,
-      canViewOperations,
-      canViewWebhookLogs: canViewOperations || checkPermission(PERMISSIONS.VIEW_WEBHOOK_LOGS),
-      canViewEmailReceiverLogs: canViewOperations || checkPermission(PERMISSIONS.VIEW_EMAIL_RECEIVER_LOGS),
-      canViewAuditLogs: checkPermission(PERMISSIONS.VIEW_AUDIT_LOGS) || checkPermission(PERMISSIONS.MANAGE_OPERATIONS),
     };
   }, [checkPermission]);
 
@@ -220,55 +180,6 @@ export function AdminDashboard() {
           icon: ImageIcon,
           enabled: adminPermissions.canManageConfig,
           component: GlobalBackgroundSettingsContent,
-        },
-        {
-          id: "permissions",
-          title: t("permissions"),
-          icon: ShieldCheck,
-          enabled: adminPermissions.canViewPermissions,
-          component: PermissionsContent,
-        },
-        {
-          id: "workers",
-          title: t("workers"),
-          icon: ServerCog,
-          enabled: adminPermissions.canViewOperations,
-          component: WorkerRunsContent,
-        },
-        {
-          id: "cleanup-runs",
-          title: t("cleanupRuns"),
-          icon: Settings,
-          enabled: adminPermissions.canViewOperations || adminPermissions.canManageConfig,
-          component: CleanupRunsContent,
-        },
-        {
-          id: "webhooks",
-          title: t("webhookLogs"),
-          icon: Webhook,
-          enabled: adminPermissions.canViewWebhookLogs,
-          component: WebhookLogsContent,
-        },
-        {
-          id: "mail-logs",
-          title: t("mailLogs"),
-          icon: Mail,
-          enabled: adminPermissions.canViewEmailReceiverLogs,
-          component: EmailReceiverLogsContent,
-        },
-        {
-          id: "audit",
-          title: t("auditLogs"),
-          icon: FileClock,
-          enabled: adminPermissions.canViewAuditLogs,
-          component: AuditLogsContent,
-        },
-        {
-          id: "diagnostics",
-          title: t("diagnostics"),
-          icon: Stethoscope,
-          enabled: adminPermissions.canViewOperations,
-          component: DiagnosticsContent,
         },
       ];
 

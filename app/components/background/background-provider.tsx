@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import { ExternalLink } from "lucide-react";
 import {
   backgroundThemeKeys,
   defaultBackgroundSettings,
@@ -15,6 +16,7 @@ export function BackgroundProvider() {
   const { data: session } = useSession();
   const [globalBg, setGlobalBg] = useState<BackgroundSettingsConfig>(defaultBackgroundSettings);
   const [userBg, setUserBg] = useState<BackgroundSettingsConfig | null>(null);
+  const [showLink, setShowLink] = useState(false);
 
   useEffect(() => {
     fetch("/api/config/background")
@@ -57,6 +59,20 @@ export function BackgroundProvider() {
               WebkitBackdropFilter: "blur(var(--background-overlay-blur))",
             }}
           />
+          <button
+            className="absolute bottom-4 right-4 p-2 rounded-full bg-black/30 hover:bg-black/50 backdrop-blur-sm transition-all duration-200 opacity-60 hover:opacity-100 group"
+            onMouseEnter={() => setShowLink(true)}
+            onMouseLeave={() => setShowLink(false)}
+            onClick={() => window.open(backgroundUrl, "_blank")}
+            title="查看原图"
+          >
+            <ExternalLink className="h-4 w-4 text-white" />
+            {showLink && (
+              <div className="absolute bottom-full right-0 mb-2 px-3 py-1.5 rounded-lg bg-black/80 backdrop-blur-sm text-xs text-white max-w-[280px] truncate whitespace-nowrap animate-fade-in-up">
+                {backgroundUrl}
+              </div>
+            )}
+          </button>
         </div>
       ) : null}
     </div>
