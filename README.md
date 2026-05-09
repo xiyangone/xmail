@@ -42,6 +42,8 @@
 
 **当前文档入口**: 本仓库 README（即当前文件）
 
+**当前版本**: `v1.6.4`
+
 当前版本暂未单独维护外部文档站点，部署、API、配置与示例请以本仓库内容为准。
 
 ### 命名约定（默认值，可自定义）
@@ -66,8 +68,8 @@
 - 📤 **发件功能**：支持使用临时邮箱发送邮件，基于 Resend 服务
 - 🔔 **Webhook 通知**：支持通过 webhook 接收新邮件通知
 - 🛡️ **策略化权限系统**：支持基于角色、数据库权限表、路由策略和 API Key Scope 的细粒度访问控制
-- 🧭 **运维中心**：管理后台内置 Worker 运行、清理历史、Webhook 日志、邮件接收日志、审计日志和配置诊断
-- 🔑 **OpenAPI**：支持通过 API Key 访问 OpenAPI
+- 🧭 **运维中心**：管理后台内置 Worker 运行、清理历史、Webhook 日志、邮件接收日志、审计日志、权限变更审计和配置诊断
+- 🔑 **OpenAPI**：支持通过 API Key 访问 OpenAPI，新创建的 API Key 可在个人中心后续查看、隐藏和复制
 - 🎫 **卡密系统**：支持通过卡密快速创建临时账号，支持单邮箱和多邮箱模式，支持卡密重置和重复登录
 - 🏷️ **域名标签管理**：优化的域名配置界面，支持标签式显示和批量添加，智能分组排序（顶级域名优先，同级别按字母顺序，同组内按长度排序）
 - 🚀 **性能优化**：React.memo、useMemo、useCallback 优化，更快的渲染速度
@@ -87,16 +89,16 @@
 - 🌐 **域名验证增强**：支持带数字的顶级域名（如 `aaugment.de5.net`），更灵活的域名配置
 - 🔐 **OAuth注册控制**：关闭注册时同时阻止GitHub OAuth创建新用户，防止绕过注册限制
 - 🔤 **纯字母前缀格式**：新增纯随机字母（无数字）的邮箱前缀生成选项
-- 🛡️ **安全加固**：PBKDF2 密码哈希、API Key 哈希存储、iframe XSS 防护（srcdoc + sandbox + CSP）、安全响应头
+- 🛡️ **安全加固**：PBKDF2 密码哈希、API Key 认证哈希校验、iframe XSS 防护（srcdoc + sandbox + CSP）、安全响应头
 - 🤖 **Turnstile 人机验证**：集成 Cloudflare Turnstile，登录/注册/卡密登录全链路防机器人
 - ⚛️ **数据一致性**：卡密激活使用 D1 db.batch() 原子操作，杜绝中途失败导致的脏数据
 - 🌐 **国际化 (i18n)**：基于 next-intl 的中英文双语支持，cookie 切换语言，无路由前缀，全页面覆盖
-- 🖼️ **自定义背景**：支持按主题（日间/夜间/樱花/琥珀）分别设置背景图片 URL，全局背景（皇帝设置）+ 用户个人背景（骑士及以上），用户可自行开关
+- 🖼️ **自定义背景**：支持按主题（日间/夜间/樱花/琥珀）分别设置背景图片 URL，全局背景（皇帝设置）+ 用户个人背景（骑士及以上），随机图源会解析为实际图片链接供查看原图
 - 🏢 **统一管理后台**：卡密管理、用户管理、清理设置集成至 `/admin` 单页面，折叠面板交互
 
 ## 技术栈
 
-- **框架**: [Next.js](https://nextjs.org/) 15.5.10 (App Router)
+- **框架**: [Next.js](https://nextjs.org/) 15.5.15 (App Router)
 - **部署**: [@opennextjs/cloudflare](https://opennext.js.org/cloudflare)
 - **平台**: [Cloudflare Workers](https://workers.cloudflare.com/)
 - **数据库**: [Cloudflare D1](https://developers.cloudflare.com/d1/) (SQLite)
@@ -203,13 +205,20 @@ pnpm lint
 pnpm build
 ```
 
-3. **验证码提取回归测试**：
+3. **权限与运维回归测试**：
+
+```bash
+pnpm test:permissions
+pnpm test:operations
+```
+
+4. **验证码提取回归测试**：
 
 ```bash
 pnpm test:verification-code
 ```
 
-4. **维护性检查**：
+5. **维护性检查**：
 
 ```bash
 pnpm test:maintainability
@@ -424,10 +433,10 @@ pnpm deploy:worker
 
 - **运维概览**：汇总 Worker 失败、Webhook 失败、邮件接收失败和审计事件数量
 - **Worker 运行**：读取 `worker_run`，展示定时任务和手动清理任务的运行状态、耗时、计数和错误摘要
-- **清理历史**：聚焦过期邮箱、卡密和临时账号清理记录
+- **清理历史**：读取 `worker_run` 中的清理任务记录，展示最近 20 条清理运行状态、触发方式、耗时、计数和错误摘要
 - **Webhook 日志**：读取 `webhook_log`，只展示状态、事件、URL、重试次数和错误摘要，不返回请求 payload
 - **邮件接收日志**：读取 `email_receiver_log`，查看收件人、发件人、主题、Webhook 状态和错误摘要
-- **审计日志**：读取 `admin_audit_log`，记录用户删除、卡密生成/重置/删除、配置变更、权限策略变更等高风险管理操作
+- **审计日志**：读取 `admin_audit_log`，记录用户删除、卡密生成/重置/删除、配置变更、权限策略和 API Key Scope 变更等高风险管理操作
 - **配置诊断**：检查 D1、KV、Resend、Turnstile、GitHub OAuth、Auth Secret 和 `INTERNAL_WORKER_SECRET` 是否已配置，不展示密钥原文
 
 临时账号清理 Worker 调用 `/api/cleanup/temp-accounts` 时会携带 `X-Internal-Worker-Secret` 请求头。生产环境应为主 Worker 和 `wrangler.temp-cleanup.json` 配置相同的 `INTERNAL_WORKER_SECRET`，避免外部请求伪造内部清理任务。

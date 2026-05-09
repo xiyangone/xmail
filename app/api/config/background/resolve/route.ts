@@ -1,3 +1,5 @@
+const BACKGROUND_RESOLVE_TIMEOUT_MS = 3000;
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const rawUrl = searchParams.get("url")?.trim();
@@ -17,8 +19,11 @@ export async function GET(request: Request) {
     return Response.json({ error: "仅支持 HTTP/HTTPS 图片 URL" }, { status: 400 });
   }
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), BACKGROUND_RESOLVE_TIMEOUT_MS);
+
   try {
-    const response = await fetch(url, { redirect: "follow" });
+    const response = await fetch(url, { redirect: "follow", signal: controller.signal });
     const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
     const resolvedUrl = response.ok && contentType.startsWith("image/") ? response.url : rawUrl;
 
@@ -32,5 +37,7 @@ export async function GET(request: Request) {
     );
   } catch {
     return Response.json({ url: rawUrl }, { headers: { "Cache-Control": "private, no-store" } });
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
