@@ -89,7 +89,7 @@ export function ApiKeySection() {
           <DialogDescription className={newKey ? "text-destructive" : "sr-only"}>
             {newKey
               ? t("saveWarning")
-              : "创建一个新的 API Key，用于调用邮箱、消息和验证码接口。"}
+              : t("createDescription")}
           </DialogDescription>
         </DialogHeader>
 

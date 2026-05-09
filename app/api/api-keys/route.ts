@@ -44,6 +44,7 @@ export async function GET() {
         createdAt: key.createdAt,
         expiresAt: key.expiresAt,
         enabled: key.enabled,
+        hasDisplayKey: Boolean(key.displayKey),
         usage: {
           total: key.totalCalls,
           today: key.dailyDate === day ? key.dailyCalls : 0,
@@ -84,11 +85,11 @@ export async function POST(request: Request) {
     await db.insert(apiKeys).values({
       name,
       key: keyHash,
+      displayKey: key,
       userId: session!.user.id!,
       expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 year
     })
 
-    // 明文 key 仅在创建时返回一次
     return NextResponse.json({ key })
   } catch (error) {
     console.error("Failed to create API key:", error)

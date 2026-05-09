@@ -23,7 +23,7 @@ import { UsersContent } from "./users/users-content";
 import { CleanupSettingsContent } from "./settings/cleanup-settings-content";
 import { GlobalBackgroundSettingsContent } from "../background/global-background-settings-content";
 
-type AdminTabId = "card-keys" | "users" | "cleanup" | "background";
+type AdminTabId = "card-keys" | "users" | "cleanup" | "cleanup-runs" | "background";
 
 interface AdminTabConfig {
   id: AdminTabId;
@@ -38,6 +38,7 @@ function isAdminTabId(value: string | null): value is AdminTabId {
     value === "card-keys" ||
     value === "users" ||
     value === "cleanup" ||
+    value === "cleanup-runs" ||
     value === "background"
   );
 }
@@ -114,7 +115,7 @@ function AdminDashboardSkeleton() {
 
         <div className="surface-panel max-h-[calc(100vh-8rem)] overflow-y-auto p-3">
           <div className="space-y-1">
-            {Array.from({ length: 4 }).map((_, index) => (
+            {Array.from({ length: 5 }).map((_, index) => (
               <Skeleton key={index} className="h-14 rounded-2xl" />
             ))}
           </div>
@@ -170,6 +171,13 @@ export function AdminDashboard() {
         {
           id: "cleanup",
           title: t("cleanupSettings"),
+          icon: Settings,
+          enabled: adminPermissions.canManageConfig,
+          component: CleanupSettingsContent,
+        },
+        {
+          id: "cleanup-runs",
+          title: t("cleanupRuns"),
           icon: Settings,
           enabled: adminPermissions.canManageConfig,
           component: CleanupSettingsContent,

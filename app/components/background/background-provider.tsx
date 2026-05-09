@@ -17,6 +17,7 @@ export function BackgroundProvider() {
   const [globalBg, setGlobalBg] = useState<BackgroundSettingsConfig>(defaultBackgroundSettings);
   const [userBg, setUserBg] = useState<BackgroundSettingsConfig | null>(null);
   const [showLink, setShowLink] = useState(false);
+  const [displayBackgroundUrl, setDisplayBackgroundUrl] = useState("");
 
   useEffect(() => {
     fetch("/api/config/background")
@@ -42,14 +43,37 @@ export function BackgroundProvider() {
     ? (userEnabled ? userBg?.[urlKey] : "") || globalBg[urlKey]
     : "";
 
+  useEffect(() => {
+    if (!backgroundUrl) {
+      setDisplayBackgroundUrl("");
+      return;
+    }
+
+    let cancelled = false;
+    setDisplayBackgroundUrl("");
+
+    fetch(`/api/config/background/resolve?url=${encodeURIComponent(backgroundUrl)}`)
+      .then((res) => (res.ok ? (res.json() as Promise<{ url?: string }>) : null))
+      .then((data) => {
+        if (!cancelled) setDisplayBackgroundUrl(data?.url || backgroundUrl);
+      })
+      .catch(() => {
+        if (!cancelled) setDisplayBackgroundUrl(backgroundUrl);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [backgroundUrl]);
+
   return (
     <>
       <div className="fixed inset-0 -z-10 overflow-hidden">
         <div className="page-gradient-background absolute inset-0" />
-        {backgroundUrl ? (
+        {displayBackgroundUrl ? (
           <div
             className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-500"
-            style={{ backgroundImage: `url(${backgroundUrl})` }}
+            style={{ backgroundImage: `url(${displayBackgroundUrl})` }}
           >
             <div
               className="absolute inset-0"
@@ -64,7 +88,7 @@ export function BackgroundProvider() {
         ) : null}
       </div>
 
-      {backgroundUrl ? (
+      {displayBackgroundUrl ? (
         <div
           className="pointer-events-none fixed bottom-6 left-6 z-[100]"
           onMouseEnter={() => setShowLink(true)}
@@ -72,7 +96,7 @@ export function BackgroundProvider() {
         >
           <a
             className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full border border-primary/20 bg-background shadow-lg opacity-80 transition-all duration-300 hover:border-primary/50 hover:opacity-100 hover:shadow-xl"
-            href={backgroundUrl}
+            href={displayBackgroundUrl}
             target="_blank"
             rel="noreferrer"
             title="查看原图"
@@ -82,7 +106,7 @@ export function BackgroundProvider() {
           </a>
           {showLink && (
             <div className="absolute bottom-full left-0 mb-2 max-w-[280px] truncate whitespace-nowrap rounded-lg bg-black/80 px-3 py-1.5 text-xs text-white backdrop-blur-sm animate-fade-in-up">
-              {backgroundUrl}
+              {displayBackgroundUrl}
             </div>
           )}
         </div>

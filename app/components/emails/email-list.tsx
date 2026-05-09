@@ -406,51 +406,39 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
 
         if (!cursor) {
 
-          const newEmails = data.emails;
+          setEmails((oldEmails) => {
 
-          const oldEmails = emails;
+            const newEmails = data.emails;
 
+            const newEmailIds = new Set(newEmails.map((e) => e.id));
 
+            const validOldEmails = oldEmails.filter((e) => newEmailIds.has(e.id));
 
-          // 创建新邮件的 ID 集合,用于快速查找
+            const lastDuplicateIndex = newEmails.findIndex((newEmail) =>
 
-          const newEmailIds = new Set(newEmails.map((e) => e.id));
+              validOldEmails.some((oldEmail) => oldEmail.id === newEmail.id)
 
+            );
 
+            if (lastDuplicateIndex === -1) {
 
-          // 过滤掉已被删除的旧邮件(服务器返回的新数据中不存在的)
+              setTotal(newEmails.length);
 
-          const validOldEmails = oldEmails.filter((e) => newEmailIds.has(e.id));
+              return newEmails;
 
+            }
 
+            const uniqueNewEmails = newEmails.slice(0, lastDuplicateIndex);
 
-          const lastDuplicateIndex = newEmails.findIndex((newEmail) =>
+            const updatedEmails = [...uniqueNewEmails, ...validOldEmails];
 
-            validOldEmails.some((oldEmail) => oldEmail.id === newEmail.id)
+            setTotal(updatedEmails.length);
 
-          );
+            return updatedEmails;
 
+          });
 
-
-          if (lastDuplicateIndex === -1) {
-
-            setEmails(newEmails);
-
-            setNextCursor(data.nextCursor);
-
-            setTotal(newEmails.length);
-
-            return;
-
-          }
-
-          const uniqueNewEmails = newEmails.slice(0, lastDuplicateIndex);
-
-          const updatedEmails = [...uniqueNewEmails, ...validOldEmails];
-
-          setEmails(updatedEmails);
-
-          setTotal(updatedEmails.length);
+          setNextCursor(data.nextCursor);
 
           return;
 
@@ -498,7 +486,7 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
 
     },
 
-    [emails, toast, tc]
+    [toast, tc]
 
   );
 
@@ -544,9 +532,7 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
 
     if (session) fetchEmails();
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-
-  }, [session]);
+  }, [session, fetchEmails]);
 
 
 
@@ -1075,4 +1061,3 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
   );
 
 }
-

@@ -1,0 +1,1 @@
+ALTER TABLE `api_keys` ADD `display_key` text;

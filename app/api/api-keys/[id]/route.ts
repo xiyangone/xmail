@@ -6,6 +6,50 @@ import { checkPermission } from "@/lib/auth"
 import { PERMISSIONS } from "@/lib/permissions"
 import { eq, and } from "drizzle-orm"
 
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const hasPermission = await checkPermission(PERMISSIONS.MANAGE_API_KEY)
+  if (!hasPermission) {
+    return NextResponse.json({ error: "权限不足" }, { status: 403 })
+  }
+
+  try {
+    const db = await createDb()
+    const session = await auth()
+    const { id } = await params
+
+    const apiKey = await db.query.apiKeys.findFirst({
+      where: and(
+        eq(apiKeys.id, id),
+        eq(apiKeys.userId, session!.user.id!)
+      ),
+    })
+
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: "API Key 不存在或无权查看" },
+        { status: 404 }
+      )
+    }
+
+    if (!apiKey.displayKey) {
+      return NextResponse.json(
+        { error: "旧 API Key 无法查看，请重新生成" },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json({ key: apiKey.displayKey })
+  } catch (error) {
+    console.error("Failed to reveal API key:", error)
+    return NextResponse.json(
+      { error: "查看 API Key 失败" },
+      { status: 500 }
+    )
+  }
+}
 
 export async function DELETE(
   _request: Request,
@@ -19,7 +63,7 @@ export async function DELETE(
     const db = await createDb()
     const session = await auth()
     const { id } = await params
-    
+
     const result = await db.delete(apiKeys)
       .where(
         and(
@@ -61,7 +105,7 @@ export async function PATCH(
 
     const { enabled } = await request.json() as { enabled: boolean }
     const db = await createDb()
-    
+
     const result = await db.update(apiKeys)
       .set({ enabled })
       .where(
@@ -87,4 +131,4 @@ export async function PATCH(
       { status: 500 }
     )
   }
-} 
+}
