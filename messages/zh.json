@@ -2032,6 +2032,8 @@
 
     "cleanupRuns": "清理历史",
 
+    "cleanupRunsDesc": "最近 20 条清理 worker 运行记录。",
+
 
 
     "webhookLogs": "Webhook 日志",

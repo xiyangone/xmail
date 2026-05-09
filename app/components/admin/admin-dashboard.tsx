@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   ChevronRight,
   CreditCard,
+  History,
   ImageIcon,
   Settings,
   Users,
@@ -21,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { CardKeysContent } from "./card-keys/card-keys-content";
 import { UsersContent } from "./users/users-content";
 import { CleanupSettingsContent } from "./settings/cleanup-settings-content";
+import { CleanupRunsContent } from "./settings/cleanup-runs-content";
 import { GlobalBackgroundSettingsContent } from "../background/global-background-settings-content";
 
 type AdminTabId = "card-keys" | "users" | "cleanup" | "cleanup-runs" | "background";
@@ -178,9 +180,9 @@ export function AdminDashboard() {
         {
           id: "cleanup-runs",
           title: t("cleanupRuns"),
-          icon: Settings,
+          icon: History,
           enabled: adminPermissions.canManageConfig,
-          component: CleanupSettingsContent,
+          component: CleanupRunsContent,
         },
         {
           id: "background",

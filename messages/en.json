@@ -2032,6 +2032,8 @@
 
     "cleanupRuns": "Cleanup History",
 
+    "cleanupRunsDesc": "Latest 20 cleanup worker run records.",
+
 
 
     "webhookLogs": "Webhook Logs",

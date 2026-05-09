@@ -1,34 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq, inArray } from "drizzle-orm";
-import { auth, checkPermission } from "@/lib/auth";
 import { recordAdminMutationAudit } from "@/lib/admin-audit";
 import { createDb } from "@/lib/db";
 import { permissions, rolePermissions, roles } from "@/lib/schema";
-import { PERMISSIONS } from "@/lib/permissions";
+import { requirePermissionAdmin } from "../permission-admin";
 
 type RolePermissionUpdate = {
   roleId?: string;
   permissionKeys?: string[];
 };
 
-async function requirePermissionAdmin() {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return { error: NextResponse.json({ error: "未授权" }, { status: 401 }) };
-  }
-
-  const hasPermission = await checkPermission(PERMISSIONS.MANAGE_PERMISSIONS);
-  if (!hasPermission) {
-    return { error: NextResponse.json({ error: "权限不足" }, { status: 403 }) };
-  }
-
-  return { session };
-}
-
 export async function GET() {
   try {
     const access = await requirePermissionAdmin();
-    if (access.error) return access.error;
+    if ("error" in access) return access.error;
 
     const db = await createDb();
     const roleRows = await db.query.roles.findMany();
@@ -58,7 +43,7 @@ export async function GET() {
 export async function PATCH(request: NextRequest) {
   try {
     const access = await requirePermissionAdmin();
-    if (access.error) return access.error;
+    if ("error" in access) return access.error;
 
     const { roleId, permissionKeys = [] } = (await request.json()) as RolePermissionUpdate;
     if (!roleId) {
@@ -91,14 +76,9 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const actorUserId = access.session.user.id;
-    if (!actorUserId) {
-      return NextResponse.json({ error: "未授权" }, { status: 401 });
-    }
-
     await recordAdminMutationAudit({
       request,
-      actorUserId,
+      actorUserId: access.actorUserId,
       action: "permissions.role.update",
       targetType: "role",
       targetId: roleId,

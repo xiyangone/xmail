@@ -19,8 +19,11 @@ export async function GET(request: Request) {
 
   try {
     const response = await fetch(url, { redirect: "follow" });
+    const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
+    const resolvedUrl = response.ok && contentType.startsWith("image/") ? response.url : rawUrl;
+
     return Response.json(
-      { url: response.url || rawUrl },
+      { url: resolvedUrl || rawUrl },
       {
         headers: {
           "Cache-Control": "private, no-store",
