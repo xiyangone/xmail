@@ -214,6 +214,88 @@ async function testHtmlTextExtractionFallback() {
   assert.equal(code, "123456");
 }
 
+async function testMultilingualVerificationCodeExtraction() {
+  const cases: Array<{
+    name: string;
+    message: { subject?: string; content?: string; html?: string };
+    expected: string;
+  }> = [
+    {
+      name: "extracts Japanese authentication code",
+      message: { subject: "認証コードのお知らせ", content: "認証コードは 123456 です。" },
+      expected: "123456",
+    },
+    {
+      name: "extracts Japanese full-width digits",
+      message: { content: "確認コード：１２３４５６" },
+      expected: "123456",
+    },
+    {
+      name: "extracts Korean authentication code",
+      message: { content: "인증 코드: 112233" },
+      expected: "112233",
+    },
+    {
+      name: "extracts Spanish verification code",
+      message: { content: "Tu código de verificación es 445566." },
+      expected: "445566",
+    },
+    {
+      name: "extracts French verification code",
+      message: { content: "Votre code de vérification est 778899." },
+      expected: "778899",
+    },
+    {
+      name: "extracts German verification code",
+      message: { content: "Ihr Bestätigungscode lautet 135790." },
+      expected: "135790",
+    },
+    {
+      name: "extracts Portuguese verification code",
+      message: { content: "Seu código de verificação é 246810." },
+      expected: "246810",
+    },
+    {
+      name: "extracts Russian verification code",
+      message: { content: "Ваш код подтверждения: 112244" },
+      expected: "112244",
+    },
+    {
+      name: "extracts Italian verification code",
+      message: { content: "Il tuo codice di verifica è 334455." },
+      expected: "334455",
+    },
+    {
+      name: "extracts Dutch verification code",
+      message: { content: "Uw verificatiecode is 556677." },
+      expected: "556677",
+    },
+    {
+      name: "extracts Polish verification code",
+      message: { content: "Twój kod weryfikacyjny: 667788" },
+      expected: "667788",
+    },
+    {
+      name: "extracts Turkish verification code",
+      message: { content: "Doğrulama kodunuz: 778899" },
+      expected: "778899",
+    },
+    {
+      name: "extracts Vietnamese verification code",
+      message: { content: "Mã xác minh của bạn là 889900." },
+      expected: "889900",
+    },
+  ];
+
+  for (const item of cases) {
+    assert.equal(
+      extractVerificationCodeFromMessage(item.message),
+      item.expected,
+      item.name
+    );
+  }
+}
+
 async function testSenderFilterMatchesFormattedAddress() {
   await withMockedFetch(async () => {
     return new Response(
@@ -287,6 +369,7 @@ async function run() {
   await testMailboxFetchFailure();
   await testHtmlNormalizationFallback();
   await testHtmlTextExtractionFallback();
+  await testMultilingualVerificationCodeExtraction();
   await testSenderFilterMatchesFormattedAddress();
   await testContactAddressHelpers();
   console.log("verification-code-fetcher tests: OK");

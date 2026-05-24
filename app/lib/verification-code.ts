@@ -27,19 +27,25 @@ const VERIFICATION_CODE_PATTERNS = [
   // 6. "123456 是您的验证码"
   /([0-9]{4,8})\s*(?:是|为)(?:您的)?验证码/i,
 
-  // 7. HTML 标签中的验证码 (h1-h6, b, strong)
+  // 7. 多语言验证码句式
+  /(?:認証コード|確認コード|セキュリティコード|인증\s*코드|확인\s*코드|보안\s*코드)[^\d]{0,24}([0-9]{4,8})/i,
+  /([0-9]{4,8})[^\d]{0,24}(?:認証コード|確認コード|セキュリティコード|인증\s*코드|확인\s*코드|보안\s*코드)/i,
+  /(?:c[oó]digo(?:\s+de)?\s+(?:verificaci[oó]n|seguran[cç]a)|code\s+de\s+v[ée]rification|code\s+de\s+s[ée]curit[ée]|best[aä]tigungscode|sicherheitscode|код\s+(?:подтверждения|проверки|безопасности)|codice\s+di\s+verifica|verificatiecode|kod\s+weryfikacyjny|do[ğg]rulama\s+kodu(?:nuz)?|m[aã]\s+x[aá]c\s+minh)[^\d]{0,24}([0-9]{4,8})/i,
+  /([0-9]{4,8})[^\d]{0,24}(?:c[oó]digo(?:\s+de)?\s+(?:verificaci[oó]n|seguran[cç]a)|code\s+de\s+v[ée]rification|code\s+de\s+s[ée]curit[ée]|best[aä]tigungscode|sicherheitscode|код\s+(?:подтверждения|проверки|безопасности)|codice\s+di\s+verifica|verificatiecode|kod\s+weryfikacyjny|do[ğg]rulama\s+kodu(?:nuz)?|m[aã]\s+x[aá]c\s+minh)/i,
+
+  // 8. HTML 标签中的验证码 (h1-h6, b, strong)
   /<(?:h[1-6]|b|strong)[^>]*>\s*([0-9]{4,8})\s*<\/(?:h[1-6]|b|strong)>/i,
 
-  // 8. 大字体或特殊样式的验证码 (包括 div 标签)
+  // 9. 大字体或特殊样式的验证码 (包括 div 标签)
   /<(?:div|span|p)[^>]*(?:font-size|font-weight|style)[^>]*>\s*([0-9]{4,8})\s*<\/(?:div|span|p)>/i,
 
-  // 8.5. 任意 div/span/p 标签包裹的纯数字（较宽松，用于处理复杂属性）
+  // 9.5. 任意 div/span/p 标签包裹的纯数字（较宽松，用于处理复杂属性）
   /<(?:div|span|p)[^>]*>\s*([0-9]{6})\s*<\/(?:div|span|p)>/i,
 
-  // 9. 6位纯数字 (最常见的验证码长度)
+  // 10. 6位纯数字 (最常见的验证码长度)
   /\b([0-9]{6})\b/,
 
-  // 10. 4-5位纯数字
+  // 11. 4-5位纯数字
   /\b([0-9]{4,5})\b/,
 ];
 
@@ -61,7 +67,7 @@ export function extractVerificationCode(text: string): string | null {
   if (!text) return null;
 
   // 移除多余的空白字符,但保留单个空格
-  const cleanText = text.replace(/\s+/g, " ").trim();
+  const cleanText = normalizeDigits(text).replace(/\s+/g, " ").trim();
 
   // 按优先级尝试所有模式
   for (let i = 0; i < VERIFICATION_CODE_PATTERNS.length; i++) {
@@ -73,8 +79,8 @@ export function extractVerificationCode(text: string): string | null {
 
       // 验证码长度必须在 4-8 位之间
       if (code.length >= 4 && code.length <= 8) {
-        // 前9个模式优先级高,直接返回（包括HTML标签相关模式）
-        if (i < 9) {
+        // 前13个模式优先级高,直接返回（包括多语言和HTML标签相关模式）
+        if (i < 13) {
           return code;
         }
 
@@ -94,6 +100,12 @@ function decodeHtmlEntities(text: string): string {
   return text.replace(
     /&nbsp;|&#160;|&#xA0;|&amp;|&lt;|&gt;|&quot;|&#39;/g,
     (entity) => HTML_ENTITY_MAP[entity] ?? entity
+  );
+}
+
+function normalizeDigits(text: string): string {
+  return text.replace(/[０-９]/g, (digit) =>
+    String.fromCharCode(digit.charCodeAt(0) - 0xfee0)
   );
 }
 
@@ -124,6 +136,36 @@ function hasVerificationContext(text: string, code: string): boolean {
     "验证码",
     "动态码",
     "校验码",
+    "認証コード",
+    "確認コード",
+    "セキュリティコード",
+    "인증 코드",
+    "인증코드",
+    "확인 코드",
+    "확인코드",
+    "보안 코드",
+    "보안코드",
+    "código",
+    "codigo",
+    "verificación",
+    "verificacion",
+    "vérification",
+    "verification",
+    "bestätigungscode",
+    "bestatigungscode",
+    "sicherheitscode",
+    "код подтверждения",
+    "код проверки",
+    "код безопасности",
+    "codice di verifica",
+    "verificatiecode",
+    "kod weryfikacyjny",
+    "doğrulama kodu",
+    "dogrulama kodu",
+    "doğrulama kodunuz",
+    "dogrulama kodunuz",
+    "mã xác minh",
+    "ma xac minh",
   ];
 
   // 检查是否包含关键词
