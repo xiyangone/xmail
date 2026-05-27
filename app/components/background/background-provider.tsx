@@ -1,10 +1,18 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { ImageIcon } from "lucide-react";
+import {
+  BACKGROUND_CACHE_NAME,
+  createBackgroundCacheKey,
+  createBackgroundCacheRequestUrl,
+  createBackgroundResolveUrl,
+  getBackgroundAssetUrl,
+  getBackgroundSourceStorageKey,
+  getOrCreateBackgroundTabId,
+} from "@/lib/background-cache";
 import {
   backgroundThemeKeys,
   defaultBackgroundSettings,
@@ -13,7 +21,6 @@ import {
 } from "@/lib/background-config";
 
 export function BackgroundProvider() {
-  const pathname = usePathname();
   const { resolvedTheme } = useTheme();
   const { data: session } = useSession();
   const [globalBg, setGlobalBg] = useState<BackgroundSettingsConfig>(defaultBackgroundSettings);
@@ -45,6 +52,8 @@ export function BackgroundProvider() {
   const backgroundUrl = globalEnabled
     ? (userEnabled ? userBg?.[urlKey] : "") || globalBg[urlKey]
     : "";
+  const userCacheKey =
+    session?.user?.email || session?.user?.name || (session?.user ? "authenticated" : "anonymous");
 
   useEffect(() => {
     if (!backgroundUrl) {
@@ -60,37 +69,88 @@ export function BackgroundProvider() {
     setDisplayBackgroundUrl("");
     setDisplayBackgroundSourceUrl("");
 
+    const setBlobBackground = (blob: Blob, sourceLabel: string) => {
+      const objectUrl = URL.createObjectURL(blob);
+      if (cancelled) {
+        URL.revokeObjectURL(objectUrl);
+        return "";
+      }
+
+      setDisplayBackgroundUrl(objectUrl);
+      setDisplayBackgroundSourceUrl(sourceLabel);
+      return objectUrl;
+    };
+
     const resolveBackground = async () => {
+      let objectUrl = "";
+
       try {
-        const params = new URLSearchParams({
-          url: sourceUrl,
-          route: pathname,
+        const tabId = getOrCreateBackgroundTabId(window.sessionStorage);
+        const cacheKey = createBackgroundCacheKey({
+          sourceUrl,
+          theme: activeTheme,
+          userKey: userCacheKey,
+          tabId,
         });
-        const response = await fetch(`/api/config/background/resolve?${params}`, {
+        const sourceStorageKey = getBackgroundSourceStorageKey(cacheKey);
+        const cachedSourceUrl = window.sessionStorage.getItem(sourceStorageKey) || sourceUrl;
+        const cache =
+          "caches" in window ? await window.caches.open(BACKGROUND_CACHE_NAME) : null;
+        const cacheRequest = new Request(createBackgroundCacheRequestUrl(cacheKey));
+        const cachedResponse = await cache?.match(cacheRequest);
+
+        if (cachedResponse?.ok) {
+          objectUrl = setBlobBackground(await cachedResponse.blob(), cachedSourceUrl);
+          try {
+            window.sessionStorage.setItem(sourceStorageKey, cachedSourceUrl);
+          } catch {}
+          return () => objectUrl && URL.revokeObjectURL(objectUrl);
+        }
+
+        const response = await fetch(createBackgroundResolveUrl(sourceUrl), {
           signal: controller.signal,
+          cache: "no-store",
         });
         const data = response.ok ? ((await response.json()) as { url?: string }) : null;
-        const displayUrl = data?.url || sourceUrl;
+        const resolvedUrl = data?.url || sourceUrl;
+        const assetUrl = getBackgroundAssetUrl(resolvedUrl);
+        const imageResponse = await fetch(assetUrl, { signal: controller.signal });
 
-        if (!cancelled) {
-          setDisplayBackgroundUrl(displayUrl);
-          setDisplayBackgroundSourceUrl(displayUrl);
+        if (!imageResponse.ok) {
+          throw new Error("Failed to load background image");
         }
+
+        const responseForCache = imageResponse.clone();
+        const blob = await imageResponse.blob();
+
+        try {
+          await cache?.put(cacheRequest, responseForCache);
+          window.sessionStorage.setItem(sourceStorageKey, resolvedUrl);
+        } catch {}
+
+        objectUrl = setBlobBackground(blob, resolvedUrl);
       } catch {
         if (!cancelled) {
-          setDisplayBackgroundUrl(sourceUrl);
+          const fallbackUrl = getBackgroundAssetUrl(sourceUrl);
+          setDisplayBackgroundUrl(fallbackUrl);
           setDisplayBackgroundSourceUrl(sourceUrl);
         }
       }
+
+      return () => objectUrl && URL.revokeObjectURL(objectUrl);
     };
 
-    void resolveBackground();
+    let revokeObjectUrl: (() => void) | undefined;
+    void resolveBackground().then((revoke) => {
+      revokeObjectUrl = revoke;
+    });
 
     return () => {
       cancelled = true;
       controller.abort();
+      revokeObjectUrl?.();
     };
-  }, [backgroundUrl, pathname]);
+  }, [activeTheme, backgroundUrl, userCacheKey]);
 
   return (
     <>
@@ -122,7 +182,7 @@ export function BackgroundProvider() {
         >
           <a
             className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full border border-primary/20 bg-background shadow-lg opacity-80 transition-all duration-300 hover:border-primary/50 hover:opacity-100 hover:shadow-xl"
-            href={displayBackgroundSourceUrl || displayBackgroundUrl}
+            href={displayBackgroundUrl}
             target="_blank"
             rel="noreferrer"
             title="查看原图"
