@@ -27,7 +27,7 @@ async function testRedirectedImageReturnsFinalUrl() {
   }, async () => {
     const response = await GET(
       new Request(
-        `https://mail.example/api/config/background/resolve?url=${encodeURIComponent(rawUrl)}`
+        `https://mail.example/api/config/background/resolve?url=${encodeURIComponent(rawUrl)}&route=%2Flogin`
       )
     );
     const data = (await response.json()) as { url: string };
@@ -48,7 +48,7 @@ async function testDirectImageReturnsStableProxyUrl() {
   }, async () => {
     const response = await GET(
       new Request(
-        `https://mail.example/api/config/background/resolve?url=${encodeURIComponent(rawUrl)}`
+        `https://mail.example/api/config/background/resolve?url=${encodeURIComponent(rawUrl)}&route=%2Flogin`
       )
     );
     const data = (await response.json()) as { url: string };
@@ -75,7 +75,7 @@ async function testProxyStreamsImageWithCacheHeaders() {
   }, async () => {
     const response = await GET(
       new Request(
-        `https://mail.example/api/config/background/resolve?proxy=1&v=test&url=${encodeURIComponent(rawUrl)}`
+        `https://mail.example/api/config/background/resolve?proxy=1&v=test&url=${encodeURIComponent(rawUrl)}&route=%2Flogin`
       )
     );
 

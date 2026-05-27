@@ -1,6 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
+import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { ImageIcon } from "lucide-react";
@@ -12,12 +13,14 @@ import {
 } from "@/lib/background-config";
 
 export function BackgroundProvider() {
+  const pathname = usePathname();
   const { resolvedTheme } = useTheme();
   const { data: session } = useSession();
   const [globalBg, setGlobalBg] = useState<BackgroundSettingsConfig>(defaultBackgroundSettings);
   const [userBg, setUserBg] = useState<BackgroundSettingsConfig | null>(null);
   const [showLink, setShowLink] = useState(false);
   const [displayBackgroundUrl, setDisplayBackgroundUrl] = useState("");
+  const [displayBackgroundSourceUrl, setDisplayBackgroundSourceUrl] = useState("");
 
   useEffect(() => {
     fetch("/api/config/background")
@@ -46,25 +49,48 @@ export function BackgroundProvider() {
   useEffect(() => {
     if (!backgroundUrl) {
       setDisplayBackgroundUrl("");
+      setDisplayBackgroundSourceUrl("");
       return;
     }
 
     let cancelled = false;
-    setDisplayBackgroundUrl("");
+    const sourceUrl = backgroundUrl.trim();
+    const controller = new AbortController();
 
-    fetch(`/api/config/background/resolve?url=${encodeURIComponent(backgroundUrl)}`)
-      .then((res) => (res.ok ? (res.json() as Promise<{ url?: string }>) : null))
-      .then((data) => {
-        if (!cancelled) setDisplayBackgroundUrl(data?.url || backgroundUrl);
-      })
-      .catch(() => {
-        if (!cancelled) setDisplayBackgroundUrl(backgroundUrl);
-      });
+    setDisplayBackgroundUrl("");
+    setDisplayBackgroundSourceUrl("");
+
+    const resolveBackground = async () => {
+      try {
+        const params = new URLSearchParams({
+          url: sourceUrl,
+          route: pathname,
+        });
+        const response = await fetch(`/api/config/background/resolve?${params}`, {
+          signal: controller.signal,
+        });
+        const data = response.ok ? ((await response.json()) as { url?: string }) : null;
+        const displayUrl = data?.url || sourceUrl;
+
+        if (!cancelled) {
+          setDisplayBackgroundUrl(displayUrl);
+          setDisplayBackgroundSourceUrl(displayUrl);
+        }
+      } catch {
+        if (!cancelled) {
+          setDisplayBackgroundUrl(sourceUrl);
+          setDisplayBackgroundSourceUrl(sourceUrl);
+        }
+      }
+    };
+
+    void resolveBackground();
 
     return () => {
       cancelled = true;
+      controller.abort();
     };
-  }, [backgroundUrl]);
+  }, [backgroundUrl, pathname]);
 
   return (
     <>
@@ -96,7 +122,7 @@ export function BackgroundProvider() {
         >
           <a
             className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full border border-primary/20 bg-background shadow-lg opacity-80 transition-all duration-300 hover:border-primary/50 hover:opacity-100 hover:shadow-xl"
-            href={displayBackgroundUrl}
+            href={displayBackgroundSourceUrl || displayBackgroundUrl}
             target="_blank"
             rel="noreferrer"
             title="查看原图"
@@ -106,7 +132,7 @@ export function BackgroundProvider() {
           </a>
           {showLink && (
             <div className="absolute bottom-full left-0 mb-2 max-w-[280px] truncate whitespace-nowrap rounded-lg bg-black/80 px-3 py-1.5 text-xs text-white backdrop-blur-sm animate-fade-in-up">
-              {displayBackgroundUrl}
+              {displayBackgroundSourceUrl || displayBackgroundUrl}
             </div>
           )}
         </div>
