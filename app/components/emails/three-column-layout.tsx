@@ -2,7 +2,7 @@
 
 
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { EmailList } from "./email-list";
 
@@ -32,9 +32,19 @@ interface Email {
 
 }
 
+type WorkspaceLayout = "mobile" | "compact" | "wide";
+
+function getWorkspaceLayout(width: number): WorkspaceLayout {
+  if (width >= 1280) return "wide";
+  if (width >= 900) return "compact";
+  return "mobile";
+}
+
 
 
 export function ThreeColumnLayout() {
+
+  const workspaceRef = useRef<HTMLDivElement | null>(null);
 
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
 
@@ -44,7 +54,7 @@ export function ThreeColumnLayout() {
 
   );
 
-  const [isDesktop, setIsDesktop] = useState<boolean | null>(null);
+  const [layoutMode, setLayoutMode] = useState<WorkspaceLayout | null>(null);
 
   const [selectedMessageType, setSelectedMessageType] = useState<
 
@@ -66,7 +76,7 @@ export function ThreeColumnLayout() {
 
 
 
-  const columnClass = "surface-panel-workspace flex min-h-0 flex-col";
+  const columnClass = "surface-panel-workspace flex h-full min-h-0 flex-col";
 
   const desktopHeaderClass =
 
@@ -80,7 +90,7 @@ export function ThreeColumnLayout() {
 
   const headerIconClass =
 
-    "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-primary/15 bg-background/36 text-primary shadow-sm backdrop-blur-xl";
+    "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-primary/15 bg-background/50 text-primary shadow-sm backdrop-blur-sm";
 
   const headerTitleClass = "truncate text-sm font-semibold leading-5";
 
@@ -96,25 +106,47 @@ export function ThreeColumnLayout() {
 
   useEffect(() => {
 
-    const mediaQuery = window.matchMedia("(min-width: 1024px)");
+    let animationFrame: number | null = null;
 
     const updateLayout = () => {
 
-      setIsDesktop(mediaQuery.matches);
+      if (animationFrame !== null) {
+        window.cancelAnimationFrame(animationFrame);
+      }
+
+      animationFrame = window.requestAnimationFrame(() => {
+        const width =
+          workspaceRef.current?.getBoundingClientRect().width ?? window.innerWidth;
+        const nextLayout = getWorkspaceLayout(width);
+
+        setLayoutMode((currentLayout) =>
+          currentLayout === nextLayout ? currentLayout : nextLayout
+        );
+        animationFrame = null;
+      });
 
     };
 
 
 
+    const observer = new ResizeObserver(updateLayout);
+    if (workspaceRef.current) {
+      observer.observe(workspaceRef.current);
+    }
+
     updateLayout();
 
-    mediaQuery.addEventListener("change", updateLayout);
+    window.addEventListener("resize", updateLayout);
 
 
 
     return () => {
 
-      mediaQuery.removeEventListener("change", updateLayout);
+      observer.disconnect();
+      window.removeEventListener("resize", updateLayout);
+      if (animationFrame !== null) {
+        window.cancelAnimationFrame(animationFrame);
+      }
 
     };
 
@@ -154,9 +186,34 @@ export function ThreeColumnLayout() {
 
 
 
-  if (isDesktop === null) {
+  const isDesktop = layoutMode === "compact" || layoutMode === "wide";
 
-    return <div className="flex h-full min-h-0 flex-col" />;
+  const isCompactDesktop = layoutMode === "compact";
+
+  const desktopGridClass = isCompactDesktop
+    ? "grid h-full min-h-0 grid-cols-[minmax(260px,0.95fr)_minmax(280px,1.1fr)_minmax(320px,1.25fr)] gap-3 overflow-hidden"
+    : "grid h-full min-h-0 grid-cols-12 gap-4 overflow-hidden";
+
+  const mailboxColumnClass = cn(
+    isCompactDesktop ? "min-w-0" : "col-span-3",
+    columnClass
+  );
+
+  const messagesColumnClass = cn(
+    isCompactDesktop ? "min-w-0" : "col-span-4",
+    columnClass
+  );
+
+  const detailColumnClass = cn(
+    isCompactDesktop ? "min-w-0" : "col-span-5",
+    columnClass
+  );
+
+
+
+  if (layoutMode === null) {
+
+    return <div ref={workspaceRef} className="flex h-full min-h-0 flex-col" />;
 
   }
 
@@ -196,13 +253,13 @@ export function ThreeColumnLayout() {
 
   return (
 
-    <div className="flex h-full min-h-0 flex-col">
+    <div ref={workspaceRef} className="flex h-full min-h-0 flex-col overflow-hidden">
 
       {isDesktop ? (
 
-        <div className="grid flex-1 min-h-0 grid-cols-12 gap-4">
+        <div className={desktopGridClass}>
 
-          <div className={cn("col-span-3", columnClass)}>
+          <div className={mailboxColumnClass}>
 
             <div className={desktopHeaderClass}>
 
@@ -220,7 +277,7 @@ export function ThreeColumnLayout() {
 
             </div>
 
-            <div className="flex-1 overflow-auto">
+            <div className="min-h-0 flex-1 overflow-hidden">
 
               <EmailList
 
@@ -244,7 +301,7 @@ export function ThreeColumnLayout() {
 
 
 
-          <div className={cn("col-span-4", columnClass)}>
+          <div className={messagesColumnClass}>
 
             <div className={desktopHeaderClass}>
 
@@ -360,7 +417,7 @@ export function ThreeColumnLayout() {
 
 
 
-          <div className={cn("col-span-5", columnClass)}>
+          <div className={detailColumnClass}>
 
             <div className={desktopHeaderClass}>
 
@@ -464,7 +521,7 @@ export function ThreeColumnLayout() {
 
               </div>
 
-              <div className="flex-1 overflow-auto">
+              <div className="min-h-0 flex-1 overflow-hidden">
 
                 <EmailList
 
@@ -492,7 +549,7 @@ export function ThreeColumnLayout() {
 
           {mobileView === "emails" && selectedEmail && (
 
-            <div className="h-full flex flex-col">
+            <div className="flex h-full min-h-0 flex-col">
 
               <div className={cn(mobileHeaderClass, "gap-2")}>
 
@@ -560,7 +617,7 @@ export function ThreeColumnLayout() {
 
               </div>
 
-              <div className="flex-1 overflow-auto">
+              <div className="min-h-0 flex-1 overflow-hidden">
 
                 <MessageListContainer
 
@@ -586,7 +643,7 @@ export function ThreeColumnLayout() {
 
           {mobileView === "message" && selectedEmail && selectedMessageId && (
 
-            <div className="h-full flex flex-col">
+            <div className="flex h-full min-h-0 flex-col">
 
               <div className={mobileHeaderClass}>
 
@@ -610,7 +667,7 @@ export function ThreeColumnLayout() {
 
               </div>
 
-              <div className="flex-1 overflow-auto">
+              <div className="min-h-0 flex-1 overflow-hidden">
 
                 <MessageView
 
@@ -639,4 +696,3 @@ export function ThreeColumnLayout() {
   );
 
 }
-

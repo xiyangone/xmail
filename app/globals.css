@@ -440,7 +440,7 @@
   }
 
   .surface-panel-workspace {
-    @apply rounded-3xl overflow-hidden border shadow-xl backdrop-blur-md;
+    @apply rounded-3xl overflow-hidden border shadow-lg backdrop-blur-sm;
     background:
       linear-gradient(
         180deg,
@@ -456,6 +456,7 @@
         hsl(var(--background) / var(--workspace-panel-bg)) 100%
       );
     border-color: hsl(var(--primary) / var(--workspace-border-opacity));
+    isolation: isolate;
   }
 
   .surface-toolbar-workspace {
@@ -504,7 +505,7 @@
   }
 
   .surface-header-shell {
-    @apply relative overflow-hidden rounded-[1.75rem] border backdrop-blur-2xl;
+    @apply relative overflow-hidden rounded-[1.75rem] border backdrop-blur-md;
     background:
       linear-gradient(
         180deg,
@@ -522,7 +523,7 @@
   }
 
   .surface-header-action {
-    @apply rounded-full border text-foreground backdrop-blur-xl transition-all duration-300;
+    @apply rounded-full border text-foreground backdrop-blur-sm transition-colors duration-150;
     background-color: hsl(var(--background) / var(--header-control-bg));
     border-color: hsl(var(--primary) / var(--header-control-border-opacity));
   }

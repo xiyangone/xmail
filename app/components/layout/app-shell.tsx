@@ -16,11 +16,11 @@ export function AppShell({
   mainClassName,
 }: AppShellProps) {
   return (
-    <div className={cn("relative min-h-screen", fullHeight && "h-[100dvh] overflow-hidden")}>
+    <div className={cn("relative min-h-screen", fullHeight && "h-dvh overflow-hidden")}>
       <div
         className={cn(
           "container mx-auto max-w-[1600px] px-4 lg:px-8",
-          fullHeight && "h-full",
+          fullHeight && "flex h-full min-h-0 flex-col",
           containerClassName
         )}
       >
@@ -28,7 +28,9 @@ export function AppShell({
         <main
           className={cn(
             "relative",
-            fullHeight ? "mt-[4.25rem] h-[calc(100dvh-4.25rem-0.5rem)] min-h-0 pb-2" : "pb-5 pt-[4.25rem]",
+            fullHeight
+              ? "flex min-h-0 flex-1 flex-col pb-3 pt-[4.75rem]"
+              : "pb-5 pt-[4.25rem]",
             mainClassName
           )}
         >

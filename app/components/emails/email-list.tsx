@@ -96,8 +96,6 @@ const EmailItem = memo(function EmailItem({
 
   email,
 
-  index,
-
   isSelected,
 
   isChecked,
@@ -111,8 +109,6 @@ const EmailItem = memo(function EmailItem({
 }: {
 
   email: Email;
-
-  index: number;
 
   isSelected: boolean;
 
@@ -216,19 +212,15 @@ const EmailItem = memo(function EmailItem({
 
       className={cn(
 
-        "flex items-center gap-2 p-3 rounded-lg cursor-pointer text-sm group transition-all duration-200",
+        "flex items-center gap-2 p-3 rounded-lg cursor-pointer text-sm group transition-[background-color,border-color,color,box-shadow] duration-150",
 
-        "hover:bg-primary/10 hover:shadow-md hover:scale-[1.02]",
+        "hover:bg-primary/10 hover:shadow-sm",
 
         "border border-transparent hover:border-primary/20",
 
-        isSelected && "bg-primary/15 border-primary/30 shadow-md",
-
-        "animate-fade-in"
+        isSelected && "bg-primary/15 border-primary/30 shadow-sm"
 
       )}
-
-      style={{ animationDelay: `${index * 50}ms` }}
 
       onClick={handleClick}
 
@@ -784,9 +776,9 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
 
     <>
 
-      <div className="flex flex-col h-full">
+      <div className="flex h-full min-h-0 flex-col">
 
-        <div className="border-b border-primary/16 bg-[hsl(var(--background)/0.08)] px-4 py-3">
+        <div className="shrink-0 border-b border-primary/16 bg-[hsl(var(--background)/0.08)] px-4 py-3">
 
           <div className="flex flex-wrap items-center justify-between gap-3">
 
@@ -902,7 +894,7 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
 
 
 
-        <div className="flex-1 overflow-auto px-3 py-3" onScroll={handleScroll}>
+        <div className="min-h-0 flex-1 overflow-auto px-3 py-3" onScroll={handleScroll}>
 
           {loading ? (
 
@@ -912,15 +904,13 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
 
             <div className="space-y-2">
 
-              {emails.map((email, index) => (
+              {emails.map((email) => (
 
                 <EmailItem
 
                   key={email.id}
 
                   email={email}
-
-                  index={index}
 
                   isSelected={selectedEmailId === email.id}
 
