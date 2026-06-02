@@ -13,7 +13,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Github, Loader2, KeyRound, User2, Eye, EyeOff } from "lucide-react";
+import { Loader2, KeyRound, User2, Eye, EyeOff } from "lucide-react";
+import { GitHubIcon } from "@/components/ui/github-icon";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 
@@ -569,7 +570,7 @@ export function LoginForm() {
                   className="w-full"
                   onClick={handleGithubLogin}
                 >
-                  <Github className="mr-2 h-4 w-4" />
+                  <GitHubIcon className="mr-2 h-4 w-4" />
                   {t("loginWithGithub")}
                 </Button>
               </div>

@@ -28,8 +28,8 @@ const VERIFICATION_CODE_PATTERNS = [
   /([0-9]{4,8})\s*(?:是|为)(?:您的)?验证码/i,
 
   // 7. 多语言验证码句式
-  /(?:認証コード|確認コード|セキュリティコード|인증\s*코드|확인\s*코드|보안\s*코드)[^\d]{0,24}([0-9]{4,8})/i,
-  /([0-9]{4,8})[^\d]{0,24}(?:認証コード|確認コード|セキュリティコード|인증\s*코드|확인\s*코드|보안\s*코드)/i,
+  /(?:認証コード|確認コード|検証コード|一時認証コード|一時確認コード|一時検証コード|ログインコード|一時ログインコード|セキュリティコード|確認番号|認証番号|인증\s*코드|확인\s*코드|보안\s*코드)[^\d]{0,24}([0-9]{4,8})/i,
+  /([0-9]{4,8})[^\d]{0,24}(?:認証コード|確認コード|検証コード|一時認証コード|一時確認コード|一時検証コード|ログインコード|一時ログインコード|セキュリティコード|確認番号|認証番号|인증\s*코드|확인\s*코드|보안\s*코드)/i,
   /(?:c[oó]digo(?:\s+de)?\s+(?:verificaci[oó]n|seguran[cç]a)|code\s+de\s+v[ée]rification|code\s+de\s+s[ée]curit[ée]|best[aä]tigungscode|sicherheitscode|код\s+(?:подтверждения|проверки|безопасности)|codice\s+di\s+verifica|verificatiecode|kod\s+weryfikacyjny|do[ğg]rulama\s+kodu(?:nuz)?|m[aã]\s+x[aá]c\s+minh)[^\d]{0,24}([0-9]{4,8})/i,
   /([0-9]{4,8})[^\d]{0,24}(?:c[oó]digo(?:\s+de)?\s+(?:verificaci[oó]n|seguran[cç]a)|code\s+de\s+v[ée]rification|code\s+de\s+s[ée]curit[ée]|best[aä]tigungscode|sicherheitscode|код\s+(?:подтверждения|проверки|безопасности)|codice\s+di\s+verifica|verificatiecode|kod\s+weryfikacyjny|do[ğg]rulama\s+kodu(?:nuz)?|m[aã]\s+x[aá]c\s+minh)/i,
 
@@ -138,7 +138,15 @@ function hasVerificationContext(text: string, code: string): boolean {
     "校验码",
     "認証コード",
     "確認コード",
+    "検証コード",
+    "一時認証コード",
+    "一時確認コード",
+    "一時検証コード",
+    "ログインコード",
+    "一時ログインコード",
     "セキュリティコード",
+    "確認番号",
+    "認証番号",
     "인증 코드",
     "인증코드",
     "확인 코드",

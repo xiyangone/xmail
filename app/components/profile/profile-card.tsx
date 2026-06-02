@@ -4,7 +4,8 @@ import { User } from "next-auth"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { signOut } from "next-auth/react"
-import { Github, Settings, Crown, Sword, User2, Gem, Mail, Zap, Shield, ImageIcon } from "lucide-react"
+import { Settings, Crown, Sword, User2, Gem, Mail, Zap, Shield, ImageIcon } from "lucide-react"
+import { GitHubIcon } from "@/components/ui/github-icon"
 import { useRouter } from "next/navigation"
 import { useRolePermission } from "@/hooks/use-role-permission"
 import { PERMISSIONS } from "@/lib/permissions"
@@ -74,7 +75,7 @@ export function ProfileCard({ user }: ProfileCardProps) {
               <h2 className="text-xl font-bold truncate">{user.name}</h2>
               {user.email && (
                 <div className="profile-pill-surface flex flex-shrink-0 items-center gap-1 rounded-full border border-primary/18 px-2.5 py-1 text-xs text-primary backdrop-blur-xl">
-                  <Github className="w-3 h-3" />
+                  <GitHubIcon className="w-3 h-3" />
                   {t("githubLinked")}
                 </div>
               )}

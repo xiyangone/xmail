@@ -27,7 +27,7 @@ export async function parseJsonBody<TSchema extends z.ZodTypeAny>(
   try {
     const validation = schema.safeParse(await request.json());
     if (!validation.success) {
-      return { ok: false, response: jsonError(validation.error.errors[0]?.message ?? "请求参数无效", 400) };
+      return { ok: false, response: jsonError(validation.error.issues[0]?.message ?? "请求参数无效", 400) };
     }
 
     return { ok: true, data: validation.data };

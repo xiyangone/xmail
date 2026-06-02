@@ -231,6 +231,14 @@ async function testMultilingualVerificationCodeExtraction() {
       expected: "123456",
     },
     {
+      name: "extracts Japanese temporary login code",
+      message: {
+        subject: "ChatGPT 用の一時ログインコード",
+        content: "この一時検証コードを入力して続行してください: 934965",
+      },
+      expected: "934965",
+    },
+    {
       name: "extracts Korean authentication code",
       message: { content: "인증 코드: 112233" },
       expected: "112233",
