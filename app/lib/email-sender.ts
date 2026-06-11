@@ -1,5 +1,3 @@
-export type EmailSendProvider = "resend" | "cloudflare";
-
 export interface EmailSendInput {
   fromEmail: string;
   to: string;
@@ -16,25 +14,7 @@ export interface ResendEmailPayload {
   reply_to: string;
 }
 
-export interface CloudflareEmailPayload {
-  from: {
-    address: string;
-    name: string;
-  };
-  to: string;
-  reply_to: string;
-  subject: string;
-  html: string;
-  text: string;
-}
-
 const SENDER_DISPLAY_NAME = "XiYang Mail";
-
-export function normalizeEmailProvider(
-  provider: string | null | undefined
-): EmailSendProvider {
-  return provider === "cloudflare" ? "cloudflare" : "resend";
-}
 
 export function stripHtmlForEmailText(html: string): string {
   return html
@@ -67,22 +47,6 @@ export function buildResendEmailPayload(input: EmailSendInput): ResendEmailPaylo
   };
 }
 
-export function buildCloudflareEmailPayload(
-  input: EmailSendInput
-): CloudflareEmailPayload {
-  return {
-    from: {
-      address: input.fromEmail,
-      name: SENDER_DISPLAY_NAME,
-    },
-    to: input.to,
-    reply_to: input.fromEmail,
-    subject: input.subject,
-    html: input.html,
-    text: stripHtmlForEmailText(input.html),
-  };
-}
-
 async function readErrorMessage(response: Response, fallback: string) {
   try {
     const data = (await response.json()) as {
@@ -92,18 +56,6 @@ async function readErrorMessage(response: Response, fallback: string) {
     return data.message || data.errors?.[0]?.message || fallback;
   } catch {
     return fallback;
-  }
-}
-
-async function readCloudflareResponse(response: Response) {
-  try {
-    return (await response.json()) as {
-      success?: boolean;
-      errors?: Array<{ message?: string }>;
-      messages?: Array<{ message?: string }>;
-    };
-  } catch {
-    return null;
   }
 }
 
@@ -125,32 +77,6 @@ export async function sendWithResend(
       response,
       "Resend发送失败，请稍后重试"
     );
-    throw new Error(message);
-  }
-}
-
-export async function sendWithCloudflare(
-  input: EmailSendInput,
-  config: { accountId: string; apiToken: string }
-) {
-  const response = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${config.accountId}/email/sending/send`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${config.apiToken}`,
-      },
-      body: JSON.stringify(buildCloudflareEmailPayload(input)),
-    }
-  );
-
-  const data = await readCloudflareResponse(response);
-  if (!response.ok || data?.success === false) {
-    const message =
-      data?.errors?.[0]?.message ||
-      data?.messages?.[0]?.message ||
-      "Cloudflare发送失败，请稍后重试";
     throw new Error(message);
   }
 }

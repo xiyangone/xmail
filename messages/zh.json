@@ -586,6 +586,14 @@
 
 
 
+      "customExpiryPlaceholder": "输入自定义时长",
+
+
+
+      "customExpiryInvalid": "请输入有效的自定义过期时间",
+
+
+
       "createButton": "创建",
 
 
@@ -827,6 +835,26 @@
 
 
       "3days": "3天",
+
+
+
+      "7days": "7天",
+
+
+
+      "custom": "自定义",
+
+
+
+      "minutes": "分钟",
+
+
+
+      "hours": "小时",
+
+
+
+      "days": "天",
 
 
 
@@ -1230,39 +1258,11 @@
 
 
 
-    "enableResendDesc": "开启后将使用已选择的服务发送邮件",
-
-
-
-    "enableSendServiceDesc": "开启后将使用已选择的服务发送邮件",
-
-
-
-    "provider": "发件服务商",
-
-
-
-    "providerResend": "Resend",
-
-
-
-    "providerCloudflare": "Cloudflare Email Sending",
-
-
-
-    "providerDesc": "选择 Resend 或 Cloudflare 后，系统只使用所选服务发送，不做失败回退。",
+    "enableResendDesc": "开启后将使用 Resend 发送邮件",
 
 
 
     "apiKeyPlaceholder": "输入 Resend API Key",
-
-
-
-    "cloudflareAccountIdPlaceholder": "输入 Cloudflare Account ID",
-
-
-
-    "cloudflareApiTokenPlaceholder": "输入 Cloudflare Email Sending API Token",
 
 
 
@@ -1326,11 +1326,7 @@
 
 
 
-    "resendUpdated": "发件服务配置已更新",
-
-
-
-    "emailServiceUpdated": "发件服务配置已更新",
+    "resendUpdated": "Resend 发件服务配置已更新",
 
 
 

@@ -5,11 +5,7 @@ import { emails, messages } from "@/lib/schema"
 import { eq } from "drizzle-orm"
 import { getCloudflareContext } from "@opennextjs/cloudflare"
 import { checkSendPermission } from "@/lib/send-permissions"
-import {
-  normalizeEmailProvider,
-  sendWithCloudflare,
-  sendWithResend,
-} from "@/lib/email-sender"
+import { sendWithResend } from "@/lib/email-sender"
 
 interface SendEmailRequest {
   to: string
@@ -71,28 +67,11 @@ export async function POST(
     }
 
     const { env } = await getCloudflareContext()
-    const [providerValue, resendApiKey, cloudflareAccountId, cloudflareApiToken] =
-      await Promise.all([
-        env.SITE_CONFIG.get("EMAIL_SEND_PROVIDER"),
-        env.SITE_CONFIG.get("RESEND_API_KEY"),
-        env.SITE_CONFIG.get("CLOUDFLARE_ACCOUNT_ID"),
-        env.SITE_CONFIG.get("CLOUDFLARE_EMAIL_API_TOKEN"),
-      ])
-    const provider = normalizeEmailProvider(providerValue)
+    const resendApiKey = await env.SITE_CONFIG.get("RESEND_API_KEY")
 
-    if (provider === "resend" && !resendApiKey) {
+    if (!resendApiKey) {
       return NextResponse.json(
         { error: "Resend 发件服务未配置，请联系管理员" },
-        { status: 500 }
-      )
-    }
-
-    if (
-      provider === "cloudflare" &&
-      (!cloudflareAccountId || !cloudflareApiToken)
-    ) {
-      return NextResponse.json(
-        { error: "Cloudflare 发件服务未配置，请联系管理员" },
         { status: 500 }
       )
     }
@@ -115,14 +94,7 @@ export async function POST(
         html: content,
         fromEmail: email.address,
       }
-      if (provider === "cloudflare") {
-        await sendWithCloudflare(sendInput, {
-          accountId: cloudflareAccountId!,
-          apiToken: cloudflareApiToken!,
-        })
-      } else {
-        await sendWithResend(sendInput, { apiKey: resendApiKey! })
-      }
+      await sendWithResend(sendInput, { apiKey: resendApiKey })
 
       // 发送成功后更新状态为 sent
       await db.update(messages)

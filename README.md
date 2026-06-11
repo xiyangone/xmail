@@ -66,7 +66,7 @@
 - 🔄 **自动清理**：自动清理过期的邮箱和邮件
 - 💸 **免费自部署**：基于 Cloudflare 构建, 可实现免费自部署，无需任何费用
 - 🎉 **可爱的 UI**：简洁可爱萌萌哒 UI 界面，集成 JetBrains Mono Nerd Font 字体
-- 📤 **发件功能**：支持使用临时邮箱发送邮件，可选择 Resend 或 Cloudflare Email Sending
+- 📤 **发件功能**：支持使用临时邮箱通过 Resend 发送邮件
 - 🔔 **Webhook 通知**：支持通过 webhook 接收新邮件通知
 - 🛡️ **策略化权限系统**：支持基于角色、数据库权限表、路由策略和 API Key Scope 的细粒度访问控制
 - 🧭 **运维中心**：管理后台内置 Worker 运行、清理历史、Webhook 日志、邮件接收日志、审计日志、权限变更审计和配置诊断
@@ -641,7 +641,7 @@ XiYang Mail 支持通过卡密快速创建临时账号，用户可以跳过注�
 
 ## 发件功能
 
-XiYang Mail 支持使用临时邮箱发送邮件，可选择 [Resend](https://resend.com/) 或 [Cloudflare Email Sending](https://developers.cloudflare.com/email-service/) 作为发件服务。
+XiYang Mail 支持使用临时邮箱通过 [Resend](https://resend.com/) 发送邮件。
 
 ### 功能特性
 
@@ -663,11 +663,9 @@ XiYang Mail 支持使用临时邮箱发送邮件，可选择 [Resend](https://re
 
 ### 配置发件服务
 
-1. **选择发件服务并获取凭证**
+1. **获取 Resend 凭证**
 
    - Resend：访问 [Resend 官网](https://resend.com/) 注册账号，在控制台创建 API Key。
-   - Cloudflare：进入 `Account API Tokens`，创建帐户级 API Token，权限选择 `Email & Messaging -> Email Sending -> Edit`。
-   - Cloudflare 发信还需要 `Account ID`，可在 Cloudflare 控制台账户 URL 或账户信息中获取。
 
 2. **配置发件服务**
 
@@ -675,9 +673,7 @@ XiYang Mail 支持使用临时邮箱发送邮件，可选择 [Resend](https://re
    - 进入个人中心页面
    - 在"发件服务配置"部分：
      - 启用发件服务开关
-     - 选择 `Resend` 或 `Cloudflare Email Sending`
-     - Resend：填入 Resend API Key
-     - Cloudflare：填入 Cloudflare Account ID 和 Cloudflare Email API Token
+     - 填入 Resend API Key
      - 设置公爵和骑士的每日发件限制（可选）
    - 点击保存配置
 
@@ -707,8 +703,8 @@ XiYang Mail 支持使用临时邮箱发送邮件，可选择 [Resend](https://re
 
 ### 注意事项
 
-- 📋 **服务商限制**：请注意 Resend 或 Cloudflare Email Sending 的发送限制和定价政策
-- 🔐 **域名验证**：使用自定义域名发件需要在当前选择的服务商中完成域名验证；当前推荐发信域名为 `xiyangone.cn`，历史使用的 `xiyangone.online` 可在服务商完成验证后重新启用
+- 📋 **服务商限制**：请注意 Resend 的发送限制和定价政策
+- 🔐 **域名验证**：使用自定义域名发件需要在 Resend 中完成域名验证；当前推荐发信域名为 `xiyangone.cn`，历史使用的 `xiyangone.online` 可在 Resend 完成验证后重新启用
 - 🚫 **反垃圾邮件**：请遵守邮件发送规范，避免发送垃圾邮件
 - 📊 **配额监控**：系统会自动统计每日发件数量，达到限额后将无法继续发送
 - 🔄 **配额重置**：每日发件配额在每天 00:00 自动重置
@@ -721,7 +717,7 @@ XiYang Mail 的发信接口会直接使用当前临时邮箱地址作为 `From`�
 awa@xiyangone.cn
 ```
 
-其中 `awa` 是邮箱本地部分，不是 DNS 子域名；只要 `xiyangone.cn` 已在当前发件服务商完成验证，就不需要为每个邮箱前缀单独添加 DNS 记录。只有使用 `user@awa.xiyangone.cn` 这类地址时，`awa.xiyangone.cn` 才是新的邮箱域名，需要单独配置收信路由和发信认证。
+其中 `awa` 是邮箱本地部分，不是 DNS 子域名；只要 `xiyangone.cn` 已在 Resend 完成验证，就不需要为每个邮箱前缀单独添加 DNS 记录。只有使用 `user@awa.xiyangone.cn` 这类地址时，`awa.xiyangone.cn` 才是新的邮箱域名，需要单独配置收信路由和发信认证。
 
 使用 Resend 时，在 Cloudflare DNS 中填写 Resend 记录，按 Resend 表格填写：
 
@@ -735,8 +731,8 @@ awa@xiyangone.cn
 
 建议 `xiyangone.cn` 至少具备以下投递认证：
 
-- DKIM：由当前发件服务商生成并验证；Resend 通常使用 `resend._domainkey.xiyangone.cn`
-- Return-Path / SPF：由当前发件服务商生成并验证；Resend 通常使用 `send.xiyangone.cn` 的 MX 和 TXT
+- DKIM：由 Resend 生成并验证；通常使用 `resend._domainkey.xiyangone.cn`
+- Return-Path / SPF：由 Resend 生成并验证；通常使用 `send.xiyangone.cn` 的 MX 和 TXT
 - DMARC：`_dmarc.xiyangone.cn`，建议先使用 `v=DMARC1; p=none; rua=mailto:dmarc@xiyangone.cn;`
 
 QQ 邮箱、Gmail、Yahoo 等收件方都会综合判断发信域认证、域名信誉、内容特征和用户反馈。配置 SPF / DKIM / DMARC 只能解决“身份可信”问题，不能保证所有邮件一定进收件箱；如果邮件仍进入垃圾箱，应继续检查邮件原文里的 `spf`、`dkim`、`dmarc` 是否为 `pass`，并优化标题、正文、链接、发送频率和投诉率。

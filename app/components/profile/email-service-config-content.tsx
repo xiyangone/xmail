@@ -12,10 +12,7 @@ import { useTranslations } from "next-intl"
 
 interface EmailServiceConfig {
   enabled: boolean
-  provider: "resend" | "cloudflare"
   apiKey: string
-  cloudflareAccountId: string
-  cloudflareApiToken: string
   roleLimits: {
     duke: number
     knight: number
@@ -25,10 +22,7 @@ interface EmailServiceConfig {
 export function EmailServiceConfigContent() {
   const [config, setConfig] = useState<EmailServiceConfig>({
     enabled: false,
-    provider: "resend",
     apiKey: "",
-    cloudflareAccountId: "",
-    cloudflareApiToken: "",
     roleLimits: {
       duke: -1,
       knight: -1,
@@ -36,7 +30,6 @@ export function EmailServiceConfigContent() {
   })
   const [loading, setLoading] = useState(false)
   const [showToken, setShowToken] = useState(false)
-  const [showCloudflareToken, setShowCloudflareToken] = useState(false)
   const { toast } = useToast()
   const t = useTranslations("emailService")
   const tc = useTranslations("common")
@@ -63,10 +56,7 @@ export function EmailServiceConfigContent() {
     try {
       const saveData = {
         enabled: config.enabled,
-        provider: config.provider,
         apiKey: config.apiKey,
-        cloudflareAccountId: config.cloudflareAccountId,
-        cloudflareApiToken: config.cloudflareApiToken,
         roleLimits: config.roleLimits
       }
 
@@ -83,7 +73,7 @@ export function EmailServiceConfigContent() {
 
       toast({
         title: t("saveSuccess"),
-        description: t("emailServiceUpdated"),
+        description: t("resendUpdated"),
       })
     } catch (error) {
       toast({
@@ -104,7 +94,7 @@ export function EmailServiceConfigContent() {
             {t("enableResend")}
           </Label>
           <p className="text-xs text-muted-foreground">
-            {t("enableSendServiceDesc")}
+            {t("enableResendDesc")}
           </p>
         </div>
         <Switch
@@ -119,136 +109,44 @@ export function EmailServiceConfigContent() {
       {config.enabled && (
         <>
           <div className="space-y-2">
-            <Label htmlFor="provider" className="text-sm font-medium">
-              {t("provider")}
+            <Label htmlFor="apiKey" className="text-sm font-medium">
+              Resend API Key
             </Label>
-            <select
-              id="provider"
-              value={config.provider}
-              onChange={(e) =>
-                setConfig((prev: EmailServiceConfig) => ({
-                  ...prev,
-                  provider: e.target.value === "cloudflare" ? "cloudflare" : "resend",
-                }))
-              }
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            >
-              <option value="resend">{t("providerResend")}</option>
-              <option value="cloudflare">{t("providerCloudflare")}</option>
-            </select>
-            <p className="text-xs text-muted-foreground">
-              {t("providerDesc")}
-            </p>
-          </div>
-
-          {config.provider === "resend" && (
-            <div className="space-y-2">
-              <Label htmlFor="apiKey" className="text-sm font-medium">
-                Resend API Key
-              </Label>
-              <div className="relative">
-                <input
-                  type="text"
-                  name="resendConfigUsername"
-                  autoComplete="username"
-                  value="resend-config"
-                  readOnly
-                  tabIndex={-1}
-                  aria-hidden="true"
-                  className="sr-only"
-                />
-                <Input
-                  id="apiKey"
-                  name="resendApiKey"
-                  type={showToken ? "text" : "password"}
-                  autoComplete="new-password"
-                  value={config.apiKey}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfig((prev: EmailServiceConfig) => ({ ...prev, apiKey: e.target.value }))}
-                  placeholder={t("apiKeyPlaceholder")}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                  onClick={() => setShowToken(!showToken)}
-                >
-                  {showToken ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
+            <div className="relative">
+              <input
+                type="text"
+                name="resendConfigUsername"
+                autoComplete="username"
+                value="resend-config"
+                readOnly
+                tabIndex={-1}
+                aria-hidden="true"
+                className="sr-only"
+              />
+              <Input
+                id="apiKey"
+                name="resendApiKey"
+                type={showToken ? "text" : "password"}
+                autoComplete="new-password"
+                value={config.apiKey}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfig((prev: EmailServiceConfig) => ({ ...prev, apiKey: e.target.value }))}
+                placeholder={t("apiKeyPlaceholder")}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                onClick={() => setShowToken(!showToken)}
+              >
+                {showToken ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </Button>
             </div>
-          )}
-
-          {config.provider === "cloudflare" && (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="cloudflareAccountId" className="text-sm font-medium">
-                  Cloudflare Account ID
-                </Label>
-                <Input
-                  id="cloudflareAccountId"
-                  name="cloudflareAccountId"
-                  value={config.cloudflareAccountId}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    setConfig((prev: EmailServiceConfig) => ({
-                      ...prev,
-                      cloudflareAccountId: e.target.value,
-                    }))
-                  }
-                  placeholder={t("cloudflareAccountIdPlaceholder")}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="cloudflareApiToken" className="text-sm font-medium">
-                  Cloudflare Email API Token
-                </Label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    name="cloudflareConfigUsername"
-                    autoComplete="username"
-                    value="cloudflare-email-config"
-                    readOnly
-                    tabIndex={-1}
-                    aria-hidden="true"
-                    className="sr-only"
-                  />
-                  <Input
-                    id="cloudflareApiToken"
-                    name="cloudflareApiToken"
-                    type={showCloudflareToken ? "text" : "password"}
-                    autoComplete="new-password"
-                    value={config.cloudflareApiToken}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                      setConfig((prev: EmailServiceConfig) => ({
-                        ...prev,
-                        cloudflareApiToken: e.target.value,
-                      }))
-                    }
-                    placeholder={t("cloudflareApiTokenPlaceholder")}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowCloudflareToken(!showCloudflareToken)}
-                  >
-                    {showCloudflareToken ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
+          </div>
 
           <div className="space-y-2">
             <Label className="text-sm font-medium">

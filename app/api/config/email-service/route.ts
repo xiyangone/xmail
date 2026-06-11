@@ -5,14 +5,10 @@ import { recordAdminMutationAudit } from "@/lib/admin-audit"
 import { getUserId } from "@/lib/apiKey"
 import { PERMISSIONS } from "@/lib/permissions"
 import { EMAIL_CONFIG } from "@/config"
-import { normalizeEmailProvider, type EmailSendProvider } from "@/lib/email-sender"
 
 interface EmailServiceConfig {
   enabled: boolean
-  provider?: EmailSendProvider
   apiKey: string
-  cloudflareAccountId?: string
-  cloudflareApiToken?: string
   roleLimits: {
     duke?: number
     knight?: number
@@ -30,19 +26,9 @@ export async function GET() {
 
   try {
     const { env } = await getCloudflareContext()
-    const [
-      enabled,
-      provider,
-      apiKey,
-      cloudflareAccountId,
-      cloudflareApiToken,
-      roleLimits,
-    ] = await Promise.all([
+    const [enabled, apiKey, roleLimits] = await Promise.all([
       env.SITE_CONFIG.get("EMAIL_SERVICE_ENABLED"),
-      env.SITE_CONFIG.get("EMAIL_SEND_PROVIDER"),
       env.SITE_CONFIG.get("RESEND_API_KEY"),
-      env.SITE_CONFIG.get("CLOUDFLARE_ACCOUNT_ID"),
-      env.SITE_CONFIG.get("CLOUDFLARE_EMAIL_API_TOKEN"),
       env.SITE_CONFIG.get("EMAIL_ROLE_LIMITS")
     ])
 
@@ -55,16 +41,13 @@ export async function GET() {
 
     return NextResponse.json({
       enabled: enabled === "true",
-      provider: normalizeEmailProvider(provider),
       apiKey: apiKey || "",
-      cloudflareAccountId: cloudflareAccountId || "",
-      cloudflareApiToken: cloudflareApiToken || "",
       roleLimits: finalLimits
     })
   } catch (error) {
     console.error("Failed to get email service config:", error)
     return NextResponse.json(
-      { error: "获取发件服务配置失败" },
+      { error: "获取 Resend 发件服务配置失败" },
       { status: 500 }
     )
   }
@@ -98,8 +81,6 @@ export async function POST(request: Request) {
     }
 
     const config = rawConfig as Partial<EmailServiceConfig>
-    const provider = normalizeEmailProvider(config.provider)
-
     if (typeof config.enabled !== "boolean" || typeof config.apiKey !== "string") {
       return NextResponse.json(
         { error: "缺少必要的配置字段" },
@@ -127,20 +108,9 @@ export async function POST(request: Request) {
       )
     }
 
-    if (config.enabled && provider === "resend" && !config.apiKey.trim()) {
+    if (config.enabled && !config.apiKey.trim()) {
       return NextResponse.json(
         { error: "启用 Resend 时，API Key 为必填项" },
-        { status: 400 }
-      )
-    }
-
-    if (
-      config.enabled &&
-      provider === "cloudflare" &&
-      (!config.cloudflareAccountId?.trim() || !config.cloudflareApiToken?.trim())
-    ) {
-      return NextResponse.json(
-        { error: "启用 Cloudflare 时，Account ID 和 API Token 为必填项" },
         { status: 400 }
       )
     }
@@ -157,10 +127,7 @@ export async function POST(request: Request) {
 
     await Promise.all([
       env.SITE_CONFIG.put("EMAIL_SERVICE_ENABLED", config.enabled.toString()),
-      env.SITE_CONFIG.put("EMAIL_SEND_PROVIDER", provider),
       env.SITE_CONFIG.put("RESEND_API_KEY", config.apiKey.trim()),
-      env.SITE_CONFIG.put("CLOUDFLARE_ACCOUNT_ID", config.cloudflareAccountId?.trim() ?? ""),
-      env.SITE_CONFIG.put("CLOUDFLARE_EMAIL_API_TOKEN", config.cloudflareApiToken?.trim() ?? ""),
       env.SITE_CONFIG.put("EMAIL_ROLE_LIMITS", JSON.stringify(customLimits))
     ])
 
@@ -172,13 +139,10 @@ export async function POST(request: Request) {
         action: "config.email_service.update",
         targetType: "site_config",
         targetId: "email_service",
-        summary: "更新发件服务配置",
+        summary: "更新 Resend 发件服务配置",
         metadata: {
           enabled: config.enabled,
-          provider,
           apiKeyConfigured: Boolean(config.apiKey.trim()),
-          cloudflareAccountIdConfigured: Boolean(config.cloudflareAccountId?.trim()),
-          cloudflareApiTokenConfigured: Boolean(config.cloudflareApiToken?.trim()),
           roleLimits: customLimits,
         },
       })
@@ -188,7 +152,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Failed to save email service config:", error)
     return NextResponse.json(
-      { error: "保存发件服务配置失败" },
+      { error: "保存 Resend 发件服务配置失败" },
       { status: 500 }
     )
   }

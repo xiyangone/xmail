@@ -586,6 +586,14 @@
 
 
 
+      "customExpiryPlaceholder": "Enter custom duration",
+
+
+
+      "customExpiryInvalid": "Enter a valid custom expiry duration",
+
+
+
       "createButton": "Create",
 
 
@@ -827,6 +835,26 @@
 
 
       "3days": "3 Days",
+
+
+
+      "7days": "7 Days",
+
+
+
+      "custom": "Custom",
+
+
+
+      "minutes": "Minutes",
+
+
+
+      "hours": "Hours",
+
+
+
+      "days": "Days",
 
 
 
@@ -1230,39 +1258,11 @@
 
 
 
-    "enableResendDesc": "When enabled, emails will be sent via the selected provider",
-
-
-
-    "enableSendServiceDesc": "When enabled, emails will be sent via the selected provider",
-
-
-
-    "provider": "Email provider",
-
-
-
-    "providerResend": "Resend",
-
-
-
-    "providerCloudflare": "Cloudflare Email Sending",
-
-
-
-    "providerDesc": "Choose Resend or Cloudflare. The selected provider is used directly without failover.",
+    "enableResendDesc": "When enabled, emails will be sent via Resend",
 
 
 
     "apiKeyPlaceholder": "Enter Resend API Key",
-
-
-
-    "cloudflareAccountIdPlaceholder": "Enter Cloudflare Account ID",
-
-
-
-    "cloudflareApiTokenPlaceholder": "Enter Cloudflare Email Sending API Token",
 
 
 
@@ -1326,11 +1326,7 @@
 
 
 
-    "resendUpdated": "Email service configuration updated",
-
-
-
-    "emailServiceUpdated": "Email service configuration updated",
+    "resendUpdated": "Resend email sending configuration updated",
 
 
 

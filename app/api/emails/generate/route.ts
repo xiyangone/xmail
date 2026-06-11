@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createDb } from "@/lib/db";
 import { emails } from "@/lib/schema";
 import { eq, and, gt, sql } from "drizzle-orm";
-import { EXPIRY_OPTIONS } from "@/types/email";
+import { isValidExpiryTime } from "@/types/email";
 import { EMAIL_CONFIG } from "@/config";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { getUserId } from "@/lib/apiKey";
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
 
     console.log("Request params - name:", name, "expiryTime:", expiryTime, "domain:", domain);
 
-    if (!EXPIRY_OPTIONS.some((option) => option.value === expiryTime)) {
+    if (!isValidExpiryTime(expiryTime)) {
       console.log("Invalid expiry time:", expiryTime);
       return NextResponse.json({ error: "无效的过期时间" }, { status: 400 });
     }

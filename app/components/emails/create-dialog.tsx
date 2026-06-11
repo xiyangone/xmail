@@ -22,7 +22,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { EXPIRY_OPTIONS } from "@/types/email";
+import {
+  CUSTOM_EXPIRY_OPTION_VALUE,
+  calculateExpiryTime,
+  EXPIRY_OPTIONS,
+  type ExpiryUnit,
+} from "@/types/email";
 import { useCopy } from "@/hooks/use-copy";
 import { useConfig } from "@/hooks/use-config";
 import { useTranslations } from "next-intl";
@@ -40,6 +45,9 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
   const [expiryTime, setExpiryTime] = useState(
     EXPIRY_OPTIONS[2].value.toString()
   );
+  const [customExpiryValue, setCustomExpiryValue] = useState("7");
+  const [customExpiryUnit, setCustomExpiryUnit] =
+    useState<ExpiryUnit>("days");
   const { toast } = useToast();
   const { copyToClipboard } = useCopy();
   const emailNameInputRef = useRef<HTMLInputElement>(null);
@@ -79,13 +87,30 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
 
     setLoading(true);
     try {
+      const selectedExpiryTime =
+        expiryTime === CUSTOM_EXPIRY_OPTION_VALUE
+          ? calculateExpiryTime(
+              customExpiryUnit,
+              Number.parseInt(customExpiryValue, 10)
+            )
+          : Number.parseInt(expiryTime, 10);
+
+      if (!Number.isSafeInteger(selectedExpiryTime) || selectedExpiryTime < 0) {
+        toast({
+          title: tc("error"),
+          description: t("create.customExpiryInvalid"),
+          variant: "destructive",
+        });
+        return;
+      }
+
       const response = await fetch("/api/emails/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: emailName,
           domain: currentDomain,
-          expiryTime: parseInt(expiryTime),
+          expiryTime: selectedExpiryTime,
         }),
       });
 
@@ -226,8 +251,46 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
                   </Label>
                 </div>
               ))}
+              <div className="flex shrink-0 items-center gap-2 whitespace-nowrap">
+                <RadioGroupItem
+                  value={CUSTOM_EXPIRY_OPTION_VALUE}
+                  id={CUSTOM_EXPIRY_OPTION_VALUE}
+                />
+                <Label
+                  htmlFor={CUSTOM_EXPIRY_OPTION_VALUE}
+                  className="cursor-pointer text-sm"
+                >
+                  {t("expiry.custom")}
+                </Label>
+              </div>
             </RadioGroup>
           </div>
+
+          {expiryTime === CUSTOM_EXPIRY_OPTION_VALUE && (
+            <div className="flex gap-3">
+              <Input
+                type="number"
+                min="1"
+                value={customExpiryValue}
+                onChange={(event) => setCustomExpiryValue(event.target.value)}
+                placeholder={t("create.customExpiryPlaceholder")}
+                className="flex-1"
+              />
+              <Select
+                value={customExpiryUnit}
+                onValueChange={(value) => setCustomExpiryUnit(value as ExpiryUnit)}
+              >
+                <SelectTrigger className="w-28">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="minutes">{t("expiry.minutes")}</SelectItem>
+                  <SelectItem value="hours">{t("expiry.hours")}</SelectItem>
+                  <SelectItem value="days">{t("expiry.days")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span className="shrink-0">{t("fullAddress")}</span>
