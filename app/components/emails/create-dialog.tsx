@@ -178,7 +178,7 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
           {t("create.button")}
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{t("create.title")}</DialogTitle>
           <DialogDescription className="sr-only">
@@ -192,16 +192,16 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
               value={emailName}
               onChange={(e) => setEmailName(e.target.value)}
               placeholder={t("create.prefixPlaceholder")}
-              className="flex-1"
+              className="min-w-0 flex-1"
             />
             {(config?.emailDomainsArray?.length ?? 0) > 1 && (
               <div
-                className="relative group"
+                className="relative group shrink-0"
                 title={t("create.domainScrollHint")}
                 onWheel={handleDomainWheel}
               >
                 <Select value={currentDomain} onValueChange={setCurrentDomain}>
-                  <SelectTrigger className="w-[180px] transition-all group-hover:ring-2 group-hover:ring-primary/20">
+                  <SelectTrigger className="w-[210px] transition-all group-hover:ring-2 group-hover:ring-primary/20">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -225,19 +225,19 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
             </Button>
           </div>
 
-          <div className="flex items-center gap-3 overflow-x-auto pb-1">
-            <Label className="shrink-0 whitespace-nowrap text-muted-foreground">
+          <div className="space-y-2.5">
+            <Label className="text-muted-foreground">
               {t("create.expiry")}
             </Label>
             <RadioGroup
               value={expiryTime}
               onValueChange={setExpiryTime}
-              className="flex min-w-max flex-nowrap items-center gap-4"
+              className="flex flex-nowrap items-center justify-between gap-x-2"
             >
               {EXPIRY_OPTIONS.map((option) => (
                 <div
                   key={option.value}
-                  className="flex shrink-0 items-center gap-2 whitespace-nowrap"
+                  className="flex items-center gap-1.5 whitespace-nowrap"
                 >
                   <RadioGroupItem
                     value={option.value.toString()}
@@ -245,20 +245,20 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
                   />
                   <Label
                     htmlFor={option.value.toString()}
-                    className="cursor-pointer text-sm"
+                    className="cursor-pointer text-sm font-normal"
                   >
                     {t(option.label)}
                   </Label>
                 </div>
               ))}
-              <div className="flex shrink-0 items-center gap-2 whitespace-nowrap">
+              <div className="flex items-center gap-1.5 whitespace-nowrap">
                 <RadioGroupItem
                   value={CUSTOM_EXPIRY_OPTION_VALUE}
                   id={CUSTOM_EXPIRY_OPTION_VALUE}
                 />
                 <Label
                   htmlFor={CUSTOM_EXPIRY_OPTION_VALUE}
-                  className="cursor-pointer text-sm"
+                  className="cursor-pointer text-sm font-normal"
                 >
                   {t("expiry.custom")}
                 </Label>
@@ -267,20 +267,20 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
           </div>
 
           {expiryTime === CUSTOM_EXPIRY_OPTION_VALUE && (
-            <div className="flex gap-3">
+            <div className="flex items-center gap-2">
               <Input
                 type="number"
                 min="1"
                 value={customExpiryValue}
                 onChange={(event) => setCustomExpiryValue(event.target.value)}
                 placeholder={t("create.customExpiryPlaceholder")}
-                className="flex-1"
+                className="flex-[2]"
               />
               <Select
                 value={customExpiryUnit}
                 onValueChange={(value) => setCustomExpiryUnit(value as ExpiryUnit)}
               >
-                <SelectTrigger className="w-28">
+                <SelectTrigger className="flex-1">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
