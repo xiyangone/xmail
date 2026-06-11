@@ -42,7 +42,7 @@
 
 **当前文档入口**: 本仓库 README（即当前文件）
 
-**当前版本**: `v1.6.7`
+**当前版本**: `v1.6.8`
 
 当前版本暂未单独维护外部文档站点，部署、API、配置与示例请以本仓库内容为准。
 
@@ -50,7 +50,8 @@
 
 - 产品名：`XiYang Mail`
 - GitHub 仓库 / Worker 前缀：`xmail`
-- 默认示例域名：`mail.xiyangone.cn`
+- 默认网站域名：`mail.xiyangone.cn`
+- 默认临时邮箱 / 发信域名：`xiyangone.cn`
 
 上述命名不是强制固定。
 如果你需要换品牌名、Worker 名、D1 名、KV 名或自定义域名，可以通过 `PROJECT_NAME`、`DATABASE_NAME`、`KV_NAMESPACE_NAME`、`CUSTOM_DOMAIN` 等配置覆盖默认值；仓库当前这组命名只是默认推荐口径。
@@ -705,10 +706,38 @@ XiYang Mail 支持使用临时邮箱发送邮件，基于 [Resend](https://resen
 ### 注意事项
 
 - 📋 **Resend 限制**：请注意 Resend 服务的发送限制和定价政策
-- 🔐 **域名验证**：使用自定义域名发件需要在 Resend 中验证域名
+- 🔐 **域名验证**：使用自定义域名发件需要在 Resend 中验证域名；当前推荐发信域名为 `xiyangone.cn`，历史使用的 `xiyangone.online` 已切换为 `xiyangone.cn`
 - 🚫 **反垃圾邮件**：请遵守邮件发送规范，避免发送垃圾邮件
 - 📊 **配额监控**：系统会自动统计每日发件数量，达到限额后将无法继续发送
 - 🔄 **配额重置**：每日发件配额在每天 00:00 自动重置
+
+### 发信域名与 DNS 认证
+
+XiYang Mail 的发信接口会直接使用当前临时邮箱地址作为 `From`：
+
+```text
+awa@xiyangone.cn
+```
+
+其中 `awa` 是邮箱本地部分，不是 DNS 子域名；只要 `xiyangone.cn` 已在 Resend 完成验证，就不需要为每个邮箱前缀单独添加 DNS 记录。只有使用 `user@awa.xiyangone.cn` 这类地址时，`awa.xiyangone.cn` 才是新的邮箱域名，需要单独配置收信路由和 Resend 发信认证。
+
+在 Cloudflare DNS 中填写 Resend 记录时，按 Resend 表格填写：
+
+| Resend 字段 | Cloudflare 字段 | 示例 |
+| --- | --- | --- |
+| Type | 类型 | `TXT` / `MX` |
+| Name | 名称 | `resend._domainkey` 或 `send` |
+| Content | 内容 | `p=...` / `v=spf1 include:amazonses.com ~all` / `feedback-smtp...amazonses.com` |
+| TTL | TTL | `Auto` |
+| Priority | 优先级 | MX 记录通常为 `10` |
+
+建议 `xiyangone.cn` 至少具备以下投递认证：
+
+- DKIM：`resend._domainkey.xiyangone.cn`，由 Resend 生成并验证
+- Return-Path / SPF：`send.xiyangone.cn` 的 MX 和 TXT，由 Resend 生成并验证
+- DMARC：`_dmarc.xiyangone.cn`，建议先使用 `v=DMARC1; p=none; rua=mailto:dmarc@xiyangone.cn;`
+
+QQ 邮箱、Gmail、Yahoo 等收件方都会综合判断发信域认证、域名信誉、内容特征和用户反馈。配置 SPF / DKIM / DMARC 只能解决“身份可信”问题，不能保证所有邮件一定进收件箱；如果邮件仍进入垃圾箱，应继续检查邮件原文里的 `spf`、`dkim`、`dmarc` 是否为 `pass`，并优化标题、正文、链接、发送频率和投诉率。
 
 ## Webhook 集成
 
@@ -732,7 +761,7 @@ X-Webhook-Event: new_message
   "content": "邮件文本内容",
   "html": "邮件HTML内容",
   "receivedAt": "2024-01-01T12:00:00.000Z",
-  "toAddress": "your-email@mail.xiyangone.cn"
+  "toAddress": "your-email@xiyangone.cn"
 }
 ```
 
@@ -842,7 +871,7 @@ GET /api/config
 ```json
 {
   "defaultRole": "CIVILIAN",
-  "emailDomains": "mail.xiyangone.cn,example.com",
+  "emailDomains": "xiyangone.cn,example.com",
   "adminContact": "admin@example.com",
   "maxEmails": "10"
 }
@@ -864,7 +893,7 @@ Content-Type: application/json
 {
   "name": "test",
   "expiryTime": 3600000,
-  "domain": "mail.xiyangone.cn"
+  "domain": "xiyangone.cn"
 }
 ```
 
@@ -879,7 +908,7 @@ Content-Type: application/json
 ```json
 {
   "id": "email-uuid-123",
-  "email": "test@mail.xiyangone.cn"
+  "email": "test@xiyangone.cn"
 }
 ```
 
@@ -905,7 +934,7 @@ GET /api/emails?cursor=xxx
   "emails": [
     {
       "id": "email-uuid-123",
-      "address": "test@mail.xiyangone.cn",
+      "address": "test@xiyangone.cn",
       "createdAt": "2024-01-01T12:00:00.000Z",
       "expiresAt": "2024-01-02T12:00:00.000Z",
       "userId": "user-uuid-456"
@@ -1115,7 +1144,7 @@ curl -X POST https://your-domain.com/api/emails/generate \
   -d '{
     "name": "test",
     "expiryTime": 3600000,
-    "domain": "mail.xiyangone.cn"
+    "domain": "xiyangone.cn"
   }'
 ```
 
@@ -1145,7 +1174,7 @@ const createEmailRes = await fetch(
     body: JSON.stringify({
       name: "test",
       expiryTime: 3600000,
-      domain: "mail.xiyangone.cn",
+      domain: "xiyangone.cn",
     }),
   }
 );
