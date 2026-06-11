@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Copy, Plus, RefreshCw } from "lucide-react";
+import { CalendarClock, Copy, Plus, RefreshCw } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -23,6 +23,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+} from "@/components/ui/popover";
+import {
   CUSTOM_EXPIRY_OPTION_VALUE,
   calculateExpiryTime,
   EXPIRY_OPTIONS,
@@ -30,7 +35,7 @@ import {
 } from "@/types/email";
 import { useCopy } from "@/hooks/use-copy";
 import { useConfig } from "@/hooks/use-config";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 interface CreateDialogProps {
   onEmailCreated: () => void;
@@ -53,6 +58,7 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
   const emailNameInputRef = useRef<HTMLInputElement>(null);
   const t = useTranslations("email");
   const tc = useTranslations("common");
+  const locale = useLocale();
 
   // 对话框打开时自动聚焦到邮箱名输入框
   useEffect(() => {
@@ -170,6 +176,25 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
     setCurrentDomain(config.emailDomainsArray[nextIndex]);
   };
 
+  // 自定义有效期的到期时间预览（仅在数值合法时展示）
+  const customExpiryMs = calculateExpiryTime(
+    customExpiryUnit,
+    Number.parseInt(customExpiryValue, 10)
+  );
+  const customExpiryPreview =
+    Number.isSafeInteger(customExpiryMs) && customExpiryMs > 0
+      ? new Date(Date.now() + customExpiryMs).toLocaleString(
+          locale === "zh" ? "zh-CN" : "en-US",
+          {
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+          }
+        )
+      : null;
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -201,7 +226,7 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
                 onWheel={handleDomainWheel}
               >
                 <Select value={currentDomain} onValueChange={setCurrentDomain}>
-                  <SelectTrigger className="w-[210px] transition-all group-hover:ring-2 group-hover:ring-primary/20">
+                  <SelectTrigger className="w-auto min-w-[150px] max-w-[260px] transition-all group-hover:ring-2 group-hover:ring-primary/20">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -251,46 +276,77 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
                   </Label>
                 </div>
               ))}
-              <div className="flex items-center gap-1.5 whitespace-nowrap">
-                <RadioGroupItem
-                  value={CUSTOM_EXPIRY_OPTION_VALUE}
-                  id={CUSTOM_EXPIRY_OPTION_VALUE}
-                />
-                <Label
-                  htmlFor={CUSTOM_EXPIRY_OPTION_VALUE}
-                  className="cursor-pointer text-sm font-normal"
+              <Popover open={expiryTime === CUSTOM_EXPIRY_OPTION_VALUE}>
+                <PopoverAnchor asChild>
+                  <div className="flex items-center gap-1.5 whitespace-nowrap">
+                    <RadioGroupItem
+                      value={CUSTOM_EXPIRY_OPTION_VALUE}
+                      id={CUSTOM_EXPIRY_OPTION_VALUE}
+                    />
+                    <Label
+                      htmlFor={CUSTOM_EXPIRY_OPTION_VALUE}
+                      className="cursor-pointer text-sm font-normal"
+                    >
+                      {t("expiry.custom")}
+                    </Label>
+                  </div>
+                </PopoverAnchor>
+                <PopoverContent
+                  side="right"
+                  align="start"
+                  sideOffset={16}
+                  onOpenAutoFocus={(event) => event.preventDefault()}
+                  onInteractOutside={(event) => event.preventDefault()}
+                  className="w-auto"
                 >
-                  {t("expiry.custom")}
-                </Label>
-              </div>
+                  <div className="space-y-2.5">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      {t("create.expiry")}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min="1"
+                        value={customExpiryValue}
+                        onChange={(event) =>
+                          setCustomExpiryValue(event.target.value)
+                        }
+                        placeholder={t("create.customExpiryPlaceholder")}
+                        className="w-20"
+                      />
+                      <Select
+                        value={customExpiryUnit}
+                        onValueChange={(value) =>
+                          setCustomExpiryUnit(value as ExpiryUnit)
+                        }
+                      >
+                        <SelectTrigger className="w-24">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="minutes">
+                            {t("expiry.minutes")}
+                          </SelectItem>
+                          <SelectItem value="hours">
+                            {t("expiry.hours")}
+                          </SelectItem>
+                          <SelectItem value="days">
+                            {t("expiry.days")}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {customExpiryPreview && (
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <CalendarClock className="size-3.5 shrink-0" />
+                        <span className="truncate">{customExpiryPreview}</span>
+                      </div>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </RadioGroup>
           </div>
-
-          {expiryTime === CUSTOM_EXPIRY_OPTION_VALUE && (
-            <div className="flex items-center gap-2">
-              <Input
-                type="number"
-                min="1"
-                value={customExpiryValue}
-                onChange={(event) => setCustomExpiryValue(event.target.value)}
-                placeholder={t("create.customExpiryPlaceholder")}
-                className="flex-[2]"
-              />
-              <Select
-                value={customExpiryUnit}
-                onValueChange={(value) => setCustomExpiryUnit(value as ExpiryUnit)}
-              >
-                <SelectTrigger className="flex-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="minutes">{t("expiry.minutes")}</SelectItem>
-                  <SelectItem value="hours">{t("expiry.hours")}</SelectItem>
-                  <SelectItem value="days">{t("expiry.days")}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
 
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span className="shrink-0">{t("fullAddress")}</span>
