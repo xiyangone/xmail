@@ -930,7 +930,7 @@
 
 
 
-    "resendConfig": "Resend Email Service Config",
+    "resendConfig": "Email Service Config",
 
 
 
@@ -1226,15 +1226,43 @@
 
 
 
-    "enableResend": "Enable Resend Email Service",
+    "enableResend": "Enable Email Sending",
 
 
 
-    "enableResendDesc": "When enabled, emails will be sent via Resend",
+    "enableResendDesc": "When enabled, emails will be sent via the selected provider",
+
+
+
+    "enableSendServiceDesc": "When enabled, emails will be sent via the selected provider",
+
+
+
+    "provider": "Email provider",
+
+
+
+    "providerResend": "Resend",
+
+
+
+    "providerCloudflare": "Cloudflare Email Sending",
+
+
+
+    "providerDesc": "Choose Resend or Cloudflare. The selected provider is used directly without failover.",
 
 
 
     "apiKeyPlaceholder": "Enter Resend API Key",
+
+
+
+    "cloudflareAccountIdPlaceholder": "Enter Cloudflare Account ID",
+
+
+
+    "cloudflareApiTokenPlaceholder": "Enter Cloudflare Email Sending API Token",
 
 
 
@@ -1298,7 +1326,11 @@
 
 
 
-    "resendUpdated": "Resend email service configuration updated",
+    "resendUpdated": "Email service configuration updated",
+
+
+
+    "emailServiceUpdated": "Email service configuration updated",
 
 
 

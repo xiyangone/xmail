@@ -5,42 +5,16 @@ import { emails, messages } from "@/lib/schema"
 import { eq } from "drizzle-orm"
 import { getCloudflareContext } from "@opennextjs/cloudflare"
 import { checkSendPermission } from "@/lib/send-permissions"
-
+import {
+  normalizeEmailProvider,
+  sendWithCloudflare,
+  sendWithResend,
+} from "@/lib/email-sender"
 
 interface SendEmailRequest {
   to: string
   subject: string
   content: string
-}
-
-async function sendWithResend(
-  to: string,
-  subject: string,
-  content: string,
-  fromEmail: string,
-  config: { apiKey: string }
-) {
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${config.apiKey}`,
-    },
-    body: JSON.stringify({
-      from: fromEmail,
-      to: [to],
-      subject: subject,
-      html: content,
-    }),
-  })
-
-  if (!response.ok) {
-    const errorData = await response.json() as { message?: string }
-    console.error('Resend API error:', errorData)
-    throw new Error(errorData.message || "Resend发送失败，请稍后重试")
-  }
-
-  return { success: true }
 }
 
 export async function POST(
@@ -97,11 +71,28 @@ export async function POST(
     }
 
     const { env } = await getCloudflareContext()
-    const apiKey = await env.SITE_CONFIG.get("RESEND_API_KEY")
+    const [providerValue, resendApiKey, cloudflareAccountId, cloudflareApiToken] =
+      await Promise.all([
+        env.SITE_CONFIG.get("EMAIL_SEND_PROVIDER"),
+        env.SITE_CONFIG.get("RESEND_API_KEY"),
+        env.SITE_CONFIG.get("CLOUDFLARE_ACCOUNT_ID"),
+        env.SITE_CONFIG.get("CLOUDFLARE_EMAIL_API_TOKEN"),
+      ])
+    const provider = normalizeEmailProvider(providerValue)
 
-    if (!apiKey) {
+    if (provider === "resend" && !resendApiKey) {
       return NextResponse.json(
         { error: "Resend 发件服务未配置，请联系管理员" },
+        { status: 500 }
+      )
+    }
+
+    if (
+      provider === "cloudflare" &&
+      (!cloudflareAccountId || !cloudflareApiToken)
+    ) {
+      return NextResponse.json(
+        { error: "Cloudflare 发件服务未配置，请联系管理员" },
         { status: 500 }
       )
     }
@@ -118,7 +109,20 @@ export async function POST(
     }).returning()
 
     try {
-      await sendWithResend(to, subject, content, email.address, { apiKey })
+      const sendInput = {
+        to,
+        subject,
+        html: content,
+        fromEmail: email.address,
+      }
+      if (provider === "cloudflare") {
+        await sendWithCloudflare(sendInput, {
+          accountId: cloudflareAccountId!,
+          apiToken: cloudflareApiToken!,
+        })
+      } else {
+        await sendWithResend(sendInput, { apiKey: resendApiKey! })
+      }
 
       // 发送成功后更新状态为 sent
       await db.update(messages)
