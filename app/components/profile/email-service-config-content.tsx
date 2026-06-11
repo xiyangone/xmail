@@ -2,13 +2,19 @@
 
 import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff, ChevronDown } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useTranslations } from "next-intl"
+import { Separator } from "@/components/ui/separator"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 
 interface EmailServiceConfig {
   enabled: boolean
@@ -148,17 +154,25 @@ export function EmailServiceConfigContent() {
             </div>
           </div>
 
+          <Separator className="bg-border/60" />
+
           <div className="space-y-2">
             <Label className="text-sm font-medium">
               {t("allowedRoles")}
             </Label>
             <div className="space-y-4">
-              <div className="theme-surface-inline-panel rounded-2xl border p-4 text-sm">
-                <p className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                  <div className="w-2 h-2 bg-primary rounded-full"></div>
-                  {t("fixedRules")}
-                </p>
-                <div className="space-y-2 text-foreground/80">
+              <Collapsible
+                defaultOpen
+                className="theme-surface-inline-panel rounded-2xl border p-4 text-sm"
+              >
+                <CollapsibleTrigger className="group flex w-full items-center justify-between gap-2 font-semibold text-foreground">
+                  <span className="flex items-center gap-2">
+                    <span className="w-2 h-2 bg-primary rounded-full"></span>
+                    {t("fixedRules")}
+                  </span>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-3 space-y-2 text-foreground/80">
                   <div className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
                     <span><strong>{t("emperorRule")}</strong></span>
@@ -167,8 +181,8 @@ export function EmailServiceConfigContent() {
                     <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
                     <span><strong>{t("civilianRule")}</strong></span>
                   </div>
-                </div>
-              </div>
+                </CollapsibleContent>
+              </Collapsible>
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 bg-primary rounded-full"></div>

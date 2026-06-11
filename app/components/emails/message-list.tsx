@@ -451,6 +451,8 @@ export function MessageList({
               size="icon"
               onClick={handleRefresh}
               disabled={refreshing}
+              title={tc("refresh")}
+              aria-label={tc("refresh")}
               className={cn("h-8 w-8", refreshing && "animate-spin")}
             >
               <RefreshCw className="h-4 w-4" />
@@ -569,6 +571,8 @@ export function MessageList({
                         variant="ghost"
                         size="icon"
                         className="opacity-0 group-hover:opacity-100 h-8 w-8 flex-shrink-0"
+                        title={tc("delete")}
+                        aria-label={tc("delete")}
                         onClick={(e) => {
                           e.stopPropagation();
                           setMessageToDelete(message);

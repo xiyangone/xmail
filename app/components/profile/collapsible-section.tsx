@@ -2,7 +2,11 @@
 
 import { useState, useEffect, ReactNode } from "react"
 import { ChevronUp, LucideIcon } from "lucide-react"
-import { cn } from "@/lib/utils"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 
 interface CollapsibleSectionProps {
   title: string
@@ -30,30 +34,24 @@ export function CollapsibleSection({
     setIsReady(true)
   }, [defaultOpen, storageKey])
 
-  const toggleOpen = () => {
-    const newState = !isOpen
-    setIsOpen(newState)
-    localStorage.setItem(storageKey, String(newState))
+  const handleOpenChange = (next: boolean) => {
+    setIsOpen(next)
+    localStorage.setItem(storageKey, String(next))
   }
 
   return (
-    <div className="profile-section-surface surface-panel-strong overflow-hidden rounded-[1.75rem]">
+    <Collapsible
+      open={isReady ? isOpen : false}
+      onOpenChange={handleOpenChange}
+      className="profile-section-surface surface-panel-strong overflow-hidden rounded-[1.75rem]"
+    >
       <div className="profile-section-toolbar surface-toolbar-workspace px-5 py-4 sm:px-6">
         <div className="flex items-center gap-4">
-          <button
-            type="button"
-            onClick={toggleOpen}
-            className="group flex min-w-0 flex-1 items-center gap-4 text-left"
-          >
+          <CollapsibleTrigger className="group flex min-w-0 flex-1 items-center gap-4 text-left">
             <Icon className="h-5 w-5 flex-shrink-0 text-primary transition-transform duration-300 group-hover:scale-105" />
             <h2 className="flex-1 text-left text-lg font-semibold">{title}</h2>
-            <ChevronUp
-              className={cn(
-                "h-5 w-5 flex-shrink-0 text-primary transition-transform",
-                !isOpen && "rotate-180"
-              )}
-            />
-          </button>
+            <ChevronUp className="h-5 w-5 flex-shrink-0 text-primary transition-transform group-data-[state=closed]:rotate-180" />
+          </CollapsibleTrigger>
           {action && (
             <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
               {action}
@@ -62,11 +60,9 @@ export function CollapsibleSection({
         </div>
       </div>
 
-      {isReady && isOpen && (
-        <div className="profile-section-content px-5 pb-5 pt-4 sm:px-6 sm:pb-6">
-          {children}
-        </div>
-      )}
-    </div>
+      <CollapsibleContent className="profile-section-content px-5 pb-5 pt-4 sm:px-6 sm:pb-6">
+        {children}
+      </CollapsibleContent>
+    </Collapsible>
   )
 }

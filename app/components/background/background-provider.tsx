@@ -176,7 +176,7 @@ export function BackgroundProvider() {
 
       {displayBackgroundUrl ? (
         <div
-          className="pointer-events-none fixed bottom-6 left-6 z-[100]"
+          className="pointer-events-none fixed bottom-6 left-6 z-header"
           onMouseEnter={() => setShowLink(true)}
           onMouseLeave={() => setShowLink(false)}
         >

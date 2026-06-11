@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Loader2 } from "lucide-react";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { formatContactDisplay } from "@/lib/contact-address";
 import { useTheme } from "next-themes";
 import { useToast } from "@/components/ui/use-toast";
@@ -176,7 +175,7 @@ export function MessageView({
 
   return (
     <div className="h-full flex flex-col animate-fade-in">
-      <div className="surface-toolbar-workspace sticky top-0 z-10 p-4 space-y-3">
+      <div className="surface-toolbar-workspace sticky top-0 z-sticky p-4 space-y-3">
         <h3 className="text-base font-bold">{message.subject}</h3>
         <div className="text-xs text-muted-foreground space-y-1">
           {fromLabel && <p>{t("from", { address: fromLabel })}</p>}
@@ -191,30 +190,27 @@ export function MessageView({
 
       {message.html && message.content && (
         <div className="border-b border-primary/10 px-3 py-2 bg-[hsl(var(--background)/0.2)]">
-          <RadioGroup
+          <ToggleGroup
+            type="single"
             value={viewMode}
-            onValueChange={(value) => setViewMode(value as ViewMode)}
-            className="surface-choice-rail flex max-w-fit items-center gap-2 p-1"
+            onValueChange={(value) => {
+              if (value) setViewMode(value as ViewMode);
+            }}
+            className="surface-choice-rail flex max-w-fit items-center gap-1 p-1"
           >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="html" id="html" />
-              <Label
-                htmlFor="html"
-                className="text-xs cursor-pointer font-medium"
-              >
-                {t("htmlView")}
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="text" id="text" />
-              <Label
-                htmlFor="text"
-                className="text-xs cursor-pointer font-medium"
-              >
-                {t("textView")}
-              </Label>
-            </div>
-          </RadioGroup>
+            <ToggleGroupItem
+              value="html"
+              className="h-7 rounded-md px-2.5 text-xs font-medium text-foreground/70 transition-colors data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm"
+            >
+              {t("htmlView")}
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              value="text"
+              className="h-7 rounded-md px-2.5 text-xs font-medium text-foreground/70 transition-colors data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm"
+            >
+              {t("textView")}
+            </ToggleGroupItem>
+          </ToggleGroup>
         </div>
       )}
 

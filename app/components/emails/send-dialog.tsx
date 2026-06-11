@@ -12,14 +12,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import { Send } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import { useTranslations } from "next-intl";
 
 interface SendDialogProps {
@@ -42,6 +46,7 @@ export function SendDialog({
   const toInputRef = useRef<HTMLInputElement>(null);
   const t = useTranslations("email");
   const tc = useTranslations("common");
+  const isDesktop = useMediaQuery("(min-width: 768px)");
 
   // 对话框打开时自动聚焦到收件人输入框
   useEffect(() => {
@@ -102,74 +107,99 @@ export function SendDialog({
     }
   };
 
+  const triggerButton = (
+    <Button
+      variant="ghost"
+      size="sm"
+      className="h-8 gap-2 hover:bg-primary/10 hover:text-primary transition-colors"
+      title={t("send.tooltip")}
+    >
+      <Send className="h-4 w-4" />
+      <span className="hidden sm:inline">{t("send.button")}</span>
+    </Button>
+  );
+
+  const formBody = (
+    <div className="space-y-4">
+      <div className="text-sm text-muted-foreground">
+        {t("sender", { address: fromAddress })}
+      </div>
+      <Input
+        ref={toInputRef}
+        value={to}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+          setTo(e.target.value)
+        }
+        placeholder={t("send.toPlaceholder")}
+      />
+      <Input
+        value={subject}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+          setSubject(e.target.value)
+        }
+        placeholder={t("send.subjectPlaceholder")}
+      />
+      <Textarea
+        value={content}
+        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+          setContent(e.target.value)
+        }
+        placeholder={t("send.contentPlaceholder")}
+        rows={6}
+      />
+    </div>
+  );
+
+  const footerButtons = (
+    <>
+      <Button
+        variant="outline"
+        onClick={() => setOpen(false)}
+        disabled={loading}
+      >
+        {tc("cancel")}
+      </Button>
+      <Button onClick={handleSend} disabled={loading}>
+        {loading ? t("send.sending") : t("send.send")}
+      </Button>
+    </>
+  );
+
+  const srDescription =
+    "填写收件人、主题和内容，从当前临时邮箱发送一封邮件。";
+
+  if (!isDesktop) {
+    return (
+      <Drawer open={open} onOpenChange={setOpen}>
+        <DrawerTrigger asChild>{triggerButton}</DrawerTrigger>
+        <DrawerContent>
+          <DrawerHeader className="text-left">
+            <DrawerTitle>{t("send.title")}</DrawerTitle>
+            <DrawerDescription className="sr-only">
+              {srDescription}
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="overflow-y-auto px-4 pb-2">{formBody}</div>
+          <DrawerFooter className="flex-row justify-end">
+            {footerButtons}
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <TooltipProvider>
-        <Tooltip>
-          <DialogTrigger asChild>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 gap-2 hover:bg-primary/10 hover:text-primary transition-colors"
-              >
-                <Send className="h-4 w-4" />
-                <span className="hidden sm:inline">{t("send.button")}</span>
-              </Button>
-            </TooltipTrigger>
-          </DialogTrigger>
-          <TooltipContent className="sm:hidden">
-            <p>{t("send.tooltip")}</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <DialogTrigger asChild>{triggerButton}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("send.title")}</DialogTitle>
           <DialogDescription className="sr-only">
-            填写收件人、主题和内容，从当前临时邮箱发送一封邮件。
+            {srDescription}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-4">
-          <div className="text-sm text-muted-foreground">
-            {t("sender", { address: fromAddress })}
-          </div>
-          <Input
-            ref={toInputRef}
-            value={to}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setTo(e.target.value)
-            }
-            placeholder={t("send.toPlaceholder")}
-          />
-          <Input
-            value={subject}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setSubject(e.target.value)
-            }
-            placeholder={t("send.subjectPlaceholder")}
-          />
-          <Textarea
-            value={content}
-            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-              setContent(e.target.value)
-            }
-            placeholder={t("send.contentPlaceholder")}
-            rows={6}
-          />
-        </div>
-        <div className="flex justify-end gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setOpen(false)}
-            disabled={loading}
-          >
-            {tc("cancel")}
-          </Button>
-          <Button onClick={handleSend} disabled={loading}>
-            {loading ? t("send.sending") : t("send.send")}
-          </Button>
-        </div>
+        <div className="py-4">{formBody}</div>
+        <div className="flex justify-end gap-2">{footerButtons}</div>
       </DialogContent>
     </Dialog>
   );

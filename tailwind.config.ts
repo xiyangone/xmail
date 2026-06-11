@@ -476,6 +476,24 @@ const config = {
 
       },
 
+      zIndex: {
+
+        sticky: "10",
+
+        header: "100",
+
+        overlay: "110",
+
+        modal: "120",
+
+        popover: "130",
+
+        select: "140",
+
+        toast: "200",
+
+      },
+
     },
 
   },

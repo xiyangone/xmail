@@ -10,7 +10,7 @@ export function NoPermissionDialog() {
   const t = useTranslations("noPermission")
 
   return (
-    <div className="fixed inset-0 bg-background/50 backdrop-blur-sm z-50">
+    <div className="fixed inset-0 bg-background/50 backdrop-blur-sm z-modal">
       <div className="fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-[90%] max-w-md">
         <div className="bg-background border-2 border-primary/20 rounded-lg p-6 md:p-12 shadow-lg">
           <div className="text-center space-y-4">

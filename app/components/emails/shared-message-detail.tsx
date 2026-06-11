@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Loader2 } from "lucide-react";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { formatContactDisplay } from "@/lib/contact-address";
 import { formatZhCnDateTime } from "@/lib/format-zh-cn-datetime";
 import { useToast } from "@/components/ui/use-toast";
@@ -167,7 +166,7 @@ export function SharedMessageDetail({
 
   return (
     <div className="h-full flex flex-col animate-fade-in">
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm p-4 space-y-3 border-b border-primary/20 shadow-sm">
+      <div className="sticky top-0 z-sticky bg-background/95 backdrop-blur-sm p-4 space-y-3 border-b border-primary/20 shadow-sm">
         <h3 className="text-base font-bold">{message.subject}</h3>
         <div className="text-xs text-muted-foreground space-y-1">
           {fromLabel && <p>{te("from", { address: fromLabel })}</p>}
@@ -185,30 +184,27 @@ export function SharedMessageDetail({
 
       {message.html && message.content && (
         <div className="border-b border-primary/20 p-2 bg-muted/30">
-          <RadioGroup
+          <ToggleGroup
+            type="single"
             value={viewMode}
-            onValueChange={(value) => setViewMode(value as ViewMode)}
-            className="flex items-center gap-2 bg-background/50 backdrop-blur-sm p-1 rounded-lg"
+            onValueChange={(value) => {
+              if (value) setViewMode(value as ViewMode);
+            }}
+            className="flex items-center gap-1 bg-background/50 backdrop-blur-sm p-1 rounded-lg"
           >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="html" id="html" />
-              <Label
-                htmlFor="html"
-                className="text-xs cursor-pointer font-medium"
-              >
-                {te("htmlView")}
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="text" id="text" />
-              <Label
-                htmlFor="text"
-                className="text-xs cursor-pointer font-medium"
-              >
-                {te("textView")}
-              </Label>
-            </div>
-          </RadioGroup>
+            <ToggleGroupItem
+              value="html"
+              className="h-7 rounded-md px-2.5 text-xs font-medium text-foreground/70 transition-colors data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm"
+            >
+              {te("htmlView")}
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              value="text"
+              className="h-7 rounded-md px-2.5 text-xs font-medium text-foreground/70 transition-colors data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm"
+            >
+              {te("textView")}
+            </ToggleGroupItem>
+          </ToggleGroup>
         </div>
       )}
 
