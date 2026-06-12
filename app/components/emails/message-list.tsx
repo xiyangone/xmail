@@ -559,7 +559,7 @@ export function MessageList({
                               {contactLabel || ""}
                             </span>
                           )}
-                          <span className="flex items-center gap-1 text-xs text-gray-500 flex-shrink-0">
+                          <span className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0">
                             <Calendar className="w-3 h-3" />
                             {new Date(
                               message.received_at || message.sent_at || 0

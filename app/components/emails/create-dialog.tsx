@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/drawer";
 import { CalendarClock, Copy, Plus, RefreshCw } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -50,10 +50,6 @@ import { useLocale, useTranslations } from "next-intl";
 interface CreateDialogProps {
   onEmailCreated: () => void;
 }
-
-// 过期选项分段控件的统一样式（选中态用主题主色）
-const EXPIRY_TOGGLE_ITEM_CLASS =
-  "h-8 rounded-lg border border-input bg-transparent px-2.5 text-xs font-normal text-foreground/80 transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-foreground data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm";
 
 export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
   const { config } = useConfig();
@@ -273,7 +269,8 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
               <SelectContent>
                 {config?.emailDomainsArray?.map((d) => (
                   <SelectItem key={d} value={d}>
-                    @{d}
+                    <span className="text-muted-foreground">@</span>
+                    <span className="font-medium">{d}</span>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -293,32 +290,43 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
 
       <div className="space-y-2.5">
         <Label className="text-muted-foreground">{t("create.expiry")}</Label>
-        <ToggleGroup
-          type="single"
+        <RadioGroup
           value={expiryTime}
-          onValueChange={(value) => {
-            if (value) setExpiryTime(value);
-          }}
-          className="flex flex-wrap justify-start gap-1.5"
+          onValueChange={setExpiryTime}
+          className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2.5 md:flex-nowrap"
         >
           {EXPIRY_OPTIONS.map((option) => (
-            <ToggleGroupItem
+            <div
               key={option.value}
-              value={option.value.toString()}
-              className={EXPIRY_TOGGLE_ITEM_CLASS}
+              className="flex items-center gap-1.5 whitespace-nowrap"
             >
-              {t(option.label)}
-            </ToggleGroupItem>
+              <RadioGroupItem
+                value={option.value.toString()}
+                id={option.value.toString()}
+              />
+              <Label
+                htmlFor={option.value.toString()}
+                className="cursor-pointer text-sm font-normal"
+              >
+                {t(option.label)}
+              </Label>
+            </div>
           ))}
           {isDesktop ? (
             <Popover open={isCustomExpiry}>
               <PopoverAnchor asChild>
-                <ToggleGroupItem
-                  value={CUSTOM_EXPIRY_OPTION_VALUE}
-                  className={EXPIRY_TOGGLE_ITEM_CLASS}
-                >
-                  {t("expiry.custom")}
-                </ToggleGroupItem>
+                <div className="flex items-center gap-1.5 whitespace-nowrap">
+                  <RadioGroupItem
+                    value={CUSTOM_EXPIRY_OPTION_VALUE}
+                    id={CUSTOM_EXPIRY_OPTION_VALUE}
+                  />
+                  <Label
+                    htmlFor={CUSTOM_EXPIRY_OPTION_VALUE}
+                    className="cursor-pointer text-sm font-normal"
+                  >
+                    {t("expiry.custom")}
+                  </Label>
+                </div>
               </PopoverAnchor>
               <PopoverContent
                 side="right"
@@ -332,14 +340,20 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
               </PopoverContent>
             </Popover>
           ) : (
-            <ToggleGroupItem
-              value={CUSTOM_EXPIRY_OPTION_VALUE}
-              className={EXPIRY_TOGGLE_ITEM_CLASS}
-            >
-              {t("expiry.custom")}
-            </ToggleGroupItem>
+            <div className="flex items-center gap-1.5 whitespace-nowrap">
+              <RadioGroupItem
+                value={CUSTOM_EXPIRY_OPTION_VALUE}
+                id={CUSTOM_EXPIRY_OPTION_VALUE}
+              />
+              <Label
+                htmlFor={CUSTOM_EXPIRY_OPTION_VALUE}
+                className="cursor-pointer text-sm font-normal"
+              >
+                {t("expiry.custom")}
+              </Label>
+            </div>
           )}
-        </ToggleGroup>
+        </RadioGroup>
         {!isDesktop && isCustomExpiry && (
           <div className="rounded-xl border bg-muted/30 p-3">
             {customExpiryFields}

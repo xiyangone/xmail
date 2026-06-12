@@ -1,5 +1,6 @@
 "use client"
 
+import { Loader2 } from "lucide-react"
 import { Skeleton } from "./skeleton"
 import { useTranslations } from "next-intl"
 
@@ -27,7 +28,7 @@ export function MessageListSkeleton() {
       <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
         <div className="bg-background/95 backdrop-blur-sm px-6 py-3 rounded-lg border border-primary/20 shadow-lg">
           <div className="flex items-center gap-3">
-            <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
             <span className="text-sm font-medium text-foreground">{t("loading")}</span>
           </div>
         </div>

@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { formatZhCnDateTime } from "@/lib/format-zh-cn-datetime";
 import type { CardKey } from "@/hooks/use-card-keys";
 
 interface CardKeyCardProps {
@@ -116,28 +117,14 @@ export function CardKeyCard({
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4 shrink-0" />
                 <span>
-                  {t("created")}{" "}
-                  {new Date(cardKey.createdAt).toLocaleString("zh-CN", {
-                    year: "numeric",
-                    month: "2-digit",
-                    day: "2-digit",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {t("created")} {formatZhCnDateTime(cardKey.createdAt)}
                 </span>
               </div>
 
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 shrink-0" />
                 <span>
-                  {t("expires")}{" "}
-                  {new Date(cardKey.expiresAt).toLocaleString("zh-CN", {
-                    year: "numeric",
-                    month: "2-digit",
-                    day: "2-digit",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {t("expires")} {formatZhCnDateTime(cardKey.expiresAt)}
                 </span>
               </div>
 

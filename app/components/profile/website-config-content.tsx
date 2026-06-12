@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +18,31 @@ import { useToast } from "@/components/ui/use-toast";
 import { EMAIL_CONFIG, EMAIL_PREFIX_FORMATS } from "@/config";
 import { Role, ROLES } from "@/lib/permissions";
 import { DomainEditor } from "./domain-editor";
+
+// 与 lib/email-generator.ts 的格式语义一致的演示样本（仅作直观示意）
+const SAMPLE_ALNUM = "k7x2m9q4w8z3plt6r5n2";
+const SAMPLE_ALPHA = "kxqmwvzspltrnbcdfghj";
+
+function buildPrefixExample(format: string, lengthRaw: string): string {
+  const length = Math.min(Math.max(Number.parseInt(lengthRaw, 10) || 8, 4), 20);
+
+  switch (format) {
+    case EMAIL_PREFIX_FORMATS.RANDOM_ALPHA:
+      return SAMPLE_ALPHA.slice(0, length);
+    case EMAIL_PREFIX_FORMATS.NAME_NUMBER:
+      return "lucy2847";
+    case EMAIL_PREFIX_FORMATS.NAME_DATE:
+      return "lucy0612";
+    case EMAIL_PREFIX_FORMATS.NAME_YEAR:
+      return "lucy2026";
+    case EMAIL_PREFIX_FORMATS.RANDOM_DATE:
+      return SAMPLE_ALNUM.slice(0, Math.max(1, length - 4)) + "0612";
+    case EMAIL_PREFIX_FORMATS.RANDOM_YEAR:
+      return SAMPLE_ALNUM.slice(0, Math.max(1, length - 4)) + "2026";
+    default:
+      return SAMPLE_ALNUM.slice(0, length);
+  }
+}
 
 export function WebsiteConfigContent() {
   const [defaultRole, setDefaultRole] = useState<string>("");
@@ -110,6 +136,8 @@ export function WebsiteConfigContent() {
     Math.max(Number.parseInt(messagePollInterval || "0", 10), 0) / 1000
   ).toFixed(0);
 
+  const exampleDomain = emailDomains.split(",")[0]?.trim() || "example.com";
+
   return (
     <div className="space-y-4">
       <div className="theme-surface-inline-panel flex items-center justify-between rounded-2xl px-4 py-3.5">
@@ -201,9 +229,9 @@ export function WebsiteConfigContent() {
           <p className="text-xs text-muted-foreground">{t("prefixConfigDesc")}</p>
         </div>
 
-        <div className="flex items-center gap-4">
-          <span className="text-sm">{t("prefixLength")}</span>
-          <div className="flex-1">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <div className="flex items-center gap-3">
+            <span className="shrink-0 text-sm">{t("prefixLength")}</span>
             <Input
               type="number"
               min="4"
@@ -211,15 +239,14 @@ export function WebsiteConfigContent() {
               value={emailPrefixLength}
               onChange={(event) => setEmailPrefixLength(event.target.value)}
               placeholder={EMAIL_CONFIG.DEFAULT_PREFIX_LENGTH.toString()}
+              className="w-24"
             />
           </div>
-        </div>
 
-        <div className="flex items-center gap-4">
-          <span className="text-sm">{t("prefixFormat")}</span>
-          <div className="flex-1">
+          <div className="flex flex-1 items-center gap-3">
+            <span className="shrink-0 text-sm">{t("prefixFormat")}</span>
             <Select value={emailPrefixFormat} onValueChange={setEmailPrefixFormat}>
-              <SelectTrigger>
+              <SelectTrigger className="flex-1">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -233,6 +260,14 @@ export function WebsiteConfigContent() {
               </SelectContent>
             </Select>
           </div>
+        </div>
+
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Sparkles className="size-3.5 shrink-0 text-primary/70" />
+          <code className="rounded-md bg-background/60 px-2 py-1 font-mono text-foreground/85">
+            {buildPrefixExample(emailPrefixFormat, emailPrefixLength)}
+            <span className="text-muted-foreground">@{exampleDomain}</span>
+          </code>
         </div>
       </div>
 

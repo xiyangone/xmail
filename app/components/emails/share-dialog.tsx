@@ -32,6 +32,7 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { useCopy } from "@/hooks/use-copy";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { formatZhCnDateTime } from "@/lib/format-zh-cn-datetime";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -305,17 +306,8 @@ export function ShareDialog({ emailId }: ShareDialogProps) {
                       <div className="flex items-center justify-between">
                         <span>
                           {tc("createdAt", {
-                            time: new Date(
-                              typeof share.createdAt === "number"
-                                ? share.createdAt
-                                : share.createdAt
-                            ).toLocaleString("zh-CN", {
-                              year: "numeric",
-                              month: "2-digit",
-                              day: "2-digit",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              second: "2-digit",
+                            time: formatZhCnDateTime(share.createdAt, {
+                              includeSeconds: true,
                             }),
                           })}
                         </span>
@@ -327,22 +319,13 @@ export function ShareDialog({ emailId }: ShareDialogProps) {
                         )}
                       </div>
                       <div>
-                        {share.expiresAt
-                          ? tc("expiresAtTime", {
-                              time: new Date(
-                                typeof share.expiresAt === "number"
-                                  ? share.expiresAt
-                                  : share.expiresAt
-                              ).toLocaleString("zh-CN", {
-                                year: "numeric",
-                                month: "2-digit",
-                                day: "2-digit",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                                second: "2-digit",
-                              }),
-                            })
-                          : tc("expiresAtTime", { time: tc("neverExpires") })}
+                        {tc("expiresAtTime", {
+                          time: share.expiresAt
+                            ? formatZhCnDateTime(share.expiresAt, {
+                                includeSeconds: true,
+                              })
+                            : tc("neverExpires"),
+                        })}
                       </div>
                     </div>
                   </div>
