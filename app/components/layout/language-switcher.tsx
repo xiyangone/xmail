@@ -11,10 +11,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-// 语言名以各自母语展示，无需走 i18n
+// 语言以代号 chip 展示，无需走 i18n
 const localeOptions = [
-  { value: "zh", label: "简体中文", short: "中文" },
-  { value: "en", label: "English", short: "EN" },
+  { value: "zh", short: "中文" },
+  { value: "en", short: "EN" },
 ] as const;
 
 export function LanguageSwitcher() {
@@ -46,17 +46,17 @@ export function LanguageSwitcher() {
           <span className="sr-only">{t("switchLanguage")}</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="surface-panel-strong min-w-44 rounded-2xl p-2">
-        {localeOptions.map(({ value, label, short }) => (
+      <DropdownMenuContent align="end" className="surface-panel-strong rounded-2xl p-2">
+        {localeOptions.map(({ value, short }) => (
           <DropdownMenuItem
             key={value}
             onSelect={() => handleLocaleSelect(value)}
-            className={`gap-3 rounded-xl px-3 py-2 text-sm focus:bg-primary/10 ${
+            className={`gap-3 rounded-xl px-3 py-2 focus:bg-primary/10 ${
               locale === value ? "bg-primary/10" : ""
             }`}
           >
             <span
-              className={`flex h-6 w-10 shrink-0 items-center justify-center rounded-md font-mono text-[10px] font-bold tracking-wide transition-colors ${
+              className={`flex h-7 w-12 shrink-0 items-center justify-center rounded-md font-mono text-xs font-bold tracking-wide transition-colors ${
                 locale === value
                   ? "bg-primary text-primary-foreground"
                   : "bg-primary/10 text-primary"
@@ -64,8 +64,11 @@ export function LanguageSwitcher() {
             >
               {short}
             </span>
-            <span>{label}</span>
-            {locale === value ? <Check className="ml-auto h-4 w-4 text-primary" /> : null}
+            <Check
+              className={`h-4 w-4 text-primary ${
+                locale === value ? "opacity-100" : "opacity-0"
+              }`}
+            />
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
