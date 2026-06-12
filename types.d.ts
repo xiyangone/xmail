@@ -16,6 +16,10 @@ declare global {
 
     INTERNAL_WORKER_SECRET?: string;
 
+    REALTIME_WS_URL?: string;
+
+    MAILBOX_REALTIME?: DurableObjectNamespace;
+
   }
 
 

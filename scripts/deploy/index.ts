@@ -14,9 +14,48 @@ const PROJECT_NAME = process.env.PROJECT_NAME || "xmail";
 const DATABASE_NAME = process.env.DATABASE_NAME || "xmail-db";
 const KV_NAMESPACE_NAME = process.env.KV_NAMESPACE_NAME || "xmail-kv";
 const KV_NAMESPACE_ID = process.env.KV_NAMESPACE_ID;
+const REALTIME_WS_URL = process.env.REALTIME_WS_URL;
+const WORKER_SECRET_BINDINGS = ["INTERNAL_WORKER_SECRET"];
 
 // Keep Wrangler deploy logs quiet unless the caller explicitly overrides it.
 process.env.WRANGLER_SEND_METRICS ??= "false";
+
+const removeConflictingSecretVars = (json: { vars?: Record<string, unknown> }) => {
+  if (!json.vars) {
+    return false;
+  }
+
+  let changed = false;
+  for (const binding of WORKER_SECRET_BINDINGS) {
+    if (Object.prototype.hasOwnProperty.call(json.vars, binding)) {
+      delete json.vars[binding];
+      changed = true;
+    }
+  }
+
+  if (Object.keys(json.vars).length === 0) {
+    delete json.vars;
+  }
+
+  return changed;
+};
+
+const sanitizeConfigSecrets = (configPath: string) => {
+  if (!existsSync(configPath)) {
+    return;
+  }
+
+  try {
+    const json = JSON.parse(readFileSync(configPath, "utf-8"));
+    if (removeConflictingSecretVars(json)) {
+      writeFileSync(configPath, JSON.stringify(json, null, 2));
+      console.log(`✅ Removed secret placeholders from ${configPath}`);
+    }
+  } catch (error) {
+    console.error(`❌ Failed to sanitize ${configPath}:`, error);
+    throw error;
+  }
+};
 
 /**
  * 验证必要的环境变量
@@ -40,6 +79,9 @@ const setupConfigFile = (examplePath: string, targetPath: string) => {
     // 如果目标文件已存在，则跳过
     if (existsSync(targetPath)) {
       console.log(`✨ Configuration ${targetPath} already exists.`);
+      if (basename(targetPath) === "wrangler.json") {
+        sanitizeConfigSecrets(targetPath);
+      }
       return;
     }
 
@@ -75,6 +117,17 @@ const setupConfigFile = (examplePath: string, targetPath: string) => {
         default:
           break;
       }
+    }
+
+    if (basename(targetPath) === "wrangler.json" && REALTIME_WS_URL) {
+      json.vars = {
+        ...(json.vars ?? {}),
+        REALTIME_WS_URL,
+      };
+    }
+
+    if (basename(targetPath) === "wrangler.json") {
+      removeConflictingSecretVars(json);
     }
 
     // 处理数据库配置
@@ -273,7 +326,7 @@ const pushWorkerSecrets = () => {
 
   // 定义运行时所需的环境变量列表
   const requiredEnvVars = ['AUTH_GITHUB_ID', 'AUTH_GITHUB_SECRET', 'AUTH_SECRET'];
-  const optionalEnvVars = ['TURNSTILE_SECRET_KEY'];
+  const optionalEnvVars = ['TURNSTILE_SECRET_KEY', 'INTERNAL_WORKER_SECRET'];
   const runtimeEnvVars = [...requiredEnvVars, ...optionalEnvVars];
 
   // 兼容老的部署方式，如果必须的环境变量不存在，则跳过推送
@@ -305,7 +358,7 @@ const pushWorkerSecrets = () => {
         // 检查是否为运行时所需的环境变量
         for (const varName of runtimeEnvVars) {
           if (line.startsWith(`${varName} =`) || line.startsWith(`${varName}=`)) {
-            return true;
+            return requiredEnvVars.includes(varName) || Boolean(process.env[varName]);
           }
         }
         return false;
@@ -324,6 +377,59 @@ const pushWorkerSecrets = () => {
     console.log("✅ Secrets pushed successfully");
   } catch (error) {
     console.error("❌ Failed to push secrets:", error);
+    throw error;
+  }
+};
+
+/**
+ * 更新实时推送公开连接地址
+ */
+const updateRealtimeConfig = () => {
+  if (!REALTIME_WS_URL) {
+    return;
+  }
+
+  const configPath = resolve("wrangler.json");
+  if (!existsSync(configPath)) {
+    return;
+  }
+
+  try {
+    const json = JSON.parse(readFileSync(configPath, "utf-8"));
+    json.vars = {
+      ...(json.vars ?? {}),
+      REALTIME_WS_URL,
+    };
+    writeFileSync(configPath, JSON.stringify(json, null, 2));
+    console.log("✅ Updated REALTIME_WS_URL in wrangler.json");
+  } catch (error) {
+    console.error("❌ Failed to update realtime config:", error);
+    throw error;
+  }
+};
+
+/**
+ * 推送 Email Worker 密钥
+ */
+const pushEmailWorkerSecrets = () => {
+  if (!process.env.INTERNAL_WORKER_SECRET) {
+    console.log("🔐 Skipping Email Worker secrets: INTERNAL_WORKER_SECRET is not set.");
+    return;
+  }
+
+  console.log("🔐 Pushing environment secrets to Email Worker...");
+
+  try {
+    const runtimeEnvFile = resolve('.env.email-runtime');
+    writeFileSync(runtimeEnvFile, `INTERNAL_WORKER_SECRET="${process.env.INTERNAL_WORKER_SECRET}"\n`);
+
+    execSync(`pnpm dlx wrangler secret bulk --config wrangler.email.json ${runtimeEnvFile}`, { stdio: "inherit" });
+
+    rmSync(runtimeEnvFile, { force: true });
+
+    console.log("✅ Email Worker secrets pushed successfully");
+  } catch (error) {
+    console.error("❌ Failed to push Email Worker secrets:", error);
     throw error;
   }
 };
@@ -467,12 +573,14 @@ const main = async () => {
     validateEnvironment();
     setupEnvFile();
     setupWranglerConfigs();
+    updateRealtimeConfig();
     await checkAndCreateDatabase();
     migrateDatabase();
     await checkAndCreateKVNamespace();
-    pushWorkerSecrets();
     deployWorker();
+    pushWorkerSecrets();
     deployEmailWorker();
+    pushEmailWorkerSecrets();
     deployCleanupWorker();
     deployTempCleanupWorker();
 

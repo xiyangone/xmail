@@ -480,6 +480,10 @@
 
     "noMessages": "No messages",
 
+    "realtimeConnected": "Realtime connected",
+
+    "autoRefreshIn": "Auto refresh · {seconds}s",
+
 
 
     "myMailbox": "My Mailboxes",

@@ -10,6 +10,7 @@ import {
   Send as SendIcon,
   Copy,
   Check,
+  Wifi,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { formatContactDisplay } from "@/lib/contact-address";
 import { extractVerificationCodeFromMessage } from "@/lib/verification-code";
 import { useTranslations } from "next-intl";
+import { useRealtimeMessages } from "@/hooks/use-realtime-messages";
 
 interface Message {
   id: string;
@@ -117,24 +119,6 @@ export function MessageList({
     errorCountRef.current = errorCount;
   }, [errorCount]);
 
-  const getBackoffInterval = useCallback(
-    (currentErrorCount: number) => {
-      const baseInterval = config?.messagePollInterval
-        ? parseInt(config.messagePollInterval)
-        : EMAIL_CONFIG.POLL_INTERVAL;
-
-      if (currentErrorCount === 0) {
-        return baseInterval;
-      }
-
-      return Math.min(
-        baseInterval * Math.pow(2, currentErrorCount),
-        MAX_BACKOFF_INTERVAL
-      );
-    },
-    [config?.messagePollInterval]
-  );
-
   const stopPolling = useCallback(() => {
     if (pollTimeoutRef.current) {
       clearTimeout(pollTimeoutRef.current);
@@ -147,6 +131,47 @@ export function MessageList({
     setCountdown(0);
     setCountdownTotal(0);
   }, []);
+
+  const handleRealtimeMessage = useCallback(() => {
+    if (messageType !== "received") {
+      return;
+    }
+
+    stopPolling();
+    setRefreshing(true);
+    void fetchMessagesRef.current({
+      forceRefresh: true,
+      silentOnError: true,
+    });
+  }, [messageType, stopPolling]);
+
+  const { connected: realtimeConnected } = useRealtimeMessages({
+    emailId: email.id,
+    enabled: messageType === "received",
+    onMessage: handleRealtimeMessage,
+  });
+
+  const getBackoffInterval = useCallback(
+    (currentErrorCount: number) => {
+      const configuredInterval = config?.messagePollInterval
+        ? parseInt(config.messagePollInterval)
+        : EMAIL_CONFIG.POLL_INTERVAL;
+      const baseInterval =
+        realtimeConnected && currentErrorCount === 0
+          ? Math.max(configuredInterval, 60_000)
+          : configuredInterval;
+
+      if (currentErrorCount === 0) {
+        return baseInterval;
+      }
+
+      return Math.min(
+        baseInterval * Math.pow(2, currentErrorCount),
+        MAX_BACKOFF_INTERVAL
+      );
+    },
+    [config?.messagePollInterval, realtimeConnected]
+  );
 
   const scheduleNextPoll = useCallback(
     (intervalMs: number) => {
@@ -457,8 +482,15 @@ export function MessageList({
             >
               <RefreshCw className="h-4 w-4" />
             </Button>
-            {countdown > 0 && !refreshing && (
-              <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-primary/5 border border-primary/10">
+            {realtimeConnected ? (
+              <div className="flex items-center gap-1.5 rounded-md border border-emerald-500/15 bg-emerald-500/10 px-2 py-1 text-emerald-700 dark:text-emerald-300">
+                <Wifi className="h-3.5 w-3.5" />
+                <span className="text-xs font-medium">
+                  {t("realtimeConnected")}
+                </span>
+              </div>
+            ) : countdown > 0 && !refreshing ? (
+              <div className="flex items-center gap-1.5 rounded-md border border-primary/10 bg-primary/5 px-2 py-1">
                 <div className="relative w-3 h-3">
                   <svg className="w-3 h-3 -rotate-90" viewBox="0 0 24 24">
                     <circle
@@ -490,10 +522,10 @@ export function MessageList({
                   </svg>
                 </div>
                 <span className="text-xs font-medium text-primary tabular-nums">
-                  {countdown}s
+                  {t("autoRefreshIn", { seconds: countdown })}
                 </span>
               </div>
-            )}
+            ) : null}
           </div>
           <span className="text-xs text-muted-foreground">
             {total > 0 ? t("messageCount", { count: total }) : t("noMessages")}

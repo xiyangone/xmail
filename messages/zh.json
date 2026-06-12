@@ -480,6 +480,10 @@
 
     "noMessages": "暂无邮件",
 
+    "realtimeConnected": "实时已连接",
+
+    "autoRefreshIn": "自动刷新中 · {seconds}s",
+
 
 
     "myMailbox": "我的邮箱",

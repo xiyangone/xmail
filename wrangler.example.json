@@ -15,9 +15,6 @@
       "service": "xmail"
     }
   ],
-  "vars": {
-    "INTERNAL_WORKER_SECRET": "${INTERNAL_WORKER_SECRET}"
-  },
   "d1_databases": [
     {
       "binding": "DB",

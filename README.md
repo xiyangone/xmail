@@ -42,7 +42,7 @@
 
 **当前文档入口**: 本仓库 README（即当前文件）
 
-**当前版本**: `v1.9.1`
+**当前版本**: `v2.0.0`
 
 当前版本暂未单独维护外部文档站点，部署、API、配置与示例请以本仓库内容为准。
 
@@ -60,6 +60,7 @@
 
 - 🔒 **隐私保护**：保护您的真实邮箱地址，远离垃圾邮件和不必要的订阅
 - ⚡ **实时收件**：可配置的自动轮询，即时接收邮件通知（支持 5-60 秒刷新间隔，失败时自动指数退避）
+- 📡 **实时推送**：支持 Durable Object + WebSocket Hibernation 秒级通知新邮件，保留自动轮询兜底，弱网或断线时不漏信
 - ⏱️ **灵活有效期**：支持 1 小时、24 小时、3 天、7 天、永久，以及自定义（分钟/小时/天）有效期，默认过期时间为 3 天
 - 🎨 **多主题系统**：支持日间 / 夜间 / 樱花 / 琥珀四种主题，下拉菜单切换，支持跟随系统
 - 📱 **响应式设计**：完美适配桌面和移动设备
@@ -103,6 +104,7 @@
 - **框架**: [Next.js](https://nextjs.org/) 15.5.15 (App Router)
 - **部署**: [@opennextjs/cloudflare](https://opennext.js.org/cloudflare)
 - **平台**: [Cloudflare Workers](https://workers.cloudflare.com/)
+- **实时连接**: [Cloudflare Durable Objects](https://developers.cloudflare.com/durable-objects/) + WebSocket Hibernation
 - **数据库**: [Cloudflare D1](https://developers.cloudflare.com/d1/) (SQLite)
 - **认证**: [NextAuth](https://authjs.dev/getting-started/installation?framework=Next.js) 配合 GitHub 登录
 - **样式**: [Tailwind CSS](https://tailwindcss.com/)
@@ -275,6 +277,7 @@ pnpm deploy:worker
    - `AUTH_GITHUB_SECRET`: GitHub OAuth App Secret
    - `AUTH_SECRET`: NextAuth Secret，用来加密 session，请设置一个随机字符串
    - `INTERNAL_WORKER_SECRET`: 内部 Worker 调用密钥，主 Worker 与临时账号清理 Worker 必须使用相同值
+   - `REALTIME_WS_URL`: 收件 Worker 暴露的 WebSocket 地址，用于浏览器实时收件推送（可选；不填则回退为自动轮询），例如 `wss://xmail-email-receiver-worker.<your-subdomain>.workers.dev/ws`
    - `CUSTOM_DOMAIN`: 网站自定义域名，用于访问 XiYang Mail (可选，如果不填，则使用 Workers 默认域名 *.workers.dev)
    - `PROJECT_NAME`: Worker 名称（可选，如果不填，则为 xmail）
    - `DATABASE_NAME`: D1 数据库名称 (可选，如果不填，则为 xmail-db)
@@ -792,6 +795,35 @@ pnpx cloudflared tunnel --url http://localhost:3001
 - Webhook 接口应在 10 秒内响应
 - 非 2xx 响应码会触发重试
 
+## 实时收件推送
+
+XiYang Mail v2.0.0 支持通过 Cloudflare Durable Object + WebSocket Hibernation 向正在查看邮箱的浏览器推送“新邮件已到达”事件。
+
+### 工作方式
+
+1. 浏览器在查看某个邮箱时请求 `/api/realtime/token`，后端校验当前用户是否拥有该邮箱。
+2. 前端使用短期 HMAC token 连接收件 Worker 的 `/ws`。
+3. `email-receiver-worker` 写入 D1 后通知 `MailboxRealtime` Durable Object。
+4. Durable Object 向同邮箱的 WebSocket 连接广播轻量事件。
+5. 浏览器收到事件后复用现有 `/api/emails/{emailId}` 接口刷新列表；邮件正文仍走原鉴权接口，不通过 WebSocket 传输。
+
+### 配置
+
+生产环境需要同时满足：
+
+- 主 Worker 和 Email Worker 配置相同的 `INTERNAL_WORKER_SECRET`
+- 主 Worker 配置 `REALTIME_WS_URL`
+- Email Worker 使用 `wrangler.email.json` 中的 `MAILBOX_REALTIME` Durable Object binding 和 `v2_mailbox_realtime` 迁移
+
+示例：
+
+```env
+INTERNAL_WORKER_SECRET="your-random-secret"
+REALTIME_WS_URL="wss://xmail-email-receiver-worker.<your-subdomain>.workers.dev/ws"
+```
+
+如果 `REALTIME_WS_URL` 或 `INTERNAL_WORKER_SECRET` 缺失，前端会自动保持原有自动轮询；WebSocket 断线、页面切后台或弱网时也会回到轮询兜底。
+
 ## 分享功能
 
 XiYang Mail 支持生成邮箱分享链接，方便与他人分享邮件内容。
@@ -1231,6 +1263,7 @@ console.log("注册成功！");
 - `AUTH_GITHUB_SECRET`: GitHub OAuth App Secret
 - `AUTH_SECRET`: NextAuth Secret，用来加密 session，请设置一个随机字符串
 - `INTERNAL_WORKER_SECRET`: 内部 Worker 调用密钥，用于校验 `/api/cleanup/temp-accounts` 的定时清理请求
+- `REALTIME_WS_URL`: 实时收件 WebSocket 地址，例如 `wss://xmail-email-receiver-worker.<your-subdomain>.workers.dev/ws`；不配置时前端保持原自动轮询行为
 
 ### Cloudflare 配置
 
