@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Languages } from "lucide-react";
+import { Languages } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
@@ -56,7 +56,7 @@ export function LanguageSwitcher() {
             }`}
           >
             <span
-              className={`flex h-7 w-12 shrink-0 items-center justify-center rounded-md font-mono text-xs font-bold tracking-wide transition-colors ${
+              className={`flex h-7 w-14 shrink-0 items-center justify-center rounded-md font-mono text-xs font-bold tracking-wide transition-colors ${
                 locale === value
                   ? "bg-primary text-primary-foreground"
                   : "bg-primary/10 text-primary"
@@ -64,11 +64,6 @@ export function LanguageSwitcher() {
             >
               {short}
             </span>
-            <Check
-              className={`h-4 w-4 text-primary ${
-                locale === value ? "opacity-100" : "opacity-0"
-              }`}
-            />
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

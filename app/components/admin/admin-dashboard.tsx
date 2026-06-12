@@ -115,10 +115,10 @@ function AdminDashboardSkeleton() {
       <div className="space-y-4 xl:sticky xl:top-20 xl:self-start">
         <Skeleton className="h-10 w-40 rounded-full" />
 
-        <div className="surface-panel max-h-[calc(100vh-8rem)] overflow-y-auto p-3">
-          <div className="space-y-1">
+        <div className="surface-panel p-3 xl:max-h-[calc(100vh-8rem)] xl:overflow-y-auto">
+          <div className="flex gap-1 overflow-hidden xl:flex-col">
             {Array.from({ length: 5 }).map((_, index) => (
-              <Skeleton key={index} className="h-14 rounded-2xl" />
+              <Skeleton key={index} className="h-14 w-40 shrink-0 rounded-2xl xl:w-full" />
             ))}
           </div>
         </div>
@@ -266,8 +266,8 @@ export function AdminDashboard() {
           {t("backToProfile")}
         </Button>
 
-        <nav className="theme-surface-admin-sidebar surface-panel max-h-[calc(100vh-8rem)] overflow-y-auto p-3">
-          <div className="flex flex-col gap-1">
+        <nav className="theme-surface-admin-sidebar surface-panel p-3 xl:max-h-[calc(100vh-8rem)] xl:overflow-y-auto">
+          <div className="flex gap-1 overflow-x-auto xl:flex-col xl:overflow-x-visible">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = tab.id === activeTabConfig.id;
@@ -278,7 +278,7 @@ export function AdminDashboard() {
                   type="button"
                   onClick={() => handleTabChange(tab.id)}
                   className={cn(
-                    "theme-surface-admin-nav-item group relative flex w-full items-center gap-3 rounded-2xl px-4 py-2.5 text-left transition-all",
+                    "theme-surface-admin-nav-item group relative flex w-auto shrink-0 items-center gap-3 rounded-2xl px-4 py-2.5 text-left transition-all xl:w-full",
                     isActive
                       ? "theme-surface-admin-nav-item-active text-foreground shadow-sm ring-1 ring-primary/20"
                       : "text-muted-foreground hover:text-foreground"
@@ -286,7 +286,7 @@ export function AdminDashboard() {
                 >
                   <span
                     className={cn(
-                      "absolute inset-y-2 left-0 w-1 rounded-r-full transition-colors",
+                      "absolute inset-y-2 left-0 hidden w-1 rounded-r-full transition-colors xl:block",
                       isActive ? "bg-primary" : "bg-transparent"
                     )}
                   />
@@ -302,11 +302,11 @@ export function AdminDashboard() {
                     <Icon className="h-4 w-4" />
                   </span>
 
-                  <span className="min-w-0 flex-1 text-sm font-semibold">{tab.title}</span>
+                  <span className="min-w-0 flex-1 whitespace-nowrap text-sm font-semibold">{tab.title}</span>
 
                   <ChevronRight
                     className={cn(
-                      "h-4 w-4 shrink-0 transition-all",
+                      "hidden h-4 w-4 shrink-0 transition-all xl:block",
                       isActive ? "text-primary" : "text-muted-foreground group-hover:translate-x-0.5"
                     )}
                   />

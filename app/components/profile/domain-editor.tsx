@@ -4,7 +4,6 @@ import { useState, useEffect, KeyboardEvent, useRef } from "react"
 import { X, Plus } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { useTranslations } from "next-intl"
 
 interface DomainEditorProps {
@@ -102,25 +101,31 @@ export function DomainEditor({ value, onChange, placeholder }: DomainEditorProps
 
   return (
     <div className="space-y-3">
-      {/* 域名标签显示区域 - 响应式高度，根据域名数量自动调整 */}
+      {/* 域名网格 - 列对齐排版，等宽卡片 + 等宽字体便于扫读 */}
       {domains.length > 0 && (
-        <div className="w-full rounded-md border p-3 flex flex-wrap gap-2 max-h-[200px] overflow-y-auto">
+        <div className="max-h-[220px] w-full overflow-y-auto rounded-xl border bg-background/40 p-2.5">
+          <div className="grid grid-cols-1 gap-2 xs:grid-cols-2 lg:grid-cols-3">
             {domains.map((domain) => (
-              <Badge
+              <div
                 key={domain}
-                variant="secondary"
-                className="px-2 py-1 text-sm font-normal"
+                className="group flex min-w-0 items-center justify-between gap-1.5 rounded-lg border border-border/70 bg-background/60 py-1.5 pl-2.5 pr-1.5 transition-colors hover:border-primary/40"
               >
-                <span className="mr-1">{domain}</span>
+                <span
+                  className="truncate font-mono text-xs text-foreground/90"
+                  title={domain}
+                >
+                  {domain}
+                </span>
                 <button
                   onClick={() => removeDomain(domain)}
-                  className="ml-1 hover:text-destructive transition-colors"
+                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                   aria-label={t("remove", { domain })}
                 >
                   <X className="h-3 w-3" />
                 </button>
-              </Badge>
+              </div>
             ))}
+          </div>
         </div>
       )}
 

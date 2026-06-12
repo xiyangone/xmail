@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Check, Cherry, Monitor, Moon, Palette, Sun } from "lucide-react";
+import { Cherry, Monitor, Moon, Palette, Sun } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import { useEffect, useRef, useState } from "react";
@@ -114,9 +114,16 @@ export function ThemeToggle() {
               theme === value ? "bg-primary/10" : ""
             }`}
           >
-            <Icon className="h-4 w-4" />
+            <span
+              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors ${
+                theme === value
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-primary/10 text-primary"
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+            </span>
             <span>{t(labelKey)}</span>
-            {theme === value ? <Check className="ml-auto h-4 w-4 text-primary" /> : null}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>

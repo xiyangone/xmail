@@ -30,11 +30,11 @@ function buildPrefixExample(format: string, lengthRaw: string): string {
     case EMAIL_PREFIX_FORMATS.RANDOM_ALPHA:
       return SAMPLE_ALPHA.slice(0, length);
     case EMAIL_PREFIX_FORMATS.NAME_NUMBER:
-      return "lucy2847";
+      return "luna2847";
     case EMAIL_PREFIX_FORMATS.NAME_DATE:
-      return "lucy0612";
+      return "luna0612";
     case EMAIL_PREFIX_FORMATS.NAME_YEAR:
-      return "lucy2026";
+      return "luna2026";
     case EMAIL_PREFIX_FORMATS.RANDOM_DATE:
       return SAMPLE_ALNUM.slice(0, Math.max(1, length - 4)) + "0612";
     case EMAIL_PREFIX_FORMATS.RANDOM_YEAR:
