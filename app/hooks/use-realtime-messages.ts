@@ -23,6 +23,9 @@ interface RealtimeTokenResponse {
   token?: string;
   wsUrl?: string;
   expiresAt?: number;
+  ttlMs?: number;
+  reason?: string;
+  serverTime?: number;
 }
 
 interface UseRealtimeMessagesOptions {
@@ -125,7 +128,7 @@ export function useRealtimeMessages({ emailId, enabled, onMessage }: UseRealtime
       cachedToken = {
         token: data.token,
         wsUrl: data.wsUrl,
-        expiresAt: data.expiresAt ?? Date.now() + 60_000,
+        expiresAt: data.expiresAt ?? Date.now() + (data.ttlMs ?? 60_000),
       };
       return cachedToken;
     };

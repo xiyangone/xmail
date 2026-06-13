@@ -43,6 +43,7 @@ interface Message {
   subject: string;
   received_at?: number;
   sent_at?: number;
+  verification_code?: string | null;
   content?: string;
   html?: string;
 }
@@ -610,6 +611,7 @@ export function MessageList({
             <div className="divide-y divide-primary/10">
               {messages.map((message) => {
                 const verificationCode =
+                  message.verification_code ??
                   extractVerificationCodeFromMessage(message);
                 const contactLabel = formatContactDisplay(
                   message.from_address || message.to_address

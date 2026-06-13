@@ -4,7 +4,11 @@ import { and, eq } from "drizzle-orm";
 
 import { getUserId } from "@/lib/apiKey";
 import { createDb } from "@/lib/db";
-import { createRealtimeTokenPayload, signRealtimeToken } from "@/lib/realtime-token";
+import {
+  createRealtimeTokenPayload,
+  REALTIME_TOKEN_TTL_MS,
+  signRealtimeToken,
+} from "@/lib/realtime-token";
 import { emails } from "@/lib/schema";
 
 function normalizeWebSocketUrl(value: string) {
@@ -55,6 +59,9 @@ export async function GET(request: Request) {
 
   const db = await createDb();
   const email = await db.query.emails.findFirst({
+    columns: {
+      id: true,
+    },
     where: and(eq(emails.id, emailId), eq(emails.userId, userId)),
   });
 
@@ -65,7 +72,12 @@ export async function GET(request: Request) {
   const { wsUrl, secret } = await getRealtimeConfig();
   if (!wsUrl || !secret) {
     return NextResponse.json(
-      { enabled: false },
+      {
+        enabled: false,
+        reason: !wsUrl ? "missing_ws_url" : "missing_secret",
+        ttlMs: 0,
+        serverTime: Date.now(),
+      },
       {
         headers: {
           "Cache-Control": "no-store",
@@ -74,7 +86,8 @@ export async function GET(request: Request) {
     );
   }
 
-  const payload = createRealtimeTokenPayload(email.id, userId);
+  const now = Date.now();
+  const payload = createRealtimeTokenPayload(email.id, userId, now);
   const token = await signRealtimeToken(payload, secret);
 
   return NextResponse.json(
@@ -83,6 +96,8 @@ export async function GET(request: Request) {
       token,
       wsUrl,
       expiresAt: payload.exp,
+      ttlMs: REALTIME_TOKEN_TTL_MS,
+      serverTime: now,
     },
     {
       headers: {

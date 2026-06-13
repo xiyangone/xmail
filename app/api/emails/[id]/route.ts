@@ -6,6 +6,7 @@ import { encodeCursor, decodeCursor } from "@/lib/cursor";
 import { getUserId } from "@/lib/apiKey";
 import { checkBasicSendPermission } from "@/lib/send-permissions";
 import { isTempUser } from "@/lib/card-keys";
+import { extractVerificationCodeFromMessage } from "@/lib/verification-code";
 
 
 export async function DELETE(
@@ -27,6 +28,9 @@ export async function DELETE(
     const db = await createDb();
     const { id } = await params;
     const email = await db.query.emails.findFirst({
+      columns: {
+        id: true,
+      },
       where: and(eq(emails.id, id), eq(emails.userId, userId!)),
     });
 
@@ -48,6 +52,18 @@ export async function DELETE(
 }
 
 const PAGE_SIZE = 20;
+
+function extractMessageVerificationCode(message: {
+  subject: string;
+  content: string | null;
+  html: string | null;
+}) {
+  return extractVerificationCodeFromMessage({
+    subject: message.subject,
+    content: message.content ?? undefined,
+    html: message.html ?? undefined,
+  });
+}
 
 export async function GET(
   request: Request,
@@ -73,6 +89,9 @@ export async function GET(
     }
 
     const email = await db.query.emails.findFirst({
+      columns: {
+        id: true,
+      },
       where: and(eq(emails.id, id), eq(emails.userId, userId!)),
     });
 
@@ -109,6 +128,16 @@ export async function GET(
       messageType === "sent" ? messages.sentAt : messages.receivedAt;
 
     const results = await db.query.messages.findMany({
+      columns: {
+        id: true,
+        fromAddress: true,
+        toAddress: true,
+        subject: true,
+        content: true,
+        html: true,
+        sentAt: true,
+        receivedAt: true,
+      },
       where: and(...conditions),
       orderBy: (messages, { desc }) => [desc(orderByTime), desc(messages.id)],
       limit: PAGE_SIZE + 1,
@@ -131,8 +160,7 @@ export async function GET(
         from_address: msg?.fromAddress,
         to_address: msg?.toAddress,
         subject: msg.subject,
-        content: msg.content,
-        html: msg.html,
+        verification_code: extractMessageVerificationCode(msg),
         sent_at: msg.sentAt?.getTime(),
         received_at: msg.receivedAt?.getTime(),
       })),

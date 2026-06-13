@@ -1,6 +1,6 @@
 {
   "name": "xmail",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -15,11 +15,12 @@
     "dev:cleanup": "wrangler dev --config wrangler.cleanup.json --test-scheduled",
     "test:cleanup": "curl http://localhost:8787/__scheduled",
     "test:api": "tsx scripts/api-smoke-test.ts",
+    "test:api-contract": "tsx scripts/tests/api-response-contract.test.ts",
     "test:verification-code": "tsx scripts/tests/verification-code-fetcher.test.ts",
     "test:realtime": "tsx scripts/tests/realtime-token.test.ts && tsx scripts/tests/realtime-client.test.ts",
     "test:permissions": "tsx scripts/tests/permission-grants.test.ts && tsx scripts/tests/route-policy.test.ts && tsx scripts/tests/api-key-policy.test.ts && tsx scripts/tests/permission-seed-sql.test.ts",
     "test:operations": "tsx scripts/tests/operations-log.test.ts && tsx scripts/tests/admin-dashboard-tabs.test.ts && tsx scripts/tests/admin-audit-integration.test.ts && tsx scripts/tests/docs-i18n.test.ts",
-    "test:maintainability": "tsx scripts/tests/maintainability-refactor.test.ts && tsx scripts/tests/email-sender.test.ts && tsx scripts/tests/email-expiry.test.ts && tsx scripts/tests/realtime-token.test.ts && tsx scripts/tests/realtime-client.test.ts",
+    "test:maintainability": "tsx scripts/tests/maintainability-refactor.test.ts && tsx scripts/tests/email-sender.test.ts && tsx scripts/tests/email-expiry.test.ts && tsx scripts/tests/realtime-token.test.ts && tsx scripts/tests/realtime-client.test.ts && tsx scripts/tests/api-response-contract.test.ts",
     "deploy:email": "wrangler deploy --config wrangler.email.json",
     "deploy:cleanup": "wrangler deploy --config wrangler.cleanup.json",
     "deploy:worker": "pnpm run build:worker && wrangler deploy"

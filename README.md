@@ -42,7 +42,7 @@
 
 **当前文档入口**: 本仓库 README（即当前文件）
 
-**当前版本**: `v2.0.1`
+**当前版本**: `v2.0.2`
 
 当前版本暂未单独维护外部文档站点，部署、API、配置与示例请以本仓库内容为准。
 
@@ -797,7 +797,7 @@ pnpx cloudflared tunnel --url http://localhost:3001
 
 ## 实时收件推送
 
-XiYang Mail v2.0.1 支持通过 Cloudflare Durable Object + WebSocket Hibernation 向正在查看邮箱的浏览器推送“新邮件已到达”事件，并优化弱网/离线状态下的重连与自动刷新兜底提示。
+XiYang Mail v2.0.2 支持通过 Cloudflare Durable Object + WebSocket Hibernation 向正在查看邮箱的浏览器推送“新邮件已到达”事件，并优化弱网/离线状态下的重连与自动刷新兜底提示及邮件列表接口负载。
 
 ### 工作方式
 
@@ -1001,6 +1001,7 @@ GET /api/emails/{emailId}?cursor=xxx
       "id": "message-uuid-789",
       "from_address": "sender@example.com",
       "subject": "邮件主题",
+      "verification_code": "123456",
       "received_at": 1704110400000
     }
   ],
@@ -1012,6 +1013,7 @@ GET /api/emails/{emailId}?cursor=xxx
 响应字段说明：
 
 - `messages`: 邮件列表数组
+- `verification_code`: 从主题或正文中提取到的验证码，未识别时为 `null`；列表接口不返回完整 `content` / `html`，需要正文时请调用单封邮件内容接口
 - `nextCursor`: 下一页游标，用于分页请求
 - `total`: 邮件总数量
 
