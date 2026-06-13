@@ -480,7 +480,15 @@
 
     "noMessages": "No messages",
 
+    "realtimeConnecting": "Realtime connecting",
+
     "realtimeConnected": "Realtime connected",
+
+    "realtimeReconnecting": "Realtime reconnecting · auto-refresh fallback",
+
+    "realtimeOffline": "Offline · auto-refresh paused",
+
+    "realtimeUnavailable": "Realtime unavailable · auto-refresh fallback",
 
     "autoRefreshIn": "Auto refresh · {seconds}s",
 

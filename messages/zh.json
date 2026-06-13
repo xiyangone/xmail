@@ -480,7 +480,15 @@
 
     "noMessages": "暂无邮件",
 
+    "realtimeConnecting": "实时连接中",
+
     "realtimeConnected": "实时已连接",
+
+    "realtimeReconnecting": "实时重连中 · 自动刷新兜底",
+
+    "realtimeOffline": "离线中 · 自动刷新暂停",
+
+    "realtimeUnavailable": "实时不可用 · 自动刷新兜底",
 
     "autoRefreshIn": "自动刷新中 · {seconds}s",
 

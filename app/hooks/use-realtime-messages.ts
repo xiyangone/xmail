@@ -2,7 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 
-export type RealtimeStatus = "idle" | "connecting" | "connected" | "fallback" | "unavailable";
+export type RealtimeStatus =
+  | "idle"
+  | "connecting"
+  | "connected"
+  | "reconnecting"
+  | "fallback"
+  | "offline"
+  | "unavailable";
 
 interface RealtimeMessageEvent {
   type: "new_message";
@@ -24,10 +31,22 @@ interface UseRealtimeMessagesOptions {
   onMessage: (event: RealtimeMessageEvent) => void;
 }
 
+interface CachedRealtimeToken {
+  token: string;
+  wsUrl: string;
+  expiresAt: number;
+}
+
+const TOKEN_REFRESH_SKEW_MS = 30_000;
+
 function buildRealtimeUrl(wsUrl: string, token: string) {
   const url = new URL(wsUrl);
   url.searchParams.set("token", token);
   return url.toString();
+}
+
+function isBrowserOffline() {
+  return typeof navigator !== "undefined" && navigator.onLine === false;
 }
 
 export function useRealtimeMessages({ emailId, enabled, onMessage }: UseRealtimeMessagesOptions) {
@@ -48,6 +67,8 @@ export function useRealtimeMessages({ emailId, enabled, onMessage }: UseRealtime
     let socket: WebSocket | null = null;
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
     let attempt = 0;
+    let hasConnected = false;
+    let cachedToken: CachedRealtimeToken | null = null;
 
     const clearReconnectTimer = () => {
       if (reconnectTimer) {
@@ -57,42 +78,90 @@ export function useRealtimeMessages({ emailId, enabled, onMessage }: UseRealtime
     };
 
     const scheduleReconnect = () => {
-      if (stopped || document.hidden) {
+      if (stopped) {
+        return;
+      }
+
+      if (document.hidden) {
         setStatus("fallback");
+        return;
+      }
+
+      if (isBrowserOffline()) {
+        setStatus("offline");
         return;
       }
 
       const delay = Math.min(30_000, 1_000 * 2 ** attempt);
       attempt += 1;
-      setStatus("fallback");
+      setStatus(hasConnected ? "reconnecting" : "fallback");
       clearReconnectTimer();
       reconnectTimer = setTimeout(() => {
-        void connect();
+        void connect(true);
       }, delay);
     };
 
-    const connect = async () => {
-      try {
-        setStatus("connecting");
-        const response = await fetch(`/api/realtime/token?emailId=${encodeURIComponent(emailId)}`, {
-          cache: "no-store",
-        });
+    const getRealtimeToken = async (): Promise<CachedRealtimeToken | "unavailable" | null> => {
+      if (cachedToken && Date.now() + TOKEN_REFRESH_SKEW_MS < cachedToken.expiresAt) {
+        return cachedToken;
+      }
 
-        if (!response.ok) {
+      const response = await fetch(`/api/realtime/token?emailId=${encodeURIComponent(emailId)}`, {
+        cache: "no-store",
+      });
+
+      if (!response.ok) {
+        cachedToken = null;
+        return null;
+      }
+
+      const data = (await response.json()) as RealtimeTokenResponse;
+      if (!data.enabled || !data.token || !data.wsUrl) {
+        cachedToken = null;
+        setStatus("unavailable");
+        return "unavailable";
+      }
+
+      cachedToken = {
+        token: data.token,
+        wsUrl: data.wsUrl,
+        expiresAt: data.expiresAt ?? Date.now() + 60_000,
+      };
+      return cachedToken;
+    };
+
+    const connect = async (isReconnect = false) => {
+      if (stopped || document.hidden) {
+        return;
+      }
+
+      if (isBrowserOffline()) {
+        setStatus("offline");
+        return;
+      }
+
+      if (socket?.readyState === WebSocket.OPEN || socket?.readyState === WebSocket.CONNECTING) {
+        return;
+      }
+
+      try {
+        setStatus(isReconnect ? "reconnecting" : "connecting");
+        const realtimeToken = await getRealtimeToken();
+
+        if (realtimeToken === "unavailable") {
+          return;
+        }
+
+        if (!realtimeToken) {
           scheduleReconnect();
           return;
         }
 
-        const data = (await response.json()) as RealtimeTokenResponse;
-        if (!data.enabled || !data.token || !data.wsUrl) {
-          setStatus("unavailable");
-          return;
-        }
-
-        socket = new WebSocket(buildRealtimeUrl(data.wsUrl, data.token));
+        socket = new WebSocket(buildRealtimeUrl(realtimeToken.wsUrl, realtimeToken.token));
 
         socket.onopen = () => {
           attempt = 0;
+          hasConnected = true;
           setStatus("connected");
         };
 
@@ -112,6 +181,7 @@ export function useRealtimeMessages({ emailId, enabled, onMessage }: UseRealtime
         };
 
         socket.onclose = () => {
+          socket = null;
           if (!stopped) {
             scheduleReconnect();
           }
@@ -129,6 +199,7 @@ export function useRealtimeMessages({ emailId, enabled, onMessage }: UseRealtime
       if (document.hidden) {
         clearReconnectTimer();
         socket?.close();
+        socket = null;
         setStatus("fallback");
         return;
       }
@@ -139,13 +210,34 @@ export function useRealtimeMessages({ emailId, enabled, onMessage }: UseRealtime
       }
     };
 
+    const handleOffline = () => {
+      clearReconnectTimer();
+      socket?.close();
+      socket = null;
+      setStatus("offline");
+    };
+
+    const handleOnline = () => {
+      if (stopped || document.hidden) {
+        return;
+      }
+
+      attempt = 0;
+      clearReconnectTimer();
+      void connect();
+    };
+
     document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener("online", handleOnline);
     void connect();
 
     return () => {
       stopped = true;
       clearReconnectTimer();
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("online", handleOnline);
       socket?.close();
     };
   }, [emailId, enabled]);

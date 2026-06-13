@@ -42,7 +42,7 @@
 
 **当前文档入口**: 本仓库 README（即当前文件）
 
-**当前版本**: `v2.0.0`
+**当前版本**: `v2.0.1`
 
 当前版本暂未单独维护外部文档站点，部署、API、配置与示例请以本仓库内容为准。
 
@@ -797,7 +797,7 @@ pnpx cloudflared tunnel --url http://localhost:3001
 
 ## 实时收件推送
 
-XiYang Mail v2.0.0 支持通过 Cloudflare Durable Object + WebSocket Hibernation 向正在查看邮箱的浏览器推送“新邮件已到达”事件。
+XiYang Mail v2.0.1 支持通过 Cloudflare Durable Object + WebSocket Hibernation 向正在查看邮箱的浏览器推送“新邮件已到达”事件，并优化弱网/离线状态下的重连与自动刷新兜底提示。
 
 ### 工作方式
 

@@ -18,6 +18,7 @@ interface ConfigStore {
   config: Config | null;
   loading: boolean;
   error: string | null;
+  fetchPromise: Promise<void> | null;
   fetch: () => Promise<void>;
 }
 
@@ -80,54 +81,79 @@ function sortDomains(domains: string[]): string[] {
   });
 }
 
-const useConfigStore = create<ConfigStore>((set) => ({
+const useConfigStore = create<ConfigStore>((set, get) => ({
   config: null,
   loading: false,
   error: null,
+  fetchPromise: null,
   fetch: async () => {
-    try {
-      set({ loading: true, error: null });
-      const res = await fetch("/api/config");
-      if (!res.ok) throw new Error("获取配置失败");
-      const data = (await res.json()) as Config & {
-        messagePollInterval?: string;
-      };
-
-      // 解析并排序域名数组
-      const domainsArray = data.emailDomains
-        .split(",")
-        .map((d) => d.trim())
-        .filter((d) => d.length > 0);
-      const sortedDomains = sortDomains(domainsArray);
-
-      set({
-        config: {
-          defaultRole: data.defaultRole || ROLES.CIVILIAN,
-          emailDomains: data.emailDomains,
-          emailDomainsArray: sortedDomains,
-          adminContact: data.adminContact || "",
-          maxEmails: Number(data.maxEmails) || EMAIL_CONFIG.MAX_ACTIVE_EMAILS,
-          messagePollInterval: data.messagePollInterval,
-        },
-        loading: false,
-      });
-    } catch (error) {
-      set({
-        error: error instanceof Error ? error.message : "获取配置失败",
-        loading: false,
-      });
+    const { config, fetchPromise } = get();
+    if (config) {
+      return;
     }
+
+    if (fetchPromise) {
+      return fetchPromise;
+    }
+
+    const inFlight = (async () => {
+      try {
+        set({ loading: true, error: null });
+        const res = await fetch("/api/config");
+        if (!res.ok) throw new Error("获取配置失败");
+        const data = (await res.json()) as Config & {
+          messagePollInterval?: string;
+        };
+
+        // 解析并排序域名数组
+        const domainsArray = data.emailDomains
+          .split(",")
+          .map((d) => d.trim())
+          .filter((d) => d.length > 0);
+        const sortedDomains = sortDomains(domainsArray);
+
+        set({
+          config: {
+            defaultRole: data.defaultRole || ROLES.CIVILIAN,
+            emailDomains: data.emailDomains,
+            emailDomainsArray: sortedDomains,
+            adminContact: data.adminContact || "",
+            maxEmails: Number(data.maxEmails) || EMAIL_CONFIG.MAX_ACTIVE_EMAILS,
+            messagePollInterval: data.messagePollInterval,
+          },
+          loading: false,
+        });
+      } catch (error) {
+        set({
+          error: error instanceof Error ? error.message : "获取配置失败",
+          loading: false,
+        });
+      } finally {
+        set({ fetchPromise: null });
+      }
+    })();
+
+    set({ fetchPromise: inFlight });
+    return inFlight;
   },
 }));
 
 export function useConfig() {
-  const store = useConfigStore();
+  const config = useConfigStore((state) => state.config);
+  const loading = useConfigStore((state) => state.loading);
+  const error = useConfigStore((state) => state.error);
+  const fetchConfig = useConfigStore((state) => state.fetch);
 
   useEffect(() => {
-    if (!store.config && !store.loading) {
-      store.fetch();
+    if (!config && !loading) {
+      void fetchConfig();
     }
-  }, [store]);
+  }, [config, loading, fetchConfig]);
 
-  return store;
+  return {
+    config,
+    loading,
+    error,
+    fetch: fetchConfig,
+  };
 }

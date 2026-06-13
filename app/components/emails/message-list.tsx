@@ -11,6 +11,7 @@ import {
   Copy,
   Check,
   Wifi,
+  WifiOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -33,7 +34,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { formatContactDisplay } from "@/lib/contact-address";
 import { extractVerificationCodeFromMessage } from "@/lib/verification-code";
 import { useTranslations } from "next-intl";
-import { useRealtimeMessages } from "@/hooks/use-realtime-messages";
+import { RealtimeStatus, useRealtimeMessages } from "@/hooks/use-realtime-messages";
 
 interface Message {
   id: string;
@@ -76,6 +77,10 @@ interface FetchMessagesOptions {
 const MAX_ERROR_COUNT = 5;
 const MAX_BACKOFF_INTERVAL = 5 * 60 * 1000;
 
+function getInitialOnlineState() {
+  return typeof navigator === "undefined" || navigator.onLine !== false;
+}
+
 export function MessageList({
   email,
   messageType,
@@ -94,6 +99,7 @@ export function MessageList({
   const [countdownTotal, setCountdownTotal] = useState(0);
   const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null);
   const [errorCount, setErrorCount] = useState(0);
+  const [browserOnline, setBrowserOnline] = useState(getInitialOnlineState);
 
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
@@ -145,11 +151,38 @@ export function MessageList({
     });
   }, [messageType, stopPolling]);
 
-  const { connected: realtimeConnected } = useRealtimeMessages({
+  const { status: realtimeStatus, connected: realtimeConnected } = useRealtimeMessages({
     emailId: email.id,
     enabled: messageType === "received",
     onMessage: handleRealtimeMessage,
   });
+
+  const getRealtimeStatusLabel = useCallback(
+    (status: RealtimeStatus) => {
+      if (!browserOnline || status === "offline") {
+        return t("realtimeOffline");
+      }
+
+      if (status === "connecting") {
+        return t("realtimeConnecting");
+      }
+
+      if (status === "connected") {
+        return t("realtimeConnected");
+      }
+
+      if (status === "reconnecting") {
+        return t("realtimeReconnecting");
+      }
+
+      if (status === "unavailable") {
+        return t("realtimeUnavailable");
+      }
+
+      return null;
+    },
+    [browserOnline, t]
+  );
 
   const getBackoffInterval = useCallback(
     (currentErrorCount: number) => {
@@ -177,7 +210,7 @@ export function MessageList({
     (intervalMs: number) => {
       stopPolling();
 
-      if (!isDocumentVisibleRef.current) {
+      if (!isDocumentVisibleRef.current || !browserOnline) {
         return;
       }
 
@@ -193,7 +226,7 @@ export function MessageList({
         void fetchMessagesRef.current({ silentOnError: true });
       }, intervalMs);
     },
-    [stopPolling]
+    [browserOnline, stopPolling]
   );
 
   const fetchMessages = useCallback(
@@ -294,7 +327,7 @@ export function MessageList({
         errorCountRef.current = nextErrorCount;
         setErrorCount(nextErrorCount);
 
-        if (scheduleNext) {
+        if (scheduleNext && browserOnline) {
           scheduleNextPoll(getBackoffInterval(nextErrorCount));
         }
 
@@ -312,7 +345,7 @@ export function MessageList({
         setLoadingMore(false);
       }
     },
-    [email.id, getBackoffInterval, messageType, scheduleNextPoll, tc, toast]
+    [browserOnline, email.id, getBackoffInterval, messageType, scheduleNextPoll, tc, toast]
   );
 
   useEffect(() => {
@@ -458,13 +491,34 @@ export function MessageList({
       });
     };
 
+    const handleOnline = () => {
+      setBrowserOnline(true);
+      if (!document.hidden && email.id) {
+        void fetchMessagesRef.current({
+          forceRefresh: true,
+          silentOnError: true,
+        });
+      }
+    };
+
+    const handleOffline = () => {
+      setBrowserOnline(false);
+      stopPolling();
+    };
+
     isDocumentVisibleRef.current = !document.hidden;
     document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
     };
   }, [email.id, stopPolling]);
+
+  const realtimeStatusLabel = getRealtimeStatusLabel(realtimeStatus);
 
   return (
     <>
@@ -482,11 +536,28 @@ export function MessageList({
             >
               <RefreshCw className="h-4 w-4" />
             </Button>
-            {realtimeConnected ? (
-              <div className="flex items-center gap-1.5 rounded-md border border-emerald-500/15 bg-emerald-500/10 px-2 py-1 text-emerald-700 dark:text-emerald-300">
-                <Wifi className="h-3.5 w-3.5" />
+            {realtimeStatusLabel ? (
+              <div
+                className={cn(
+                  "flex items-center gap-1.5 rounded-md border px-2 py-1",
+                  realtimeConnected
+                    ? "border-emerald-500/15 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                    : !browserOnline || realtimeStatus === "offline"
+                      ? "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                      : realtimeStatus === "reconnecting"
+                        ? "border-primary/15 bg-primary/10 text-primary"
+                        : "border-primary/10 bg-primary/5 text-primary"
+                )}
+              >
+                {!browserOnline || realtimeStatus === "offline" ? (
+                  <WifiOff className="h-3.5 w-3.5" />
+                ) : realtimeStatus === "connecting" || realtimeStatus === "reconnecting" ? (
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Wifi className="h-3.5 w-3.5" />
+                )}
                 <span className="text-xs font-medium">
-                  {t("realtimeConnected")}
+                  {realtimeStatusLabel}
                 </span>
               </div>
             ) : countdown > 0 && !refreshing ? (
