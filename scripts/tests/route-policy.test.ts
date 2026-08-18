@@ -19,6 +19,9 @@ function run() {
   const publicConfig = requirePolicy("/api/config", "GET");
   assert.equal(publicConfig.access, POLICY_ACCESS.PUBLIC);
 
+  const publicBackgroundProxy = requirePolicy("/api/config/background/resolve", "GET");
+  assert.equal(publicBackgroundProxy.access, POLICY_ACCESS.PUBLIC);
+
   const configWrite = requirePolicy("/api/config", "POST");
   assert.deepEqual(configWrite.requiredPermissions, [PERMISSIONS.MANAGE_CONFIG]);
 

@@ -25,58 +25,46 @@ export async function GET(request: Request) {
     return proxyImage(url);
   }
 
+  return Response.json(
+    { url: resolveDisplayUrl(requestUrl, rawUrl) },
+    {
+      headers: {
+        "Cache-Control": "public, max-age=60, s-maxage=300, stale-while-revalidate=600",
+      },
+    }
+  );
+}
+
+async function proxyImage(url: URL) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), BACKGROUND_RESOLVE_TIMEOUT_MS);
 
   try {
     const response = await fetch(url, { redirect: "follow", signal: controller.signal });
     const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
-    const resolvedUrl =
-      response.ok && contentType.startsWith("image/")
-        ? resolveDisplayUrl(requestUrl, rawUrl, response.url)
-        : rawUrl;
 
-    return Response.json(
-      { url: resolvedUrl || rawUrl },
-      {
-        headers: {
-          "Cache-Control": "private, no-store",
-        },
-      }
-    );
+    if (!response.ok || !contentType.startsWith("image/") || !response.body) {
+      return Response.json({ error: "无法读取图片" }, { status: 502 });
+    }
+
+    return new Response(response.body, {
+      status: response.status,
+      headers: {
+        "Cache-Control": `public, max-age=${BACKGROUND_PROXY_CACHE_SECONDS}, immutable`,
+        "Content-Type": response.headers.get("content-type") ?? "image/jpeg",
+        "X-Content-Type-Options": "nosniff",
+      },
+    });
   } catch {
-    return Response.json({ url: rawUrl }, { headers: { "Cache-Control": "private, no-store" } });
+    return Response.json({ error: "无法读取图片" }, { status: 502 });
   } finally {
     clearTimeout(timeoutId);
   }
 }
 
-async function proxyImage(url: URL) {
-  const response = await fetch(url, { redirect: "follow" });
-  const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
-
-  if (!response.ok || !contentType.startsWith("image/") || !response.body) {
-    return Response.json({ error: "无法读取图片" }, { status: 502 });
-  }
-
-  return new Response(response.body, {
-    status: response.status,
-    headers: {
-      "Cache-Control": `public, max-age=${BACKGROUND_PROXY_CACHE_SECONDS}, immutable`,
-      "Content-Type": response.headers.get("content-type") ?? "image/jpeg",
-      "X-Content-Type-Options": "nosniff",
-    },
-  });
-}
-
-function resolveDisplayUrl(requestUrl: URL, rawUrl: string, resolvedUrl: string) {
-  if (resolvedUrl !== rawUrl) {
-    return resolvedUrl;
-  }
-
+function resolveDisplayUrl(requestUrl: URL, rawUrl: string) {
   const proxyUrl = new URL(requestUrl.pathname, requestUrl.origin);
   proxyUrl.searchParams.set("proxy", "1");
-  proxyUrl.searchParams.set("v", String(Date.now()));
   proxyUrl.searchParams.set("url", rawUrl);
   return proxyUrl.toString();
 }

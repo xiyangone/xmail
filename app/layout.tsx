@@ -13,8 +13,6 @@ import { BackgroundProvider } from "@/components/background/background-provider"
 import { APP_THEMES } from "@/lib/background-config";
 import { auth } from "@/lib/auth";
 
-export const dynamic = "force-dynamic";
-
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   const t = await getTranslations("metadata");
@@ -105,51 +103,6 @@ export default async function RootLayout({
       } catch {}
       return target;
     };
-  } catch {}
-})();`,
-          }}
-        />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function () {
-  try {
-    if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
-
-    var cleanupKey = "__xmail_sw_cleanup_v1";
-
-    navigator.serviceWorker.getRegistrations().then(function (registrations) {
-      if (!registrations.length) {
-        try {
-          sessionStorage.removeItem(cleanupKey);
-        } catch {}
-        return;
-      }
-
-      Promise.all(
-        registrations.map(function (registration) {
-          return registration.unregister().catch(function () {});
-        })
-      )
-        .then(function () {
-          if (!("caches" in window)) return;
-
-          return caches.keys().then(function (keys) {
-            return Promise.all(
-              keys.map(function (key) {
-                return caches.delete(key);
-              })
-            );
-          });
-        })
-        .finally(function () {
-          try {
-            if (sessionStorage.getItem(cleanupKey) === "1") return;
-            sessionStorage.setItem(cleanupKey, "1");
-          } catch {}
-
-          window.location.reload();
-        });
-    }).catch(function () {});
   } catch {}
 })();`,
           }}

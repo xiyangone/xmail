@@ -469,7 +469,7 @@ export function LoginForm() {
             <TabsTrigger value="register">{t("registerTab")}</TabsTrigger>
             <TabsTrigger value="cardkey">{t("cardKeyTab")}</TabsTrigger>
           </TabsList>
-          <div className="min-h-[220px]">
+          <div>
             <TabsContent value="login" className="mt-0">
               <form className="space-y-4" onSubmit={handleLoginSubmit}>
               <div className="space-y-3">

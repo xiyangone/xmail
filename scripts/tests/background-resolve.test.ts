@@ -15,15 +15,13 @@ function withMockedFetch<T>(
   });
 }
 
-async function testRedirectedImageReturnsFinalUrl() {
-  const rawUrl = "https://random.example/redirect";
+async function testResolveReturnsStableProxyUrlWithoutUpstreamFetch() {
+  const rawUrl = "https://random.example/image";
+  let calls = 0;
 
   await withMockedFetch(async () => {
-    return {
-      ok: true,
-      url: "https://cdn.example/final.jpg",
-      headers: new Headers({ "content-type": "image/jpeg" }),
-    } as Response;
+    calls += 1;
+    return new Response(null, { status: 500 });
   }, async () => {
     const response = await GET(
       new Request(
@@ -31,8 +29,14 @@ async function testRedirectedImageReturnsFinalUrl() {
       )
     );
     const data = (await response.json()) as { url: string };
+    const proxyUrl = new URL(data.url);
 
-    assert.equal(data.url, "https://cdn.example/final.jpg");
+    assert.equal(proxyUrl.pathname, "/api/config/background/resolve");
+    assert.equal(proxyUrl.searchParams.get("proxy"), "1");
+    assert.equal(proxyUrl.searchParams.get("url"), rawUrl);
+    assert.equal(proxyUrl.searchParams.has("v"), false);
+    assert.equal(calls, 0);
+    assert.match(response.headers.get("cache-control") ?? "", /s-maxage=300/);
   });
 }
 
@@ -58,7 +62,7 @@ async function testDirectImageReturnsStableProxyUrl() {
     assert.equal(proxyUrl.pathname, "/api/config/background/resolve");
     assert.equal(proxyUrl.searchParams.get("proxy"), "1");
     assert.equal(proxyUrl.searchParams.get("url"), rawUrl);
-    assert.ok(proxyUrl.searchParams.get("v"));
+    assert.equal(proxyUrl.searchParams.has("v"), false);
   });
 }
 
@@ -91,7 +95,7 @@ async function testProxyStreamsImageWithCacheHeaders() {
 }
 
 async function run() {
-  await testRedirectedImageReturnsFinalUrl();
+  await testResolveReturnsStableProxyUrlWithoutUpstreamFetch();
   await testDirectImageReturnsStableProxyUrl();
   await testProxyStreamsImageWithCacheHeaders();
   console.log("background-resolve tests: OK");

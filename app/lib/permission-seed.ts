@@ -62,6 +62,17 @@ export const DEFAULT_ROUTE_POLICIES: RoutePolicyDefinition[] = [
     description: "Public background config read.",
   },
   {
+    pathPattern: "/api/config/background/resolve",
+    methods: "GET",
+    access: POLICY_ACCESS.PUBLIC,
+    requiredPermissions: [],
+    allowApiKey: true,
+    allowInternal: false,
+    priority: 295,
+    enabled: true,
+    description: "Public background image proxy.",
+  },
+  {
     pathPattern: "/api/config",
     methods: "GET",
     access: POLICY_ACCESS.PUBLIC,

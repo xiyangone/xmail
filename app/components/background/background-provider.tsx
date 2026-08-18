@@ -8,7 +8,6 @@ import {
   BACKGROUND_CACHE_NAME,
   createBackgroundCacheKey,
   createBackgroundCacheRequestUrl,
-  createBackgroundResolveUrl,
   getBackgroundAssetUrl,
   getBackgroundSourceStorageKey,
   getOrCreateBackgroundTabId,
@@ -107,14 +106,11 @@ export function BackgroundProvider() {
           return () => objectUrl && URL.revokeObjectURL(objectUrl);
         }
 
-        const response = await fetch(createBackgroundResolveUrl(sourceUrl), {
+        const assetUrl = getBackgroundAssetUrl(sourceUrl);
+        const imageResponse = await fetch(assetUrl, {
           signal: controller.signal,
-          cache: "no-store",
+          cache: "force-cache",
         });
-        const data = response.ok ? ((await response.json()) as { url?: string }) : null;
-        const resolvedUrl = data?.url || sourceUrl;
-        const assetUrl = getBackgroundAssetUrl(resolvedUrl);
-        const imageResponse = await fetch(assetUrl, { signal: controller.signal });
 
         if (!imageResponse.ok) {
           throw new Error("Failed to load background image");
@@ -125,10 +121,10 @@ export function BackgroundProvider() {
 
         try {
           await cache?.put(cacheRequest, responseForCache);
-          window.sessionStorage.setItem(sourceStorageKey, resolvedUrl);
+          window.sessionStorage.setItem(sourceStorageKey, sourceUrl);
         } catch {}
 
-        objectUrl = setBlobBackground(blob, resolvedUrl);
+        objectUrl = setBlobBackground(blob, sourceUrl);
       } catch {
         if (!cancelled) {
           const fallbackUrl = getBackgroundAssetUrl(sourceUrl);

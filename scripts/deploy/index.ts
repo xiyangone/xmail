@@ -15,6 +15,7 @@ const DATABASE_NAME = process.env.DATABASE_NAME || "xmail-db";
 const KV_NAMESPACE_NAME = process.env.KV_NAMESPACE_NAME || "xmail-kv";
 const KV_NAMESPACE_ID = process.env.KV_NAMESPACE_ID;
 const REALTIME_WS_URL = process.env.REALTIME_WS_URL;
+const CUSTOM_DOMAIN = process.env.CUSTOM_DOMAIN?.trim();
 const WORKER_SECRET_BINDINGS = ["INTERNAL_WORKER_SECRET"];
 
 // Keep Wrangler deploy logs quiet unless the caller explicitly overrides it.
@@ -57,6 +58,49 @@ const sanitizeConfigSecrets = (configPath: string) => {
   }
 };
 
+const updateCustomDomainRoute = (json: { routes?: unknown[] }) => {
+  if (!Array.isArray(json.routes)) {
+    return false;
+  }
+
+  let changed = false;
+  const routes = json.routes.filter((route) => {
+    if (!route || typeof route !== "object") {
+      return true;
+    }
+
+    const customDomainRoute = route as { custom_domain?: unknown; pattern?: unknown };
+    if (
+      customDomainRoute.custom_domain === true &&
+      typeof customDomainRoute.pattern === "string" &&
+      customDomainRoute.pattern.includes("${CUSTOM_DOMAIN}") &&
+      !CUSTOM_DOMAIN
+    ) {
+      changed = true;
+      return false;
+    }
+
+    if (customDomainRoute.custom_domain === true && CUSTOM_DOMAIN) {
+      if (customDomainRoute.pattern !== CUSTOM_DOMAIN) {
+        customDomainRoute.pattern = CUSTOM_DOMAIN;
+        changed = true;
+      }
+    }
+
+    return true;
+  });
+
+  if (routes.length !== json.routes.length) {
+    json.routes = routes;
+  }
+
+  if (!CUSTOM_DOMAIN && changed) {
+    console.warn("⚠️ CUSTOM_DOMAIN is not set; skipping the Custom Domain route.");
+  }
+
+  return changed;
+};
+
 /**
  * 验证必要的环境变量
  */
@@ -80,6 +124,11 @@ const setupConfigFile = (examplePath: string, targetPath: string) => {
     if (existsSync(targetPath)) {
       console.log(`✨ Configuration ${targetPath} already exists.`);
       if (basename(targetPath) === "wrangler.json") {
+        const json = JSON.parse(readFileSync(targetPath, "utf-8"));
+        if (updateCustomDomainRoute(json)) {
+          writeFileSync(targetPath, JSON.stringify(json, null, 2));
+          console.log(`✅ Updated Custom Domain route in ${targetPath}`);
+        }
         sanitizeConfigSecrets(targetPath);
       }
       return;
@@ -127,6 +176,7 @@ const setupConfigFile = (examplePath: string, targetPath: string) => {
     }
 
     if (basename(targetPath) === "wrangler.json") {
+      updateCustomDomainRoute(json);
       removeConflictingSecretVars(json);
     }
 
