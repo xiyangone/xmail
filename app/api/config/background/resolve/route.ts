@@ -1,4 +1,5 @@
-const BACKGROUND_RESOLVE_TIMEOUT_MS = 3000;
+const BACKGROUND_RESOLVE_TIMEOUT_MS = 8000;
+const BACKGROUND_PROXY_TIMEOUT_MS = 3000;
 const BACKGROUND_PROXY_CACHE_SECONDS = 3600;
 
 export async function GET(request: Request) {
@@ -25,6 +26,10 @@ export async function GET(request: Request) {
     return proxyImage(url);
   }
 
+  if (searchParams.get("resolve") === "1") {
+    return resolveImageUrl(url);
+  }
+
   return Response.json(
     { url: resolveDisplayUrl(requestUrl, rawUrl) },
     {
@@ -37,7 +42,7 @@ export async function GET(request: Request) {
 
 async function proxyImage(url: URL) {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), BACKGROUND_RESOLVE_TIMEOUT_MS);
+  const timeoutId = setTimeout(() => controller.abort(), BACKGROUND_PROXY_TIMEOUT_MS);
 
   try {
     const response = await fetch(url, { redirect: "follow", signal: controller.signal });
@@ -57,6 +62,40 @@ async function proxyImage(url: URL) {
     });
   } catch {
     return Response.json({ error: "无法读取图片" }, { status: 502 });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+async function resolveImageUrl(url: URL) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), BACKGROUND_RESOLVE_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(url, {
+      redirect: "follow",
+      headers: { Accept: "image/*" },
+      signal: controller.signal,
+    });
+    const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
+    const finalUrl = response.url || url.toString();
+
+    if (!response.ok || !contentType.startsWith("image/") || !/^https?:/i.test(finalUrl)) {
+      return Response.json({ error: "无法解析图片地址" }, { status: 502 });
+    }
+
+    await response.body?.cancel();
+
+    return Response.json(
+      { url: finalUrl },
+      {
+        headers: {
+          "Cache-Control": "public, max-age=30, s-maxage=60, stale-while-revalidate=300",
+        },
+      }
+    );
+  } catch {
+    return Response.json({ error: "无法解析图片地址" }, { status: 502 });
   } finally {
     clearTimeout(timeoutId);
   }

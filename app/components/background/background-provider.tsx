@@ -8,6 +8,7 @@ import {
   BACKGROUND_CACHE_NAME,
   createBackgroundCacheKey,
   createBackgroundCacheRequestUrl,
+  createBackgroundResolveUrl,
   getBackgroundAssetUrl,
   getBackgroundSourceStorageKey,
   getOrCreateBackgroundTabId,
@@ -97,6 +98,18 @@ export function BackgroundProvider() {
           "caches" in window ? await window.caches.open(BACKGROUND_CACHE_NAME) : null;
         const cacheRequest = new Request(createBackgroundCacheRequestUrl(cacheKey));
         const cachedResponse = await cache?.match(cacheRequest);
+        const parsedSourceUrl = new URL(sourceUrl, window.location.origin);
+        const isCrossOrigin = parsedSourceUrl.origin !== window.location.origin;
+
+        if (
+          isCrossOrigin &&
+          cachedSourceUrl !== sourceUrl &&
+          /^https?:/i.test(cachedSourceUrl)
+        ) {
+          setDisplayBackgroundUrl(cachedSourceUrl);
+          setDisplayBackgroundSourceUrl(sourceUrl);
+          return () => {};
+        }
 
         if (cachedResponse?.ok) {
           objectUrl = setBlobBackground(await cachedResponse.blob(), cachedSourceUrl);
@@ -104,6 +117,28 @@ export function BackgroundProvider() {
             window.sessionStorage.setItem(sourceStorageKey, cachedSourceUrl);
           } catch {}
           return () => objectUrl && URL.revokeObjectURL(objectUrl);
+        }
+
+        if (isCrossOrigin) {
+          const resolveUrl = `${createBackgroundResolveUrl(sourceUrl)}&resolve=1`;
+          const resolveResponse = await fetch(resolveUrl, {
+            signal: controller.signal,
+            cache: "no-store",
+          });
+          const resolvedData = (await resolveResponse.json()) as { url?: unknown };
+          const resolvedUrl = typeof resolvedData.url === "string" ? resolvedData.url : "";
+
+          if (!resolveResponse.ok || !/^https?:/i.test(resolvedUrl)) {
+            throw new Error("Failed to resolve background image");
+          }
+
+          try {
+            window.sessionStorage.setItem(sourceStorageKey, resolvedUrl);
+          } catch {}
+
+          setDisplayBackgroundUrl(resolvedUrl);
+          setDisplayBackgroundSourceUrl(sourceUrl);
+          return () => {};
         }
 
         const assetUrl = getBackgroundAssetUrl(sourceUrl);
@@ -127,9 +162,8 @@ export function BackgroundProvider() {
         objectUrl = setBlobBackground(blob, sourceUrl);
       } catch {
         if (!cancelled) {
-          const fallbackUrl = getBackgroundAssetUrl(sourceUrl);
-          setDisplayBackgroundUrl(fallbackUrl);
-          setDisplayBackgroundSourceUrl(sourceUrl);
+          setDisplayBackgroundUrl("");
+          setDisplayBackgroundSourceUrl("");
         }
       }
 
