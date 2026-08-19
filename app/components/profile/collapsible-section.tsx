@@ -21,22 +21,23 @@ export function CollapsibleSection({
   title,
   icon: Icon,
   children,
-  defaultOpen = true,
+  defaultOpen = false,
   storageKey,
   action
 }: CollapsibleSectionProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [isReady, setIsReady] = useState(false)
+  const lazyStorageKey = `${storageKey}-lazy-v1`
 
   useEffect(() => {
-    const saved = localStorage.getItem(storageKey)
+    const saved = localStorage.getItem(lazyStorageKey)
     setIsOpen(saved !== null ? saved === "true" : defaultOpen)
     setIsReady(true)
-  }, [defaultOpen, storageKey])
+  }, [defaultOpen, lazyStorageKey])
 
   const handleOpenChange = (next: boolean) => {
     setIsOpen(next)
-    localStorage.setItem(storageKey, String(next))
+    localStorage.setItem(lazyStorageKey, String(next))
   }
 
   return (
@@ -61,7 +62,7 @@ export function CollapsibleSection({
       </div>
 
       <CollapsibleContent className="profile-section-content px-5 pb-5 pt-4 sm:px-6 sm:pb-6">
-        {children}
+        {isReady && isOpen ? children : null}
       </CollapsibleContent>
     </Collapsible>
   )

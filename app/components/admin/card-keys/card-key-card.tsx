@@ -143,8 +143,11 @@ export function CardKeyCard({
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-3 lg:ml-auto lg:flex-col lg:items-end">
-          <Badge variant="secondary" className={`${cfg.color} gap-1.5 border-transparent px-3 py-1`}>
+        <div className="flex shrink-0 items-center justify-between gap-3 lg:ml-auto lg:flex-col lg:items-end">
+          <Badge
+            variant="secondary"
+            className={`${cfg.color} shrink-0 gap-1.5 whitespace-nowrap border-transparent px-3 py-1`}
+          >
             <StatusIcon className="h-3.5 w-3.5" />
             {status.label}
           </Badge>
