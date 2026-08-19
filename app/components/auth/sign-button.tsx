@@ -1,9 +1,9 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { cn } from "@/lib/utils";
-import { LogIn, User2 } from "lucide-react";
-import Image from "next/image";
+import { LogIn } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
@@ -45,19 +45,14 @@ export function SignButton({ size = "default" }: SignButtonProps) {
         title={session.user.name || t("userAvatar")}
         aria-label={session.user.name || t("userAvatar")}
       >
-        {session.user.image ? (
-          <span className="relative h-5 w-5 flex-none overflow-hidden rounded-full ring-1 ring-primary/20 sm:h-6 sm:w-6">
-            <Image
-              src={session.user.image}
-              alt={session.user.name || t("userAvatar")}
-              fill
-              sizes="(min-width: 640px) 24px, 20px"
-              className="object-cover"
-            />
-          </span>
-        ) : (
-          <User2 className="h-5 w-5 flex-none text-foreground/80 sm:h-6 sm:w-6" />
-        )}
+        <UserAvatar
+          src={session.user.image}
+          name={session.user.name}
+          alt={session.user.name || t("userAvatar")}
+          size={24}
+          priority
+          className="h-5 w-5 text-[10px] ring-1 ring-primary/20 sm:h-6 sm:w-6 sm:text-xs"
+        />
         <span className="hidden max-w-28 truncate text-sm font-medium sm:inline">
           {session.user.name}
         </span>

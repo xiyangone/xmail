@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { Clock, Gem, Sword, Trash2, User2, Users } from "lucide-react";
 import {
   AlertDialog,
@@ -17,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import {
   Select,
   SelectContent,
@@ -194,19 +194,13 @@ export function UsersContent() {
 
                         <TableCell>
                           <div className="flex min-w-[220px] items-center gap-3">
-                            {user.image ? (
-                              <Image
-                                src={user.image}
-                                alt={user.name || hook.t("userAvatar")}
-                                width={36}
-                                height={36}
-                                className="rounded-full ring-2 ring-primary/10"
-                              />
-                            ) : (
-                              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-                                {(user.name || user.username || hook.t("user")).slice(0, 1).toUpperCase()}
-                              </div>
-                            )}
+                            <UserAvatar
+                              src={user.image}
+                              name={user.name || user.username || hook.t("user")}
+                              alt={user.name || hook.t("userAvatar")}
+                              size={36}
+                              className="h-9 w-9 text-sm ring-2 ring-primary/10"
+                            />
 
                             <div className="min-w-0">
                               <div className="truncate font-medium text-foreground">

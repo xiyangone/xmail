@@ -1,8 +1,8 @@
 "use client"
 
 import { User } from "next-auth"
-import Image from "next/image"
 import { Button } from "@/components/ui/button"
+import { UserAvatar } from "@/components/ui/user-avatar"
 import { signOut } from "next-auth/react"
 import { Settings, Crown, Sword, User2, Gem, Mail, Zap, Shield, ImageIcon } from "lucide-react"
 import { GitHubIcon } from "@/components/ui/github-icon"
@@ -57,18 +57,15 @@ export function ProfileCard({ user }: ProfileCardProps) {
       <div className="profile-hero-surface surface-panel-strong rounded-[2rem] p-6 sm:p-7">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-6">
           <div className="relative group">
-            {user.image && (
-              <>
-                <Image
-                  src={user.image}
-                  alt={user.name || ta("userAvatar")}
-                  width={80}
-                  height={80}
-                  className="rounded-full ring-2 ring-primary/25 shadow-[0_18px_36px_hsl(var(--primary)/0.16)] transition-all duration-300 group-hover:scale-105 group-hover:ring-primary/45"
-                />
-                <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-primary/0 via-transparent to-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              </>
-            )}
+            <UserAvatar
+              src={user.image}
+              name={user.name}
+              alt={user.name || ta("userAvatar")}
+              size={80}
+              priority
+              className="h-20 w-20 text-2xl ring-2 ring-primary/25 shadow-[0_18px_36px_hsl(var(--primary)/0.16)] transition-all duration-300 group-hover:scale-105 group-hover:ring-primary/45"
+            />
+            <div className="pointer-events-none absolute inset-0 rounded-full bg-gradient-to-tr from-primary/0 via-transparent to-primary/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
