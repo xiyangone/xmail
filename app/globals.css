@@ -1308,7 +1308,7 @@
 
   /* 字体家族 */
   .font-jetbrains {
-    font-family: var(--font-jetbrains-mono), "Segoe UI", system-ui, sans-serif;
+    font-family: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
   }
 }
 

@@ -648,7 +648,7 @@ export function MessageList({
                                 className="text-sm font-bold text-primary tracking-wider"
                                 style={{
                                   fontFamily:
-                                    '"JetBrains Mono Nerd Font", "Maple Mono", "JetBrains Mono", monospace',
+                                    'var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace',
                                 }}
                               >
                                 {verificationCode}

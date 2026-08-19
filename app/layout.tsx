@@ -112,7 +112,7 @@ export default async function RootLayout({
       <body
         className={cn(
           jetBrainsMono.variable,
-          "font-jetbrains min-h-screen antialiased",
+          "min-h-screen antialiased",
           "bg-background text-foreground",
           "theme-color-transition"
         )}

@@ -68,7 +68,7 @@ export function CardKeyFilterBar({
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-nowrap gap-2 overflow-x-auto pb-1">
           {filterOptions.map((option) => {
             const Icon = filterIcons[option.value];
             const isActive = filterStatus === option.value;
@@ -79,7 +79,7 @@ export function CardKeyFilterBar({
                 variant={isActive ? "default" : "outline"}
                 size="sm"
                 onClick={() => setFilterStatus(option.value)}
-                className="rounded-full px-4"
+                className="min-h-10 shrink-0 whitespace-nowrap rounded-full px-4"
               >
                 <Icon className="mr-2 h-4 w-4" />
                 {option.label}
