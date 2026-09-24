@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 
 import { DEFAULT_ROUTE_POLICIES, POLICY_ACCESS } from "../../app/lib/permission-seed";
 import { PERMISSIONS } from "../../app/lib/permissions";
-import { matchRoutePolicyFromList, methodMatches, pathMatches } from "../../app/lib/policy";
+import { hasSessionPermissions, matchRoutePolicyFromList, methodMatches, pathMatches } from "../../app/lib/policy";
 
 function requirePolicy(pathname: string, method: string) {
   const policy = matchRoutePolicyFromList(DEFAULT_ROUTE_POLICIES, pathname, method);
@@ -15,6 +15,14 @@ function run() {
   assert.equal(methodMatches("GET", "POST"), false);
   assert.equal(pathMatches("/api/admin/:path*", "/api/admin/operations/summary"), true);
   assert.equal(pathMatches("/api/config", "/api/config/background"), false);
+
+  const sessionIdentity = { source: "session" as const, userId: "user-a", permissionKeys: [PERMISSIONS.VIEW_TEMP_EMAIL] };
+  assert.equal(hasSessionPermissions(sessionIdentity, [PERMISSIONS.VIEW_TEMP_EMAIL]), true);
+  assert.equal(hasSessionPermissions(sessionIdentity, [PERMISSIONS.MANAGE_EMAIL]), false);
+  assert.equal(hasSessionPermissions(sessionIdentity, []), true);
+  assert.equal(hasSessionPermissions({ source: "session", userId: "user-b" }, [PERMISSIONS.VIEW_TEMP_EMAIL]), false);
+  assert.equal(hasSessionPermissions({ ...sessionIdentity, source: "api_key" }, [PERMISSIONS.VIEW_TEMP_EMAIL]), false);
+  assert.equal(hasSessionPermissions({ ...sessionIdentity, userId: undefined }, []), false);
 
   const publicConfig = requirePolicy("/api/config", "GET");
   assert.equal(publicConfig.access, POLICY_ACCESS.PUBLIC);

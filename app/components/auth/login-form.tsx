@@ -17,6 +17,7 @@ import { Loader2, KeyRound, User2, Eye, EyeOff } from "lucide-react";
 import { GitHubIcon } from "@/components/ui/github-icon";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 
 interface FormErrors {
   username?: string;
@@ -25,6 +26,11 @@ interface FormErrors {
 }
 
 export function LoginForm() {
+  const router = useRouter();
+  const completeSignIn = () => {
+    router.replace("/");
+    router.refresh();
+  };
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -276,7 +282,7 @@ export function LoginForm() {
         return;
       }
 
-      window.location.href = "/";
+      completeSignIn();
     } catch (error) {
       toast({
         title: t("errors.loginFailed"),
@@ -343,7 +349,7 @@ export function LoginForm() {
           return;
         }
 
-        window.location.href = "/";
+        completeSignIn();
       } else {
         // Turnstile 未能及时提供新 token，引导手动登录
         toast({
@@ -408,7 +414,7 @@ export function LoginForm() {
         title: t("loginSuccess"),
         description: t("loginSuccessDesc"),
       });
-      window.location.href = "/";
+      completeSignIn();
     } catch (error) {
       toast({
         title: t("errors.cardKeyLoginFailed"),
@@ -455,7 +461,7 @@ export function LoginForm() {
   return (
     <Card className="surface-panel-strong w-[95%] max-w-lg border-2 border-primary/20 shadow-2xl">
       <CardHeader className="space-y-2">
-        <CardTitle className="text-2xl text-center bg-gradient-to-r from-[hsl(var(--gradient-start))] to-[hsl(var(--gradient-mid))] bg-clip-text text-transparent">
+        <CardTitle className="text-2xl text-center bg-linear-to-r from-[hsl(var(--gradient-start))] to-[hsl(var(--gradient-mid))] bg-clip-text text-transparent">
           {t("welcome")}
         </CardTitle>
         <CardDescription className="text-center">

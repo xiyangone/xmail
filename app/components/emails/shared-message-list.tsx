@@ -154,7 +154,7 @@ export function SharedMessageList({
       </div>
 
       <div className="mx-3 mt-3 flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-2">
-        <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600" />
+        <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
         <p className="text-xs text-blue-700">
           <strong>{t("refreshHintTitle")}</strong>
           {t("refreshHint")}
@@ -180,7 +180,7 @@ export function SharedMessageList({
               style={{ animationDelay: `${index * 30}ms` }}
               onClick={() => onMessageSelect(message.id)}
             >
-              <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-1" />
+              <Mail className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
               <div className="flex-1 min-w-0 space-y-1">
                 <div className="font-medium truncate">
                   {message.subject || te("noSubject")}

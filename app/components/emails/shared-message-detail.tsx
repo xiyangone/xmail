@@ -166,7 +166,7 @@ export function SharedMessageDetail({
 
   return (
     <div className="h-full flex flex-col animate-fade-in">
-      <div className="sticky top-0 z-sticky bg-background/95 backdrop-blur-sm p-4 space-y-3 border-b border-primary/20 shadow-sm">
+      <div className="sticky top-0 z-sticky bg-background/95 backdrop-blur-xs p-4 space-y-3 border-b border-primary/20 shadow-xs">
         <h3 className="text-base font-bold">{message.subject}</h3>
         <div className="text-xs text-muted-foreground space-y-1">
           {fromLabel && <p>{te("from", { address: fromLabel })}</p>}
@@ -190,17 +190,17 @@ export function SharedMessageDetail({
             onValueChange={(value) => {
               if (value) setViewMode(value as ViewMode);
             }}
-            className="flex items-center gap-1 bg-background/50 backdrop-blur-sm p-1 rounded-lg"
+            className="flex items-center gap-1 bg-background/50 backdrop-blur-xs p-1 rounded-lg"
           >
             <ToggleGroupItem
               value="html"
-              className="h-7 rounded-md px-2.5 text-xs font-medium text-foreground/70 transition-colors data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm"
+              className="h-7 rounded-md px-2.5 text-xs font-medium text-foreground/70 transition-colors data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-xs"
             >
               {te("htmlView")}
             </ToggleGroupItem>
             <ToggleGroupItem
               value="text"
-              className="h-7 rounded-md px-2.5 text-xs font-medium text-foreground/70 transition-colors data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm"
+              className="h-7 rounded-md px-2.5 text-xs font-medium text-foreground/70 transition-colors data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-xs"
             >
               {te("textView")}
             </ToggleGroupItem>

@@ -7,6 +7,7 @@ import { formatContactDisplay } from "@/lib/contact-address";
 import { useTheme } from "next-themes";
 import { useToast } from "@/components/ui/use-toast";
 import { useTranslations } from "next-intl";
+import { createRequestController, isAbortError } from "@/lib/request-control";
 import { resolveAppTheme, THEME_IFRAME_COLORS } from "@/lib/background-config";
 
 interface Message {
@@ -38,12 +39,16 @@ export function MessageView({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("html");
+  const [requests] = useState(createRequestController);
   const { resolvedTheme } = useTheme();
   const { toast } = useToast();
   const t = useTranslations("email");
   const tc = useTranslations("common");
 
   useEffect(() => {
+    const request = requests.start();
+    setMessage(null);
+    setViewMode("html");
     const fetchMessage = async () => {
       try {
         setLoading(true);
@@ -53,10 +58,12 @@ export function MessageView({
           messageType === "sent" ? "?type=sent" : ""
         }`;
 
-        const response = await fetch(url);
+        const response = await fetch(url, { signal: request.signal });
+        if (!request.isCurrent()) return;
 
         if (!response.ok) {
           const errorData = await response.json();
+          if (!request.isCurrent()) return;
           const errorMessage =
             (errorData as { error?: string }).error || t("fetchDetailFailed");
           setError(errorMessage);
@@ -69,11 +76,13 @@ export function MessageView({
         }
 
         const data = (await response.json()) as { message: Message };
+        if (!request.isCurrent()) return;
         setMessage(data.message);
         if (!data.message.html) {
           setViewMode("text");
         }
       } catch (error) {
+        if (!request.isCurrent() || isAbortError(error)) return;
         const errorMessage = tc("networkError");
         setError(errorMessage);
         toast({
@@ -83,12 +92,13 @@ export function MessageView({
         });
         console.error("Failed to fetch message:", error);
       } finally {
-        setLoading(false);
+        if (request.finish()) setLoading(false);
       }
     };
 
-    fetchMessage();
-  }, [emailId, messageId, messageType, toast, t, tc]);
+    void fetchMessage();
+    return () => requests.cancel();
+  }, [emailId, messageId, messageType, toast, t, tc, requests]);
 
   const iframeSrcDoc = useCallback(() => {
     if (viewMode !== "html" || !message?.html) return undefined;
@@ -200,13 +210,13 @@ export function MessageView({
           >
             <ToggleGroupItem
               value="html"
-              className="h-7 rounded-md px-2.5 text-xs font-medium text-foreground/70 transition-colors data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm"
+              className="h-7 rounded-md px-2.5 text-xs font-medium text-foreground/70 transition-colors data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-xs"
             >
               {t("htmlView")}
             </ToggleGroupItem>
             <ToggleGroupItem
               value="text"
-              className="h-7 rounded-md px-2.5 text-xs font-medium text-foreground/70 transition-colors data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-sm"
+              className="h-7 rounded-md px-2.5 text-xs font-medium text-foreground/70 transition-colors data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:shadow-xs"
             >
               {t("textView")}
             </ToggleGroupItem>

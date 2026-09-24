@@ -261,7 +261,7 @@ export function ShareDialog({ emailId }: ShareDialogProps) {
                     <div className="flex items-center gap-2">
                       <Link2
                         className={cn(
-                          "h-4 w-4 flex-shrink-0",
+                          "h-4 w-4 shrink-0",
                           isExpired ? "text-destructive/60" : "text-primary"
                         )}
                       />
@@ -283,7 +283,7 @@ export function ShareDialog({ emailId }: ShareDialogProps) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-9 w-9 flex-shrink-0"
+                        className="h-9 w-9 shrink-0"
                         title={tc("copy")}
                         aria-label={tc("copy")}
                         onClick={() => handleCopy(share.token)}
@@ -294,7 +294,7 @@ export function ShareDialog({ emailId }: ShareDialogProps) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-9 w-9 flex-shrink-0 hover:bg-destructive/10"
+                        className="h-9 w-9 shrink-0 hover:bg-destructive/10"
                         title={tc("delete")}
                         aria-label={tc("delete")}
                         onClick={() => setDeleteTarget(share)}

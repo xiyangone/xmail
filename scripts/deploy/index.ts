@@ -419,7 +419,7 @@ const pushWorkerSecrets = () => {
     writeFileSync(runtimeEnvFile, runtimeEnvContent);
 
     // 使用临时文件推送secrets（Workers secret bulk，不需要 --project-name）
-    execSync(`pnpm dlx wrangler secret bulk ${runtimeEnvFile}`, { stdio: "inherit" });
+    execSync(`pnpm exec wrangler secret bulk ${runtimeEnvFile}`, { stdio: "inherit" });
 
     // 清理临时文件
     rmSync(runtimeEnvFile, { force: true });
@@ -473,7 +473,7 @@ const pushEmailWorkerSecrets = () => {
     const runtimeEnvFile = resolve('.env.email-runtime');
     writeFileSync(runtimeEnvFile, `INTERNAL_WORKER_SECRET="${process.env.INTERNAL_WORKER_SECRET}"\n`);
 
-    execSync(`pnpm dlx wrangler secret bulk --config wrangler.email.json ${runtimeEnvFile}`, { stdio: "inherit" });
+    execSync(`pnpm exec wrangler secret bulk --config wrangler.email.json ${runtimeEnvFile}`, { stdio: "inherit" });
 
     rmSync(runtimeEnvFile, { force: true });
 
@@ -500,7 +500,7 @@ const deployWorker = () => {
     console.log("✅ Build completed successfully");
 
     console.log("🚀 Deploying to Cloudflare Workers...");
-    const deployOutput = execSync("pnpm dlx wrangler deploy", {
+    const deployOutput = execSync("pnpm exec wrangler deploy", {
       encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe'],
       maxBuffer: 10 * 1024 * 1024
@@ -522,7 +522,7 @@ const deployWorker = () => {
 const deployEmailWorker = () => {
   console.log("🚧 Deploying Email Worker...");
   try {
-    const output = execSync("pnpm dlx wrangler deploy --config wrangler.email.json", { 
+    const output = execSync("pnpm exec wrangler deploy --config wrangler.email.json", {
       encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe']
     });
@@ -542,7 +542,7 @@ const deployEmailWorker = () => {
 const deployCleanupWorker = () => {
   console.log("🚧 Deploying Cleanup Worker...");
   try {
-    const output = execSync("pnpm dlx wrangler deploy --config wrangler.cleanup.json", { 
+    const output = execSync("pnpm exec wrangler deploy --config wrangler.cleanup.json", {
       encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe']
     });
@@ -562,7 +562,7 @@ const deployCleanupWorker = () => {
 const deployTempCleanupWorker = () => {
   console.log("🚧 Deploying Temp Cleanup Worker...");
   try {
-    const output = execSync("pnpm dlx wrangler deploy --config wrangler.temp-cleanup.json", { 
+    const output = execSync("pnpm exec wrangler deploy --config wrangler.temp-cleanup.json", {
       encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe']
     });
@@ -619,6 +619,8 @@ const setupEnvFile = () => {
 const main = async () => {
   try {
     console.log("🚀 Starting deployment process...");
+
+    execSync("pnpm run verify", { stdio: "inherit" });
 
     validateEnvironment();
     setupEnvFile();

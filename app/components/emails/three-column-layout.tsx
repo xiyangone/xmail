@@ -90,7 +90,7 @@ export function ThreeColumnLayout() {
 
   const headerIconClass =
 
-    "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-primary/15 bg-background/50 text-primary shadow-sm backdrop-blur-sm";
+    "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-primary/15 bg-background/50 text-primary shadow-xs backdrop-blur-xs";
 
   const headerTitleClass = "truncate text-sm font-semibold leading-5";
 

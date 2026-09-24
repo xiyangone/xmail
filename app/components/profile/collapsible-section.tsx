@@ -49,12 +49,12 @@ export function CollapsibleSection({
       <div className="profile-section-toolbar surface-toolbar-workspace px-5 py-4 sm:px-6">
         <div className="flex items-center gap-4">
           <CollapsibleTrigger className="group flex min-w-0 flex-1 items-center gap-4 text-left">
-            <Icon className="h-5 w-5 flex-shrink-0 text-primary transition-transform duration-300 group-hover:scale-105" />
+            <Icon className="h-5 w-5 shrink-0 text-primary transition-transform duration-300 group-hover:scale-105" />
             <h2 className="flex-1 text-left text-lg font-semibold">{title}</h2>
-            <ChevronUp className="h-5 w-5 flex-shrink-0 text-primary transition-transform group-data-[state=closed]:rotate-180" />
+            <ChevronUp className="h-5 w-5 shrink-0 text-primary transition-transform group-data-[state=closed]:rotate-180" />
           </CollapsibleTrigger>
           {action && (
-            <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+            <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
               {action}
             </div>
           )}

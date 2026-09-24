@@ -35,7 +35,7 @@ function assertBannedCommentAbsent(file: string, pattern: RegExp) {
 // Check excessive blank lines in large files
 assertNoExcessiveBlankRuns("app/lib/auth.ts");
 assertNoExcessiveBlankRuns("app/lib/schema.ts");
-assertNoExcessiveBlankRuns("middleware.ts");
+assertNoExcessiveBlankRuns("proxy.ts");
 
 // Check duplicate readJsonError copies
 const sourceFiles = listFiles("app", [".ts", ".tsx"]);

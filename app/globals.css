@@ -1,6 +1,176 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss" source(none);
+@source "./";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-primary-light: hsl(var(--primary-light));
+  --color-primary-dark: hsl(var(--primary-dark));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-accent-orange: hsl(var(--accent-orange));
+  --color-accent-purple: hsl(var(--accent-purple));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+  --font-sans: var(--font-jetbrains-mono), "Segoe UI", system-ui, sans-serif;
+  --font-jetbrains: var(--font-jetbrains-mono), "Segoe UI", system-ui, sans-serif;
+  --breakpoint-xs: 23.4375rem;
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-gradient: gradient 3s ease infinite;
+  --animate-fade-in: fade-in 0.3s ease-out;
+  --animate-fade-in-up: fade-in-up 0.5s ease-out;
+  --animate-scale-in: scale-in 0.2s ease-out;
+  --animate-shimmer: shimmer 2s infinite;
+}
+
+@utility container {
+  margin-inline: auto;
+  padding-inline: 2rem;
+  @media (width >= 0rem) { max-width: none; }
+  @media (width >= 87.5rem) { max-width: 87.5rem; }
+}
+
+@utility bg-gradient-size { background-size: 200% 200%; }
+@utility z-sticky { z-index: 10; }
+@utility z-header { z-index: 100; }
+@utility z-overlay { z-index: 110; }
+@utility z-modal { z-index: 120; }
+@utility z-popover { z-index: 130; }
+@utility z-select { z-index: 140; }
+@utility z-toast { z-index: 200; }
+
+@utility animate-in {
+  animation-name: enter;
+  animation-duration: var(--tw-duration, 150ms);
+  --tw-enter-opacity: initial;
+  --tw-enter-scale: initial;
+  --tw-enter-rotate: initial;
+  --tw-enter-translate-x: initial;
+  --tw-enter-translate-y: initial;
+}
+@utility fade-in-* {
+  --tw-enter-opacity: calc(--value(integer) / 100);
+  --tw-enter-opacity: --value([number]);
+}
+@utility zoom-in-* {
+  --tw-enter-scale: calc(--value(integer) / 100);
+  --tw-enter-scale: --value([number]);
+}
+@utility slide-in-from-top-* {
+  --tw-enter-translate-y: calc(var(--spacing) * --value(integer) * -1);
+  --tw-enter-translate-y: calc(--value(ratio) * -100%);
+  --tw-enter-translate-y: calc(--value([length], [percentage]) * -1);
+}
+@utility slide-in-from-top-full { --tw-enter-translate-y: -100%; }
+@utility slide-in-from-bottom-* {
+  --tw-enter-translate-y: calc(var(--spacing) * --value(integer) * 1);
+  --tw-enter-translate-y: calc(--value(ratio) * 100%);
+  --tw-enter-translate-y: calc(--value([length], [percentage]) * 1);
+}
+@utility slide-in-from-bottom-full { --tw-enter-translate-y: 100%; }
+@utility slide-in-from-left-* {
+  --tw-enter-translate-x: calc(var(--spacing) * --value(integer) * -1);
+  --tw-enter-translate-x: calc(--value(ratio) * -100%);
+  --tw-enter-translate-x: calc(--value([length], [percentage]) * -1);
+}
+@utility slide-in-from-left-full { --tw-enter-translate-x: -100%; }
+@utility slide-in-from-right-* {
+  --tw-enter-translate-x: calc(var(--spacing) * --value(integer) * 1);
+  --tw-enter-translate-x: calc(--value(ratio) * 100%);
+  --tw-enter-translate-x: calc(--value([length], [percentage]) * 1);
+}
+@utility slide-in-from-right-full { --tw-enter-translate-x: 100%; }
+
+@utility animate-out {
+  animation-name: exit;
+  animation-duration: var(--tw-duration, 150ms);
+  --tw-exit-opacity: initial;
+  --tw-exit-scale: initial;
+  --tw-exit-rotate: initial;
+  --tw-exit-translate-x: initial;
+  --tw-exit-translate-y: initial;
+}
+@utility fade-out-* {
+  --tw-exit-opacity: calc(--value(integer) / 100);
+  --tw-exit-opacity: --value([number]);
+}
+@utility zoom-out-* {
+  --tw-exit-scale: calc(--value(integer) / 100);
+  --tw-exit-scale: --value([number]);
+}
+@utility slide-out-to-top-* {
+  --tw-exit-translate-y: calc(var(--spacing) * --value(integer) * -1);
+  --tw-exit-translate-y: calc(--value(ratio) * -100%);
+  --tw-exit-translate-y: calc(--value([length], [percentage]) * -1);
+}
+@utility slide-out-to-top-full { --tw-exit-translate-y: -100%; }
+@utility slide-out-to-bottom-* {
+  --tw-exit-translate-y: calc(var(--spacing) * --value(integer) * 1);
+  --tw-exit-translate-y: calc(--value(ratio) * 100%);
+  --tw-exit-translate-y: calc(--value([length], [percentage]) * 1);
+}
+@utility slide-out-to-bottom-full { --tw-exit-translate-y: 100%; }
+@utility slide-out-to-left-* {
+  --tw-exit-translate-x: calc(var(--spacing) * --value(integer) * -1);
+  --tw-exit-translate-x: calc(--value(ratio) * -100%);
+  --tw-exit-translate-x: calc(--value([length], [percentage]) * -1);
+}
+@utility slide-out-to-left-full { --tw-exit-translate-x: -100%; }
+@utility slide-out-to-right-* {
+  --tw-exit-translate-x: calc(var(--spacing) * --value(integer) * 1);
+  --tw-exit-translate-x: calc(--value(ratio) * 100%);
+  --tw-exit-translate-x: calc(--value([length], [percentage]) * 1);
+}
+@utility slide-out-to-right-full { --tw-exit-translate-x: 100%; }
+
+@keyframes enter {
+  from {
+    opacity: var(--tw-enter-opacity, 1);
+    translate: var(--tw-enter-translate-x, var(--tw-translate-x, 0)) var(--tw-enter-translate-y, var(--tw-translate-y, 0));
+    scale: var(--tw-enter-scale, 1);
+    rotate: var(--tw-enter-rotate, 0deg);
+  }
+}
+@keyframes exit {
+  to {
+    opacity: var(--tw-exit-opacity, 1);
+    translate: var(--tw-exit-translate-x, var(--tw-translate-x, 0)) var(--tw-exit-translate-y, var(--tw-translate-y, 0));
+    scale: var(--tw-exit-scale, 1);
+    rotate: var(--tw-exit-rotate, 0deg);
+  }
+}
+@keyframes accordion-down { from { height: 0; } to { height: var(--radix-accordion-content-height); } }
+@keyframes accordion-up { from { height: var(--radix-accordion-content-height); } to { height: 0; } }
+@keyframes gradient { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+@keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fade-in-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes scale-in { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+@keyframes shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+@keyframes page-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+.page-enter { animation: page-enter 160ms ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .page-enter { animation: none; }
+}
 
 @layer base {
   :root,
@@ -374,6 +544,12 @@
   }
 }
 
+@utility surface-header-action{
+    @apply rounded-full border text-foreground backdrop-blur-xs transition-colors duration-150;
+    background-color: hsl(var(--background) / var(--header-control-bg));
+    border-color: hsl(var(--primary) / var(--header-control-border-opacity));
+}
+
 @layer utilities {
   .theme-color-transition {
     transition-property: background-color, color;
@@ -421,7 +597,7 @@
   }
 
   .surface-toolbar {
-    @apply border backdrop-blur-xl shadow-sm;
+    @apply border backdrop-blur-xl shadow-xs;
     background:
       linear-gradient(
         180deg,
@@ -440,7 +616,7 @@
   }
 
   .surface-panel-workspace {
-    @apply rounded-3xl overflow-hidden border shadow-lg backdrop-blur-sm;
+    @apply rounded-3xl overflow-hidden border shadow-lg backdrop-blur-xs;
     background:
       linear-gradient(
         180deg,
@@ -460,7 +636,7 @@
   }
 
   .surface-toolbar-workspace {
-    @apply border-b shadow-sm;
+    @apply border-b shadow-xs;
     background:
       linear-gradient(
         180deg,
@@ -479,7 +655,7 @@
   }
 
   .surface-tabs-rail {
-    @apply rounded-xl border shadow-sm;
+    @apply rounded-xl border shadow-xs;
     background-color: hsl(var(--background) / var(--workspace-tab-rail-bg));
     border-color: hsl(
       var(--primary) / var(--workspace-tab-rail-border-opacity)
@@ -497,7 +673,7 @@
   }
 
   .surface-choice-rail {
-    @apply rounded-xl border shadow-sm;
+    @apply rounded-xl border shadow-xs;
     background-color: hsl(var(--background) / var(--workspace-tab-rail-bg));
     border-color: hsl(
       var(--primary) / var(--workspace-tab-rail-border-opacity)
@@ -522,12 +698,6 @@
       hsl(var(--primary) / var(--header-shell-shadow-opacity));
   }
 
-  .surface-header-action {
-    @apply rounded-full border text-foreground backdrop-blur-sm transition-colors duration-150;
-    background-color: hsl(var(--background) / var(--header-control-bg));
-    border-color: hsl(var(--primary) / var(--header-control-border-opacity));
-  }
-
   .surface-header-action:hover {
     background-color: hsl(var(--background) / var(--header-control-bg-hover));
     border-color: hsl(
@@ -537,7 +707,7 @@
   }
 
   .surface-header-link {
-    @apply surface-header-action flex items-center gap-2 px-2.5 py-1.5 shadow-sm;
+    @apply surface-header-action flex items-center gap-2 px-2.5 py-1.5 shadow-xs;
   }
 
   .surface-header-accent {

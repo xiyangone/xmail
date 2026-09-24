@@ -51,6 +51,7 @@ import { EmailListSkeleton } from "@/components/ui/loading-skeletons";
 import { EmptyState } from "@/components/ui/empty-state";
 
 import { useTranslations } from "next-intl";
+import { createRequestController, isAbortError } from "@/lib/request-control";
 
 
 
@@ -214,11 +215,11 @@ const EmailItem = memo(function EmailItem({
 
         "flex items-center gap-2 p-3 rounded-lg cursor-pointer text-sm group transition-[background-color,border-color,color,box-shadow] duration-150",
 
-        "hover:bg-primary/10 hover:shadow-sm",
+        "hover:bg-primary/10 hover:shadow-xs",
 
         "border border-transparent hover:border-primary/20",
 
-        isSelected && "bg-primary/15 border-primary/30 shadow-sm"
+        isSelected && "bg-primary/15 border-primary/30 shadow-xs"
 
       )}
 
@@ -226,7 +227,7 @@ const EmailItem = memo(function EmailItem({
 
     >
 
-      <button onClick={handleCheckboxClick} className="flex-shrink-0">
+      <button onClick={handleCheckboxClick} className="shrink-0">
 
         {isChecked ? (
 
@@ -240,7 +241,7 @@ const EmailItem = memo(function EmailItem({
 
       </button>
 
-      <Mail className="h-5 w-5 text-primary/70 group-hover:text-primary transition-colors flex-shrink-0" />
+      <Mail className="h-5 w-5 text-primary/70 group-hover:text-primary transition-colors shrink-0" />
 
       <div className="truncate flex-1 space-y-1">
 
@@ -317,6 +318,8 @@ const EmailItem = memo(function EmailItem({
 export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
 
   const { data: session } = useSession();
+  const userId = session?.user?.id;
+  const [requests] = useState(createRequestController);
 
   const { config } = useConfig();
 
@@ -358,6 +361,9 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
 
     async (cursor?: string, isManualRefresh = false) => {
 
+      if (cursor && requests.pending) return;
+      const request = requests.start();
+
       try {
 
         const url = new URL("/api/emails", window.location.origin);
@@ -368,7 +374,8 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
 
         }
 
-        const response = await fetch(url);
+        const response = await fetch(url, { signal: request.signal });
+        if (!request.isCurrent()) return;
 
         if (!response.ok) {
 
@@ -393,12 +400,14 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
         }
 
         const data = (await response.json()) as EmailResponse;
+        if (!request.isCurrent()) return;
 
 
 
         if (!cursor) {
 
           setEmails((oldEmails) => {
+            if (!request.isCurrent()) return oldEmails;
 
             const newEmails = data.emails;
 
@@ -437,6 +446,7 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
         }
 
         setEmails((prev) => {
+          if (!request.isCurrent()) return prev;
 
           const updated = [...prev, ...data.emails];
 
@@ -449,6 +459,7 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
         setNextCursor(data.nextCursor);
 
       } catch (error) {
+        if (!request.isCurrent() || isAbortError(error)) return;
 
         console.error("Failed to fetch emails:", error);
 
@@ -468,17 +479,17 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
 
       } finally {
 
-        setLoading(false);
-
-        setRefreshing(false);
-
-        setLoadingMore(false);
+        if (request.finish()) {
+          setLoading(false);
+          setRefreshing(false);
+          setLoadingMore(false);
+        }
 
       }
 
     },
 
-    [toast, tc]
+    [toast, tc, requests]
 
   );
 
@@ -496,7 +507,7 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
 
   const handleScroll = useThrottle((e: React.UIEvent<HTMLDivElement>) => {
 
-    if (loadingMore) return;
+    if (loadingMore || requests.pending) return;
 
 
 
@@ -522,9 +533,15 @@ export function EmailList({ onEmailSelect, selectedEmailId }: EmailListProps) {
 
   useEffect(() => {
 
-    if (session) fetchEmails();
+    setEmails([]);
+    setTotal(0);
+    setNextCursor(null);
+    setSelectedEmails([]);
+    setLoading(Boolean(userId));
+    if (userId) void fetchEmails();
+    return () => requests.cancel();
 
-  }, [session, fetchEmails]);
+  }, [userId, fetchEmails, requests]);
 
 
 

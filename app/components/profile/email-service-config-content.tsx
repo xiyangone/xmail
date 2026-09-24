@@ -200,8 +200,8 @@ export function EmailServiceConfigContent() {
                       key={role.value}
                       className={`theme-surface-inline-panel group relative rounded-2xl border-2 p-4 transition-all duration-200 ${
                         isEnabled
-                          ? 'border-primary/30 bg-primary/5 shadow-sm'
-                          : 'border-border hover:border-primary/20 hover:shadow-sm'
+                          ? 'border-primary/30 bg-primary/5 shadow-xs'
+                          : 'border-border hover:border-primary/20 hover:shadow-xs'
                       }`}
                     >
                       <div className="flex items-center justify-between">

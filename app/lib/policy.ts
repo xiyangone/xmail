@@ -14,6 +14,7 @@ export interface AuthIdentity {
   source: AuthSource;
   userId?: string;
   apiKeyId?: string;
+  permissionKeys?: string[];
 }
 
 export interface AuthorizationDecision {
@@ -23,6 +24,14 @@ export interface AuthorizationDecision {
   identity: AuthIdentity;
   policy?: RoutePolicyDefinition;
   requestHeaders?: Headers;
+}
+
+export function hasSessionPermissions(identity: AuthIdentity, requiredPermissions: Permission[]): boolean {
+  return identity.source === "session" && Boolean(identity.userId) && (
+    !requiredPermissions.length || requiredPermissions.some(
+      (permission) => identity.permissionKeys?.includes(permission)
+    )
+  );
 }
 
 function allowDecision(
@@ -164,7 +173,14 @@ async function resolveAuthIdentity(request: Request): Promise<{ identity: AuthId
   const session = await auth();
   if (session?.user?.id) {
     requestHeaders.set("X-Auth-Source", "session");
-    return { identity: { source: "session", userId: session.user.id }, requestHeaders };
+    return {
+      identity: {
+        source: "session",
+        userId: session.user.id,
+        permissionKeys: session.user.permissions ?? [],
+      },
+      requestHeaders,
+    };
   }
 
   return { identity: { source: "anonymous" }, requestHeaders };
@@ -213,7 +229,9 @@ export async function authorizeRequest(request: Request): Promise<AuthorizationD
     return denyDecision(401, "未授权", identity, requestHeaders, policy);
   }
 
-  const hasPermission = await userHasAnyPermission(identity.userId, policy.requiredPermissions);
+  const hasPermission = identity.source === "session"
+    ? hasSessionPermissions(identity, policy.requiredPermissions)
+    : await userHasAnyPermission(identity.userId, policy.requiredPermissions);
   if (!hasPermission) {
     return denyDecision(403, "权限不足", identity, requestHeaders, policy);
   }

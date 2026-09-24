@@ -26,7 +26,7 @@ export function MessageListSkeleton() {
     <div className="relative">
       {/* 加载中提示 - 居中显示 */}
       <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
-        <div className="bg-background/95 backdrop-blur-sm px-6 py-3 rounded-lg border border-primary/20 shadow-lg">
+        <div className="bg-background/95 backdrop-blur-xs px-6 py-3 rounded-lg border border-primary/20 shadow-lg">
           <div className="flex items-center gap-3">
             <Loader2 className="h-5 w-5 animate-spin text-primary" />
             <span className="text-sm font-medium text-foreground">{t("loading")}</span>

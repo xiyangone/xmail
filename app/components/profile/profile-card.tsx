@@ -65,13 +65,13 @@ export function ProfileCard({ user }: ProfileCardProps) {
               priority
               className="h-20 w-20 text-2xl ring-2 ring-primary/25 shadow-[0_18px_36px_hsl(var(--primary)/0.16)] transition-all duration-300 group-hover:scale-105 group-hover:ring-primary/45"
             />
-            <div className="pointer-events-none absolute inset-0 rounded-full bg-gradient-to-tr from-primary/0 via-transparent to-primary/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+            <div className="pointer-events-none absolute inset-0 rounded-full bg-linear-to-tr from-primary/0 via-transparent to-primary/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-bold truncate">{user.name}</h2>
               {user.email && (
-                <div className="profile-pill-surface flex flex-shrink-0 items-center gap-1 rounded-full border border-primary/18 px-2.5 py-1 text-xs text-primary backdrop-blur-xl">
+                <div className="profile-pill-surface flex shrink-0 items-center gap-1 rounded-full border border-primary/18 px-2.5 py-1 text-xs text-primary backdrop-blur-xl">
                   <GitHubIcon className="w-3 h-3" />
                   {t("githubLinked")}
                 </div>

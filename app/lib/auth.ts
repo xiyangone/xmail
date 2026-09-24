@@ -1,4 +1,5 @@
 import NextAuth from "next-auth";
+import { cache } from "react";
 
 
 import GitHub from "next-auth/providers/github";
@@ -957,7 +958,7 @@ const nextAuth = NextAuth(async () => ({
         }));
 
 
-        session.user.permissions = (await getUserPermissionSnapshot(session.user.id)).permissionKeys;
+        session.user.permissions = (await getUserPermissionSnapshot(session.user.id, userRoleRecords)).permissionKeys;
 
 
       }
@@ -999,7 +1000,8 @@ export const {
 } = nextAuth;
 
 
-export const auth = nextAuth.auth;
+// React owns this cache's lifetime: it is shared only within one server render.
+export const auth = cache(() => nextAuth.auth());
 
 
 export async function register(username: string, password: string) {
@@ -1054,5 +1056,4 @@ export async function register(username: string, password: string) {
 
 
 }
-
 

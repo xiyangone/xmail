@@ -81,25 +81,24 @@ function sortDomains(domains: string[]): string[] {
   });
 }
 
-const useConfigStore = create<ConfigStore>((set, get) => ({
+export const createConfigStore = (fetcher: (url: string) => Promise<Response> = fetch) => create<ConfigStore>((set, get) => ({
   config: null,
   loading: false,
   error: null,
   fetchPromise: null,
-  fetch: async () => {
+  fetch: () => {
     const { config, fetchPromise } = get();
     if (config) {
-      return;
+      return Promise.resolve();
     }
 
     if (fetchPromise) {
       return fetchPromise;
     }
 
-    const inFlight = (async () => {
+    const inFlight = Promise.resolve().then(async () => {
       try {
-        set({ loading: true, error: null });
-        const res = await fetch("/api/config");
+        const res = await fetcher("/api/config");
         if (!res.ok) throw new Error("获取配置失败");
         const data = (await res.json()) as Config & {
           messagePollInterval?: string;
@@ -131,12 +130,14 @@ const useConfigStore = create<ConfigStore>((set, get) => ({
       } finally {
         set({ fetchPromise: null });
       }
-    })();
+    });
 
-    set({ fetchPromise: inFlight });
+    set({ fetchPromise: inFlight, loading: true, error: null });
     return inFlight;
   },
 }));
+
+const useConfigStore = createConfigStore();
 
 export function useConfig() {
   const config = useConfigStore((state) => state.config);
@@ -145,10 +146,10 @@ export function useConfig() {
   const fetchConfig = useConfigStore((state) => state.fetch);
 
   useEffect(() => {
-    if (!config && !loading) {
+    if (!config && !loading && !error) {
       void fetchConfig();
     }
-  }, [config, loading, fetchConfig]);
+  }, [config, loading, error, fetchConfig]);
 
   return {
     config,

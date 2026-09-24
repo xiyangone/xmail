@@ -4,14 +4,14 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 active:scale-95",
+  "inline-flex items-center justify-center rounded-md text-sm font-medium transition-all focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 active:scale-95",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow hover:bg-primary/90 hover:shadow-lg",
-        destructive: "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
-        outline: "theme-surface-button-outline border border-input bg-transparent shadow-sm hover:bg-accent hover:text-accent-foreground hover:border-primary/50",
-        secondary: "theme-surface-button-secondary bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
+        default: "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:shadow-lg",
+        destructive: "bg-destructive text-destructive-foreground shadow-xs hover:bg-destructive/90",
+        outline: "theme-surface-button-outline border border-input bg-transparent shadow-xs hover:bg-accent hover:text-accent-foreground hover:border-primary/50",
+        secondary: "theme-surface-button-secondary bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
         glass:
           "theme-surface-button-glass border border-primary/15 bg-background/55 text-foreground shadow-[0_18px_40px_hsl(var(--primary)/0.12)] backdrop-blur-xl hover:bg-background/72 hover:border-primary/28 hover:shadow-[0_22px_48px_hsl(var(--primary)/0.18)]",
         ghost: "theme-surface-button-ghost hover:bg-accent hover:text-accent-foreground",

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Mail } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { NavigationLink } from "@/components/layout/navigation-link"
 import { useTranslations } from "next-intl"
 import { MAILBOX_ROUTE } from "@/lib/routes"
 import {
@@ -23,7 +23,6 @@ interface ActionButtonProps {
 }
 
 export function ActionButton({ isLoggedIn }: ActionButtonProps) {
-  const router = useRouter()
   const t = useTranslations("home")
   const ta = useTranslations("auth")
   const tc = useTranslations("common")
@@ -34,11 +33,13 @@ export function ActionButton({ isLoggedIn }: ActionButtonProps) {
       <Button 
         variant="plain"
         size="lg" 
-        onClick={() => router.push(MAILBOX_ROUTE)}
+        asChild
         className="gradient-primary gap-2 rounded-full border border-primary/20 px-8 text-primary-foreground shadow-[0_18px_40px_hsl(var(--primary)/0.26)] hover:opacity-95 hover:shadow-[0_22px_48px_hsl(var(--primary)/0.34)]"
       >
-        <Mail className="w-5 h-5" />
-        {t("enterMailbox")}
+        <NavigationLink href={MAILBOX_ROUTE}>
+          <Mail className="w-5 h-5" />
+          {t("enterMailbox")}
+        </NavigationLink>
       </Button>
     )
   }
@@ -62,8 +63,8 @@ export function ActionButton({ isLoggedIn }: ActionButtonProps) {
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>{tc("cancel")}</AlertDialogCancel>
-          <AlertDialogAction onClick={() => router.push("/login")}>
-            {ta("loginRegister")}
+          <AlertDialogAction asChild>
+            <NavigationLink href="/login">{ta("loginRegister")}</NavigationLink>
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

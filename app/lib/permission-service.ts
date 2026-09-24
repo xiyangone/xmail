@@ -1,4 +1,5 @@
 import { and, eq, inArray } from "drizzle-orm";
+import { cache } from "react";
 import { createDb, type Db } from "./db";
 import { permissions, rolePermissions, routePolicies, userRoles } from "./schema";
 import {
@@ -89,9 +90,17 @@ export async function ensurePermissionSeeded(db?: Db) {
   }
 }
 
-export async function getUserPermissionSnapshot(userId: string): Promise<UserPermissionSnapshot> {
-  const db = await createDb();
-  const userRoleRecords = await db.query.userRoles.findMany({
+interface PermissionRoleRecord {
+  roleId: string;
+  role: { name: string };
+}
+
+export async function readUserPermissionSnapshot(
+  db: Db,
+  userId: string,
+  knownRoles?: PermissionRoleRecord[]
+): Promise<UserPermissionSnapshot> {
+  const userRoleRecords = knownRoles ?? await db.query.userRoles.findMany({
     where: eq(userRoles.userId, userId),
     with: { role: true },
   });
@@ -149,6 +158,11 @@ export async function getUserPermissionSnapshot(userId: string): Promise<UserPer
     return { roles: roleNames, permissionKeys: fallback, source: "fallback" };
   }
 }
+
+export const getUserPermissionSnapshot = cache(async (
+  userId: string,
+  knownRoles?: PermissionRoleRecord[]
+): Promise<UserPermissionSnapshot> => readUserPermissionSnapshot(await createDb(), userId, knownRoles));
 
 export async function userHasPermission(userId: string, permission: Permission) {
   const snapshot = await getUserPermissionSnapshot(userId);

@@ -1,7 +1,7 @@
 import { AppShell } from "@/components/layout/app-shell";
 import { ThreeColumnLayout } from "@/components/emails/three-column-layout";
 import { NoPermissionDialog } from "@/components/no-permission-dialog";
-import { auth, checkPermission } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { PERMISSIONS } from "@/lib/permissions";
 import { redirect } from "next/navigation";
 
@@ -12,9 +12,10 @@ export default async function MailboxPage() {
     redirect("/");
   }
 
-  const hasManagePermission = await checkPermission(PERMISSIONS.MANAGE_EMAIL);
-  const hasViewPermission = await checkPermission(PERMISSIONS.VIEW_TEMP_EMAIL);
-  const hasPermission = hasManagePermission || hasViewPermission;
+  const permissions = session.user.permissions ?? [];
+  const hasPermission = permissions.some((permission) =>
+    permission === PERMISSIONS.MANAGE_EMAIL || permission === PERMISSIONS.VIEW_TEMP_EMAIL
+  );
 
   return (
     <AppShell fullHeight>

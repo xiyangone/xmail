@@ -14,8 +14,7 @@ import { APP_THEMES } from "@/lib/background-config";
 import { auth } from "@/lib/auth";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const locale = await getLocale();
-  const t = await getTranslations("metadata");
+  const [locale, t] = await Promise.all([getLocale(), getTranslations("metadata")]);
   const title = t("title");
   const description = t("description");
 
@@ -85,9 +84,11 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const locale = await getLocale();
-  const messages = await getMessages();
-  const session = await auth();
+  const [locale, messages, session] = await Promise.all([
+    getLocale(),
+    getMessages(),
+    auth(),
+  ]);
 
   return (
     <html lang={locale} suppressHydrationWarning>

@@ -280,7 +280,7 @@ export function AdminDashboard() {
                   className={cn(
                     "theme-surface-admin-nav-item group relative flex w-auto shrink-0 items-center gap-3 rounded-2xl px-4 py-2.5 text-left transition-all xl:w-full",
                     isActive
-                      ? "theme-surface-admin-nav-item-active text-foreground shadow-sm ring-1 ring-primary/20"
+                      ? "theme-surface-admin-nav-item-active text-foreground shadow-xs ring-1 ring-primary/20"
                       : "text-muted-foreground hover:text-foreground"
                   )}
                 >

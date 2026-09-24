@@ -1,7 +1,7 @@
 import { authorizeRequest } from "@/lib/policy"
 import { NextResponse } from "next/server"
 
-export async function middleware(request: Request) {
+export async function proxy(request: Request) {
   const decision = await authorizeRequest(request)
   if (!decision.allowed) {
     return NextResponse.json(

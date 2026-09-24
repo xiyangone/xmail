@@ -101,16 +101,16 @@
 
 ## 技术栈
 
-- **框架**: [Next.js](https://nextjs.org/) 15.5.15 (App Router)
-- **部署**: [@opennextjs/cloudflare](https://opennext.js.org/cloudflare)
+- **框架**: [Next.js](https://nextjs.org/) 16.3.6 (App Router) + React 19.3.0
+- **部署**: [@opennextjs/cloudflare](https://opennext.js.org/cloudflare) 1.20.6 + Wrangler 4.136.3
 - **平台**: [Cloudflare Workers](https://workers.cloudflare.com/)
 - **实时连接**: [Cloudflare Durable Objects](https://developers.cloudflare.com/durable-objects/) + WebSocket Hibernation
 - **数据库**: [Cloudflare D1](https://developers.cloudflare.com/d1/) (SQLite)
 - **认证**: [NextAuth](https://authjs.dev/getting-started/installation?framework=Next.js) 配合 GitHub 登录
-- **样式**: [Tailwind CSS](https://tailwindcss.com/)
+- **样式**: [Tailwind CSS](https://tailwindcss.com/) 4.3.3，主题和动画统一由 `app/globals.css` 配置
 - **UI 组件**: 基于 [Radix UI](https://www.radix-ui.com/) 的自定义组件
 - **邮件处理**: [Cloudflare Email Workers](https://developers.cloudflare.com/email-routing/)
-- **类型安全**: [TypeScript](https://www.typescriptlang.org/)
+- **类型安全**: [TypeScript](https://www.typescriptlang.org/) 6.0.3
 - **ORM**: [Drizzle ORM](https://orm.drizzle.team/)
 - **国际化**: [next-intl](https://next-intl.dev/) (中英双语)
 
@@ -118,10 +118,12 @@
 
 ### 前置要求
 
-- Node.js 24+
-- Pnpm
-- Wrangler CLI
+- Node.js 24.x
+- pnpm 11.19.0（版本由 `packageManager` 锁定）
+- Wrangler 使用项目依赖，不需要另行全局安装
 - Cloudflare 账号
+
+项目使用 pnpm 的 `hoisted` 依赖布局，避免 OpenNext 复制依赖时要求 Windows 符号链接权限；本地与 CI 使用同一配置。
 
 ### 安装
 
@@ -135,7 +137,7 @@ cd xmail
 2. 安装依赖：
 
 ```bash
-pnpm install
+pnpm install --frozen-lockfile
 ```
 
 3. 设置 wrangler：
@@ -147,7 +149,7 @@ cp wrangler.cleanup.example.json wrangler.cleanup.json
 ```
 
 > 以上方式适合手动维护 `wrangler*.json`。
-> 如果你希望通过环境变量自定义 Worker / D1 / KV 名称，建议优先使用下方“本地 Wrangler 部署”流程，并在首次执行 `pnpm deploy:worker` 前先设置 `.env` 中的 `PROJECT_NAME` / `DATABASE_NAME` / `KV_NAMESPACE_NAME`。
+> 如果你希望通过环境变量自定义 Worker / D1 / KV 名称，应在明确执行完整初始化流程前设置 `.env` 中的 `PROJECT_NAME` / `DATABASE_NAME` / `KV_NAMESPACE_NAME`。已有部署的 `pnpm deploy:worker` 直接使用现有 `wrangler.json`，不会重新生成这些配置。
 
 设置 Cloudflare D1 数据库名以及数据库 ID
 
@@ -195,7 +197,17 @@ pnpm generate-test-data
 
 ### 本地测试
 
-在提交代码前,建议运行以下命令进行测试:
+提交前运行完整检查；类型检查、Lint 和全部回归测试分别执行，任何一项失败都会阻止部署：
+
+```bash
+pnpm run verify
+pnpm run build
+pnpm run build:worker
+```
+
+页面导航、请求取消、配置重试与鉴权查询的定向回归可运行 `pnpm run test:performance`。完整测试还包含 MIME 解析与 Tailwind 迁移检查。
+
+以下命令可单独用于定位问题：
 
 1. **代码检查**：
 
@@ -228,7 +240,7 @@ pnpm test:verification-code
 pnpm test:maintainability
 ```
 
-> `pnpm build:worker` 仍保留用于 GitHub Actions / Linux / WSL 环境下的 OpenNext Worker 打包校验，不再作为 Windows 本机日常必跑项。
+> Next.js 生产构建显式使用 Webpack。生产交付必须完成 OpenNext Worker 打包验证；Windows 遇到平台限制时，应在 WSL / Linux / CI 中完成，不能用 `next build` 替代 Worker 打包验证。
 
 ## 部署
 
@@ -238,31 +250,23 @@ https://www.bilibili.com/video/BV19wrXY2ESM/
 
 ### 本地 Wrangler 部署
 
-> 生产环境默认推荐使用下方 GitHub Actions 部署链路直连 Cloudflare。Windows 本机更适合日常开发和通用检查；如需执行 OpenNext Worker 打包，请优先放到 WSL / Linux / CI 环境验证。
-
-1. 创建 .env 文件
-
-```bash
-cp .env.example .env
-```
-
-2. 在 .env 文件中设置[环境变量](#环境变量)
-
-> `pnpm deploy:worker` 会读取 `.env` 中的 `PROJECT_NAME` / `DATABASE_NAME` / `KV_NAMESPACE_NAME`，并在 `wrangler*.json` 不存在时按这些值生成默认配置。
-> 如果相关 `wrangler*.json` 已存在，脚本会保留现有文件，不会自动覆盖；此时如需改名，请手动修改对应配置，或删除后重新生成。
-> 如果你要复用已存在的 D1 / KV 资源，建议同时设置 `DATABASE_ID` / `KV_NAMESPACE_ID`，避免脚本按名称重新查找或创建资源。
-
-3. 构建并部署 OpenNext Worker
+已有部署的代码更新：先核对 `wrangler.json` 的 Worker、域名、D1 和 KV 绑定，再执行：
 
 ```bash
 pnpm deploy:worker
 ```
 
+该命令依次运行验证、OpenNext 构建和 `wrangler deploy --keep-vars`，保留 Cloudflare 已有变量；**不会创建资源或执行数据库迁移**，也不会自动上传 `.env` 中的密钥。
+
+首次部署的完整初始化使用下方 GitHub Actions 流程，或在明确需要初始化时执行 `pnpm exec tsx scripts/deploy/index.ts`。该脚本读取 `.env`、生成配置、检查或创建资源，并执行远端数据库迁移；不要将它当作无数据变更的普通代码发布命令。复用现有资源时，应明确设置 `DATABASE_ID` / `KV_NAMESPACE_ID`。
+
+数据库变更、收件 Worker 和清理 Worker 的发布须单独核对影响范围。NextAuth 当前仍为 beta 版本，升级后应验证登录、退出与权限隔离。
+
 ### Github Actions 部署
 
 本项目可使用 GitHub Actions 实现自动化部署。支持以下触发方式：
 
-> 当前仓库默认生产部署环境为 GitHub Actions `ubuntu-latest` + Node.js 24，Cloudflare Worker 打包与发布以该 Linux CI 链路为准。
+> 默认自动化部署环境为 GitHub Actions `ubuntu-latest` + Node.js 24。手动发布同样需要使用锁定的依赖并完成完整验证和 OpenNext Worker 打包。
 
 1. **自动触发**：推送新的 tag 时自动触发部署流程
 2. **手动触发**：在 GitHub Actions 页面手动触发
@@ -1305,17 +1309,14 @@ console.log("注册成功！");
 
 ### 首次加载或长时间未访问时加载较慢
 
-这是正常现象，主要原因：
+需要区分浏览器请求排队、DNS/TLS 建连、首字节等待和页面渲染，不能仅凭页面总耗时判断为 Worker 冷启动或 D1 查询缓慢。
 
-- **Cloudflare Workers 冷启动**：首次访问或长时间未访问，Worker 需要启动（100-500ms）
-- **D1 数据库初始化**：边缘数据库连接需要建立
-- 这是所有边缘计算平台的共同特点
+- 站内入口使用 Link 预取、导航反馈和路由骨架屏。
+- 同一服务端渲染中的会话查询可复用；权限缓存不跨请求共享。
+- 邮箱列表和详情在切换或卸载时取消请求，并拒绝过期响应；配置加载失败不会无限自动重试。
+- 主 Worker 开启 10% 采样的可观测性。排查时结合浏览器 Network 时序与实际 Worker 日志，再决定是否需要调整代码或网络配置。
 
-**优化措施**：
-
-- 已优化数据库查询，移除冗余的 COUNT 查询
-- 已添加多个数据库索引加速查询
-- 冷启动后的后续访问会很快
+依赖升级、已有索引或本地测试通过都不能替代部署后的实际耗时验证。
 
 ### 如何部署数据库索引优化
 

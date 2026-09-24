@@ -35,6 +35,7 @@ import { formatContactDisplay } from "@/lib/contact-address";
 import { extractVerificationCodeFromMessage } from "@/lib/verification-code";
 import { useTranslations } from "next-intl";
 import { RealtimeStatus, useRealtimeMessages } from "@/hooks/use-realtime-messages";
+import { createRequestController, isAbortError } from "@/lib/request-control";
 
 interface Message {
   id: string;
@@ -101,6 +102,7 @@ export function MessageList({
   const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null);
   const [errorCount, setErrorCount] = useState(0);
   const [browserOnline, setBrowserOnline] = useState(getInitialOnlineState);
+  const [requests] = useState(createRequestController);
 
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
@@ -239,6 +241,8 @@ export function MessageList({
         silentOnError = true,
       } = options;
 
+      if (requests.pending && !forceRefresh) return;
+      const request = requests.start();
       try {
         const url = new URL(`/api/emails/${email.id}`, window.location.origin);
         if (messageType === "sent") {
@@ -248,7 +252,8 @@ export function MessageList({
           url.searchParams.set("cursor", cursor);
         }
 
-        const response = await fetch(url);
+        const response = await fetch(url, { signal: request.signal });
+        if (!request.isCurrent()) return;
         if (!response.ok) {
           let errorMessage = `HTTP error: ${response.status}`;
           if (response.headers.get("content-type")?.includes("application/json")) {
@@ -263,6 +268,7 @@ export function MessageList({
         }
 
         const data = (await response.json()) as MessageResponse;
+        if (!request.isCurrent()) return;
 
         if (errorCountRef.current !== 0) {
           errorCountRef.current = 0;
@@ -324,6 +330,7 @@ export function MessageList({
           scheduleNextPoll(getBackoffInterval(0));
         }
       } catch (error) {
+        if (!request.isCurrent() || isAbortError(error)) return;
         const nextErrorCount = Math.min(errorCountRef.current + 1, MAX_ERROR_COUNT);
         errorCountRef.current = nextErrorCount;
         setErrorCount(nextErrorCount);
@@ -341,12 +348,14 @@ export function MessageList({
           });
         }
       } finally {
-        setLoading(false);
-        setRefreshing(false);
-        setLoadingMore(false);
+        if (request.finish()) {
+          setLoading(false);
+          setRefreshing(false);
+          setLoadingMore(false);
+        }
       }
     },
-    [browserOnline, email.id, getBackoffInterval, messageType, scheduleNextPoll, tc, toast]
+    [browserOnline, email.id, getBackoffInterval, messageType, requests, scheduleNextPoll, tc, toast]
   );
 
   useEffect(() => {
@@ -362,7 +371,7 @@ export function MessageList({
   };
 
   const handleScroll = useThrottle((e: React.UIEvent<HTMLDivElement>) => {
-    if (loadingMore) {
+    if (loadingMore || requests.pending) {
       return;
     }
 
@@ -373,11 +382,7 @@ export function MessageList({
     if (remainingScroll <= threshold && nextCursor) {
       setLoadingMore(true);
       stopPolling();
-      void fetchMessages({ cursor: nextCursor, silentOnError: false }).finally(
-        () => {
-          scheduleNextPoll(getBackoffInterval(errorCountRef.current));
-        }
-      );
+      void fetchMessages({ cursor: nextCursor, silentOnError: false, scheduleNext: true });
     }
   }, 200);
 
@@ -450,6 +455,7 @@ export function MessageList({
 
     stopPolling();
     setMessages([]);
+    messagesRef.current = [];
     setLoading(true);
     setNextCursor(null);
     setTotal(0);
@@ -459,6 +465,7 @@ export function MessageList({
     void fetchMessages({ forceRefresh: true, silentOnError: true });
 
     return () => {
+      requests.cancel();
       stopPolling();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -626,7 +633,7 @@ export function MessageList({
                     )}
                   >
                     <div className="flex items-start gap-3">
-                      <Mail className="w-4 h-4 text-primary/60 mt-1 flex-shrink-0" />
+                      <Mail className="w-4 h-4 text-primary/60 mt-1 shrink-0" />
                       <div className="min-w-0 flex-1">
                         <p className="font-medium text-sm truncate">
                           {message.subject}
@@ -634,7 +641,7 @@ export function MessageList({
                         <div className="mt-1 flex items-center justify-between gap-2">
                           {verificationCode ? (
                             <div
-                              className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-colors cursor-pointer"
+                              className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20 hover:bg-primary/15 transition-colors cursor-pointer"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleCopyCode(verificationCode, message.id);
@@ -664,7 +671,7 @@ export function MessageList({
                               {contactLabel || ""}
                             </span>
                           )}
-                          <span className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0">
+                          <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
                             <Calendar className="w-3 h-3" />
                             {new Date(
                               message.received_at || message.sent_at || 0
@@ -675,7 +682,7 @@ export function MessageList({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="opacity-0 group-hover:opacity-100 h-8 w-8 flex-shrink-0"
+                        className="opacity-0 group-hover:opacity-100 h-8 w-8 shrink-0"
                         title={tc("delete")}
                         aria-label={tc("delete")}
                         onClick={(e) => {

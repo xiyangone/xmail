@@ -16,7 +16,7 @@ export default async function Home() {
         <div className="mx-auto w-full max-w-4xl space-y-12 py-8 animate-fade-in-up">
           <div className="space-y-6">
             <h1 className="text-4xl font-bold tracking-wider sm:text-5xl md:text-6xl">
-              <span className="animate-gradient bg-gradient-to-r from-[hsl(var(--gradient-start))] via-[hsl(var(--gradient-mid))] to-[hsl(var(--gradient-end))] bg-clip-text text-transparent bg-gradient-size">
+              <span className="animate-gradient bg-linear-to-r from-[hsl(var(--gradient-start))] via-[hsl(var(--gradient-mid))] to-[hsl(var(--gradient-end))] bg-clip-text text-transparent bg-gradient-size">
                 XiYang Mail
               </span>
             </h1>

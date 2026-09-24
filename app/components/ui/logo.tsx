@@ -20,7 +20,7 @@ export function Logo() {
         />
       </span>
       <span className="leading-none">
-        <span className="block bg-gradient-to-r from-[hsl(var(--gradient-start))] via-[hsl(var(--gradient-mid))] to-[hsl(var(--gradient-end))] bg-clip-text text-sm font-bold tracking-[0.24em] text-transparent sm:text-base">
+        <span className="block bg-linear-to-r from-[hsl(var(--gradient-start))] via-[hsl(var(--gradient-mid))] to-[hsl(var(--gradient-end))] bg-clip-text text-sm font-bold tracking-[0.24em] text-transparent sm:text-base">
           XIYANG
         </span>
         <span className="hidden text-[10px] tracking-[0.32em] text-muted-foreground/85 sm:block">

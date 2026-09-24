@@ -196,8 +196,8 @@ export function BackgroundProvider() {
               style={{
                 background:
                   "radial-gradient(circle at 50% -12%, hsl(var(--primary) / var(--background-image-glow-opacity)), transparent 52%), linear-gradient(180deg, hsl(var(--background) / var(--background-image-overlay-start)) 0%, hsl(var(--background) / var(--background-image-overlay-mid)) 42%, hsl(var(--background) / var(--background-image-overlay-end)) 100%)",
-                backdropFilter: "blur(var(--background-overlay-blur))",
-                WebkitBackdropFilter: "blur(var(--background-overlay-blur))",
+                backdropFilter: "blur-sm(var(--background-overlay-blur))",
+                WebkitBackdropFilter: "blur-sm(var(--background-overlay-blur))",
               }}
             />
           </div>
@@ -221,7 +221,7 @@ export function BackgroundProvider() {
             <span className="sr-only">查看原图</span>
           </a>
           {showLink && (
-            <div className="absolute bottom-full left-0 mb-2 max-w-[280px] truncate whitespace-nowrap rounded-lg bg-black/80 px-3 py-1.5 text-xs text-white backdrop-blur-sm animate-fade-in-up">
+            <div className="absolute bottom-full left-0 mb-2 max-w-[280px] truncate whitespace-nowrap rounded-lg bg-black/80 px-3 py-1.5 text-xs text-white backdrop-blur-xs animate-fade-in-up">
               {displayBackgroundSourceUrl || displayBackgroundUrl}
             </div>
           )}
