@@ -12,6 +12,7 @@ export default defineConfig([
     "out/**/*",
     "build/**/*",
     ".wrangler/**/*",
+    "de/**/*",
   ]),
   {
     linterOptions: {

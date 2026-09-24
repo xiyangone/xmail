@@ -106,3 +106,12 @@ test("mobile back navigation preserves mounted mailbox and message lists", () =>
   assert.doesNotMatch(source, /mobileView === "list" &&/);
   assert.doesNotMatch(source, /mobileView === "emails" && selectedEmail/);
 });
+
+test("cleanup staging is excluded from source control, type checks, and lint", () => {
+  const gitignore = readFileSync(".gitignore", "utf8");
+  const tsconfig = JSON.parse(readFileSync("tsconfig.json", "utf8")) as { exclude: string[] };
+  const eslint = readFileSync("eslint.config.mjs", "utf8");
+  assert.match(gitignore, /^\/de\/$/m);
+  assert.ok(tsconfig.exclude.includes("de"));
+  assert.match(eslint, /"de\/\*\*\/\*"/);
+});
