@@ -98,3 +98,11 @@ test("routes outside the authorization proxy never trust client-supplied identit
   assert.equal(settings.match(/const session = await auth\(\)/g)?.length, 2);
   assert.match(settings, /session\.user\.permissions\?\.includes\(PERMISSIONS\.MANAGE_WEBHOOK\)/);
 });
+
+test("mobile back navigation preserves mounted mailbox and message lists", () => {
+  const source = readFileSync("app/components/emails/three-column-layout.tsx", "utf8");
+  assert.match(source, /mobileView !== "list" && "hidden"/);
+  assert.match(source, /mobileView !== "emails" && "hidden"/);
+  assert.doesNotMatch(source, /mobileView === "list" &&/);
+  assert.doesNotMatch(source, /mobileView === "emails" && selectedEmail/);
+});

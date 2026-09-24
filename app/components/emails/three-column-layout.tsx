@@ -511,9 +511,7 @@ export function ThreeColumnLayout() {
 
         <div className={cn("flex-1 min-h-0", columnClass)}>
 
-          {mobileView === "list" && (
-
-            <>
+          <div className={cn("flex h-full min-h-0 flex-col", mobileView !== "list" && "hidden")}>
 
               <div className={mobileHeaderClass}>
 
@@ -541,15 +539,13 @@ export function ThreeColumnLayout() {
 
               </div>
 
-            </>
-
-          )}
+          </div>
 
 
 
-          {mobileView === "emails" && selectedEmail && (
+          {selectedEmail && (
 
-            <div className="flex h-full min-h-0 flex-col">
+            <div className={cn("flex h-full min-h-0 flex-col", mobileView !== "emails" && "hidden")}>
 
               <div className={cn(mobileHeaderClass, "gap-2")}>
 
