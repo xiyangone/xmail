@@ -192,11 +192,16 @@ async function apiKeyHasRequiredScope(apiKeyId: string, requiredPermissions: Per
   return requiredPermissions.some((permission) => scopeKeys.includes(permission));
 }
 
-export async function authorizeRequest(request: Request): Promise<AuthorizationDecision> {
+export async function authorizeRequest(
+  request: Request,
+  dependencies = { getRoutePolicies, resolveAuthIdentity }
+): Promise<AuthorizationDecision> {
   const { pathname } = new URL(request.url);
-  const policies = await getRoutePolicies();
+  const [policies, { identity, requestHeaders }] = await Promise.all([
+    dependencies.getRoutePolicies(),
+    dependencies.resolveAuthIdentity(request),
+  ]);
   const policy = matchRoutePolicyFromList(policies, pathname, request.method);
-  const { identity, requestHeaders } = await resolveAuthIdentity(request);
 
   if (!policy) {
     return denyDecision(403, "未配置访问策略", identity, requestHeaders);

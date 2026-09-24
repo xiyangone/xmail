@@ -26,7 +26,7 @@ export function SignButton({ size = "default" }: SignButtonProps) {
       <Button
         variant="plain"
         asChild
-        className={cn("surface-header-accent gap-2", size === "lg" ? "px-8" : "px-4")}
+        className={cn("surface-header-accent shrink-0 whitespace-nowrap gap-1.5", size === "lg" ? "px-8" : "px-3 sm:px-4")}
         size={size}
       >
         <NavigationLink href="/login">

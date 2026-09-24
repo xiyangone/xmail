@@ -4,13 +4,15 @@ import { NextResponse } from "next/server";
 import { emails } from "@/lib/schema";
 import { encodeCursor, decodeCursor } from "@/lib/cursor";
 import { getUserId } from "@/lib/apiKey";
-import { isTempUser } from "@/lib/card-keys";
 
 
 const PAGE_SIZE = 20;
 
 export async function GET(request: Request) {
   const userId = await getUserId();
+  if (!userId) {
+    return NextResponse.json({ error: "未授权" }, { status: 401 });
+  }
 
   const { searchParams } = new URL(request.url);
   const cursor = searchParams.get("cursor");
@@ -18,23 +20,10 @@ export async function GET(request: Request) {
   const db = await createDb();
 
   try {
-    // 检查是否为临时用户
-    const isTemp = await isTempUser(userId!);
-    let baseConditions;
-
-    if (isTemp) {
-      // 临时用户可以看到所有绑定的邮箱（支持多邮箱模式）
-      baseConditions = and(
-        eq(emails.userId, userId!),
-        gt(emails.expiresAt, new Date())
-      );
-    } else {
-      // 普通用户可以看到所有自己的邮箱
-      baseConditions = and(
-        eq(emails.userId, userId!),
-        gt(emails.expiresAt, new Date())
-      );
-    }
+    const baseConditions = and(
+      eq(emails.userId, userId),
+      gt(emails.expiresAt, new Date())
+    );
 
     const conditions = [baseConditions];
 

@@ -6,7 +6,7 @@ import { UserAvatar } from "@/components/ui/user-avatar"
 import { signOut } from "next-auth/react"
 import { Settings, Crown, Sword, User2, Gem, Mail, Zap, Shield, ImageIcon } from "lucide-react"
 import { GitHubIcon } from "@/components/ui/github-icon"
-import { useRouter } from "next/navigation"
+import { NavigationLink } from "@/components/layout/navigation-link"
 import { useRolePermission } from "@/hooks/use-role-permission"
 import { PERMISSIONS } from "@/lib/permissions"
 import { CollapsibleSection } from "./collapsible-section"
@@ -35,7 +35,6 @@ interface ProfileCardProps {
 }
 
 export function ProfileCard({ user }: ProfileCardProps) {
-  const router = useRouter()
   const { checkPermission } = useRolePermission()
   const canManageWebhook = checkPermission(PERMISSIONS.MANAGE_WEBHOOK)
   const canPromote = checkPermission(PERMISSIONS.PROMOTE_USER)
@@ -50,6 +49,7 @@ export function ProfileCard({ user }: ProfileCardProps) {
     duke: { name: tr('duke'), icon: Gem },
     knight: { name: tr('knight'), icon: Sword },
     civilian: { name: tr('civilian'), icon: User2 },
+    temp_user: { name: tr('tempUser'), icon: User2 },
   } as const
 
   return (
@@ -83,7 +83,7 @@ export function ProfileCard({ user }: ProfileCardProps) {
             {user.roles && (
               <div className="mt-3 flex flex-wrap gap-2">
                 {user.roles.map(({ name }) => {
-                  const roleConfig = roleConfigs[name as keyof typeof roleConfigs]
+                  const roleConfig = roleConfigs[name as keyof typeof roleConfigs] ?? { name, icon: User2 }
                   const Icon = roleConfig.icon
                   return (
                     <div
@@ -131,20 +131,24 @@ export function ProfileCard({ user }: ProfileCardProps) {
       <div className="profile-action-surface surface-panel rounded-[1.75rem] p-1.5 sm:p-2">
         <div className="flex flex-col gap-2 sm:flex-row">
           <Button
-            onClick={() => router.push(MAILBOX_ROUTE)}
+            asChild
             className="gap-2 flex-1 rounded-[1.15rem] shadow-[0_18px_40px_hsl(var(--primary)/0.22)]"
           >
-            <Mail className="w-4 h-4" />
-            {t("backToMailbox")}
+            <NavigationLink href={MAILBOX_ROUTE}>
+              <Mail className="w-4 h-4" />
+              {t("backToMailbox")}
+            </NavigationLink>
           </Button>
           {(canManageCardKeys || canPromote) && (
             <Button
-              onClick={() => router.push("/admin")}
+              asChild
               variant="glass"
               className="gap-2 flex-1 rounded-[1.15rem]"
             >
-              <Shield className="w-4 h-4" />
-              {t("adminDashboard")}
+              <NavigationLink href="/admin">
+                <Shield className="w-4 h-4" />
+                {t("adminDashboard")}
+              </NavigationLink>
             </Button>
           )}
           <Button

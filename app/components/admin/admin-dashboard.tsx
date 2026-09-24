@@ -10,20 +10,22 @@ import {
   Settings,
   Users,
 } from "lucide-react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+import dynamic from "next/dynamic";
 import type { ComponentType, ReactNode } from "react";
 import { useEffect, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { NavigationLink } from "@/components/layout/navigation-link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRolePermission } from "@/hooks/use-role-permission";
 import { PERMISSIONS } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
-import { CardKeysContent } from "./card-keys/card-keys-content";
-import { UsersContent } from "./users/users-content";
-import { CleanupSettingsContent } from "./settings/cleanup-settings-content";
-import { CleanupRunsContent } from "./settings/cleanup-runs-content";
-import { GlobalBackgroundSettingsContent } from "../background/global-background-settings-content";
+const CardKeysContent = dynamic(() => import("./card-keys/card-keys-content").then((mod) => mod.CardKeysContent), { loading: AdminModuleLoadingState });
+const UsersContent = dynamic(() => import("./users/users-content").then((mod) => mod.UsersContent), { loading: AdminModuleLoadingState });
+const CleanupSettingsContent = dynamic(() => import("./settings/cleanup-settings-content").then((mod) => mod.CleanupSettingsContent), { loading: AdminModuleLoadingState });
+const CleanupRunsContent = dynamic(() => import("./settings/cleanup-runs-content").then((mod) => mod.CleanupRunsContent), { loading: AdminModuleLoadingState });
+const GlobalBackgroundSettingsContent = dynamic(() => import("../background/global-background-settings-content").then((mod) => mod.GlobalBackgroundSettingsContent), { loading: AdminModuleLoadingState });
 
 type AdminTabId = "card-keys" | "users" | "cleanup" | "cleanup-runs" | "background";
 
@@ -134,7 +136,6 @@ function AdminDashboardSkeleton() {
 }
 
 export function AdminDashboard() {
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const searchParamsString = searchParams.toString();
@@ -216,9 +217,9 @@ export function AdminDashboard() {
     if (requestedTab !== activeTab) {
       const params = new URLSearchParams(searchParamsString);
       params.set("tab", activeTab);
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      window.history.replaceState(null, "", `${pathname}?${params.toString()}`);
     }
-  }, [activeTab, isReady, pathname, requestedTab, router, searchParamsString]);
+  }, [activeTab, isReady, pathname, requestedTab, searchParamsString]);
 
   const handleTabChange = (nextTab: string) => {
     if (!isAdminTabId(nextTab) || !tabs.some((tab) => tab.id === nextTab)) {
@@ -229,13 +230,8 @@ export function AdminDashboard() {
     params.set("tab", nextTab);
     const url = `${pathname}?${params.toString()}`;
 
-    if (document.startViewTransition) {
-      document.startViewTransition(() => {
-        router.replace(url, { scroll: false });
-      });
-    } else {
-      router.replace(url, { scroll: false });
-    }
+    // Tabs are client state; changing them must not refetch the server page.
+    window.history.replaceState(null, "", url);
   };
 
   if (!isReady) {
@@ -259,11 +255,13 @@ export function AdminDashboard() {
       <aside className="space-y-4 xl:sticky xl:top-20 xl:self-start">
         <Button
           variant="glass"
-          onClick={() => router.push("/profile")}
+          asChild
           className="rounded-full border-primary/20 px-4 shadow-[0_16px_34px_hsl(var(--primary)/0.14)]"
         >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          {t("backToProfile")}
+          <NavigationLink href="/profile">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            {t("backToProfile")}
+          </NavigationLink>
         </Button>
 
         <nav className="theme-surface-admin-sidebar surface-panel p-3 xl:max-h-[calc(100vh-8rem)] xl:overflow-y-auto">

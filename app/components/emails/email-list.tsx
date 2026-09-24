@@ -208,109 +208,69 @@ const EmailItem = memo(function EmailItem({
 
 
   return (
-
     <div
-
+      data-testid="mailbox-row"
       className={cn(
-
-        "flex items-center gap-2 p-3 rounded-lg cursor-pointer text-sm group transition-[background-color,border-color,color,box-shadow] duration-150",
-
-        "hover:bg-primary/10 hover:shadow-xs",
-
-        "border border-transparent hover:border-primary/20",
-
-        isSelected && "bg-primary/15 border-primary/30 shadow-xs"
-
+        "group grid grid-cols-[1rem_minmax(0,1fr)] items-center gap-x-2 gap-y-1.5 rounded-lg border border-transparent p-3 text-sm transition-colors duration-150",
+        "hover:border-primary/20 hover:bg-primary/10",
+        isSelected && "border-primary/30 bg-primary/15 shadow-xs"
       )}
-
-      onClick={handleClick}
-
     >
-
-      <button onClick={handleCheckboxClick} className="shrink-0">
-
+      <button
+        type="button"
+        role="checkbox"
+        aria-checked={isChecked}
+        aria-label={email.address}
+        onClick={handleCheckboxClick}
+        className="flex h-7 items-center justify-center rounded focus-visible:outline-2 focus-visible:outline-ring"
+      >
         {isChecked ? (
-
-          <CheckSquare className="h-4 w-4 text-primary" />
-
+          <CheckSquare className="h-4 w-4 text-primary" aria-hidden="true" />
         ) : (
-
-          <Square className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-
+          <Square className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
         )}
-
       </button>
-
-      <Mail className="h-5 w-5 text-primary/70 group-hover:text-primary transition-colors shrink-0" />
-
-      <div className="truncate flex-1 space-y-1">
-
-        <div className="font-medium truncate group-hover:text-primary transition-colors">
-
-          {email.address}
-
+      <button
+        type="button"
+        onClick={handleClick}
+        aria-pressed={isSelected}
+        title={email.address}
+        className="flex min-w-0 items-center gap-2 rounded text-left font-medium focus-visible:outline-2 focus-visible:outline-ring hover:text-primary"
+      >
+        <Mail className="h-4 w-4 shrink-0 text-primary/70" aria-hidden="true" />
+        <span className="min-w-0 break-all">{email.address}</span>
+      </button>
+      <div className="col-start-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+        {isPermanent ? (
+          <span className="rounded-full bg-green-100 px-2 py-0.5 font-medium text-green-700 dark:bg-green-900/30 dark:text-green-300">
+            {tc("permanent")}
+          </span>
+        ) : (
+          <>
+            {isExpiringSoon && (
+              <span className="rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary">
+                {tc("expiringSoon")}
+              </span>
+            )}
+            <span>{tc("expiresAt", { time: formattedExpiry })}</span>
+          </>
+        )}
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+          <ShareDialog emailId={email.id} emailAddress={email.address} />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            aria-label={tc("delete")}
+            title={tc("delete")}
+            onClick={handleDelete}
+          >
+            <Trash2 className="h-4 w-4 text-destructive" aria-hidden="true" />
+          </Button>
         </div>
-
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-
-          {isPermanent ? (
-
-            <span className="px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 font-medium">
-
-              {tc("permanent")}
-
-            </span>
-
-          ) : (
-
-            <>
-
-              {isExpiringSoon && (
-
-                <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium animate-pulse">
-
-                  {tc("expiringSoon")}
-
-                </span>
-
-              )}
-
-              <span>{tc("expiresAt", { time: formattedExpiry })}</span>
-
-            </>
-
-          )}
-
-        </div>
-
       </div>
-
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-
-        <ShareDialog emailId={email.id} emailAddress={email.address} />
-
-        <Button
-
-          variant="ghost"
-
-          size="icon"
-
-          className="h-8 w-8"
-
-          onClick={handleDelete}
-
-        >
-
-          <Trash2 className="h-4 w-4 text-destructive" />
-
-        </Button>
-
-      </div>
-
     </div>
-
   );
-
 });
 
 

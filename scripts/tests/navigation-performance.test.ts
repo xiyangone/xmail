@@ -17,7 +17,7 @@ test("navigation retains native anchor behavior and reserves space for its pendi
 });
 
 test("entry points use prefetch-capable links and a route loading boundary", () => {
-  for (const file of ["app/components/auth/sign-button.tsx", "app/components/home/action-button.tsx"]) {
+  for (const file of ["app/components/auth/sign-button.tsx", "app/components/home/action-button.tsx", "app/components/profile/profile-card.tsx", "app/components/admin/admin-dashboard.tsx"]) {
     const source = readFileSync(file, "utf8");
     assert.match(source, /NavigationLink/);
     assert.doesNotMatch(source, /router\.push/);
