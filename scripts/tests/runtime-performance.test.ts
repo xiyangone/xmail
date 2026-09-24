@@ -82,3 +82,19 @@ test("temporary or custom roles can render their profile without a missing-role 
   assert.match(source, /temp_user: \{ name: tr\('tempUser'\)/);
   assert.match(source, /roleConfigs\[name as keyof typeof roleConfigs\] \?\? \{ name, icon: User2 \}/);
 });
+
+test("routes outside the authorization proxy never trust client-supplied identity headers", () => {
+  for (const file of [
+    "app/api/user/settings/route.ts",
+    "app/api/user/temp-info/route.ts",
+    "app/api/realtime/token/route.ts",
+  ]) {
+    const source = readFileSync(file, "utf8");
+    assert.match(source, /const session = await auth\(\)/);
+    assert.match(source, /const userId = session\?\.user\?\.id/);
+    assert.doesNotMatch(source, /getUserId|checkPermission\(/);
+  }
+  const settings = readFileSync("app/api/user/settings/route.ts", "utf8");
+  assert.equal(settings.match(/const session = await auth\(\)/g)?.length, 2);
+  assert.match(settings, /session\.user\.permissions\?\.includes\(PERMISSIONS\.MANAGE_WEBHOOK\)/);
+});

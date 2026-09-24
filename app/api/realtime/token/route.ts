@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { and, eq } from "drizzle-orm";
 
-import { getUserId } from "@/lib/apiKey";
+import { auth } from "@/lib/auth";
 import { createDb } from "@/lib/db";
 import {
   createRealtimeTokenPayload,
@@ -46,7 +46,8 @@ async function getRealtimeConfig() {
 }
 
 export async function GET(request: Request) {
-  const userId = await getUserId();
+  const session = await auth();
+  const userId = session?.user?.id;
   if (!userId) {
     return NextResponse.json({ error: "未授权" }, { status: 401 });
   }

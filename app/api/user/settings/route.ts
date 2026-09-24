@@ -1,13 +1,13 @@
 import { eq } from "drizzle-orm";
-import { getUserId } from "@/lib/apiKey";
-import { checkPermission } from "@/lib/auth";
+import { auth } from "@/lib/auth";
 import { defaultBackgroundSettings, type BackgroundSettingsConfig } from "@/lib/background-config";
 import { createDb } from "@/lib/db";
 import { PERMISSIONS } from "@/lib/permissions";
 import { userSettings } from "@/lib/schema";
 
 export async function GET() {
-  const userId = await getUserId();
+  const session = await auth();
+  const userId = session?.user?.id;
   if (!userId) {
     return Response.json({ error: "未登录" }, { status: 401 });
   }
@@ -32,12 +32,13 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const userId = await getUserId();
+  const session = await auth();
+  const userId = session?.user?.id;
   if (!userId) {
     return Response.json({ error: "未登录" }, { status: 401 });
   }
 
-  const canCustomize = await checkPermission(PERMISSIONS.MANAGE_WEBHOOK);
+  const canCustomize = session.user.permissions?.includes(PERMISSIONS.MANAGE_WEBHOOK);
   if (!canCustomize) {
     return Response.json({ error: "权限不足，骑士及以上可自定义背景" }, { status: 403 });
   }

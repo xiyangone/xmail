@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { getUserId } from "@/lib/apiKey";
+import { auth } from "@/lib/auth";
 import { getTempUserInfo } from "@/lib/card-keys";
 
 
 export async function GET() {
   try {
-    const userId = await getUserId();
+    const session = await auth();
+    const userId = session?.user?.id;
     
     if (!userId) {
       return NextResponse.json(
